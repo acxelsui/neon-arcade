@@ -1,0 +1,16 @@
+import express from 'express';
+import http from 'node:http';
+import path from 'node:path';
+import { fileURLToPath } from 'node:url';
+import { bootstrap } from '@mercuryworkshop/proxy-bootstrap';
+const root=path.dirname(fileURLToPath(import.meta.url));
+const proxy=await bootstrap({transport:'libcurl'});
+const app=express();
+app.use((req,res,next)=>{res.setHeader('Cross-Origin-Opener-Policy','same-origin');res.setHeader('Cross-Origin-Embedder-Policy','credentialless');if(!proxy.routeRequest(req,res))next();});
+app.use('/games',express.static(path.join(root,'math-tutors-main/math-tutors-main')));
+app.use('/covers',express.static(path.join(root,'covers-main/covers-main')));
+app.use('/wallpapers',express.static(path.join(root,'Wallpapers')));
+app.use(express.static(path.join(root,'public')));
+const server=http.createServer(app);
+server.on('upgrade',(req,socket,head)=>{if(!proxy.routeUpgrade(req,socket,head))socket.destroy();});
+server.listen(Number(process.env.PORT)||3000,'127.0.0.1',()=>console.log('Neon Arcade is ready: http://localhost:3000'));
