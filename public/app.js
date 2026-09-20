@@ -2,7 +2,7 @@ const $=s=>document.querySelector(s);
 const store={get(k,f){try{return JSON.parse(localStorage.getItem('neon-'+k))??f}catch{return f}},set(k,v){try{localStorage.setItem('neon-'+k,JSON.stringify(v))}catch{}}};
 let catalog,selectedGame,previousFocus,controllerPromise,webFrame;
 function toast(message){$('#toast').textContent=message;$('#toast').hidden=false;setTimeout(()=>$('#toast').hidden=true,4000)}
-function showPage(name){if(!['home','games','search','settings'].includes(name))name='home';document.querySelectorAll('.page').forEach(p=>p.hidden=p.id!==name);document.querySelectorAll('nav button').forEach(b=>{b.classList.toggle('active',b.dataset.page===name);b.setAttribute('aria-current',b.dataset.page===name?'page':'false')});if(location.hash!=='#'+name)history.replaceState(null,'','#'+name);window.scrollTo(0,0)}
+function showPage(name){if(!['home','games','search','sports','settings'].includes(name))name='home';document.querySelectorAll('.page').forEach(p=>p.hidden=p.id!==name);document.querySelectorAll('nav button').forEach(b=>{b.classList.toggle('active',b.dataset.page===name);b.setAttribute('aria-current',b.dataset.page===name?'page':'false')});if(location.hash!=='#'+name)history.replaceState(null,'','#'+name);window.scrollTo(0,0);if(name==='sports')openSports()}
 document.querySelectorAll('[data-page]').forEach(b=>b.onclick=()=>showPage(b.dataset.page));window.addEventListener('hashchange',()=>showPage(location.hash.slice(1)));
 function updateClock(){const now=new Date();$('#clock').textContent=now.toLocaleTimeString([],{hour:'2-digit',minute:'2-digit',hour12:!store.get('24hour',false)}).replace(/\s?[AP]M/i,'');$('#date').textContent=now.toLocaleDateString([],{weekday:'long',month:'long',day:'numeric',year:'numeric'});$('#clock').dateTime=now.toISOString()}
 $('#clock-format').checked=store.get('24hour',false);$('#clock-format').onchange=e=>{store.set('24hour',e.target.checked);updateClock()};updateClock();setInterval(updateClock,1000);
@@ -23,3 +23,33 @@ $('#search-form').onsubmit=e=>{e.preventDefault();browse($('#query').value)};$('
 function searchHome(){navigationId++;$('#search-start').hidden=false;$('#web-frames').hidden=true;$('#web-error').hidden=true;$('#address').value='';$('#search-status').textContent='';$('#query').focus()}
 $('#web-home').onclick=searchHome;$('#new-search').onclick=searchHome;$('#web-back').onclick=()=>webFrame?.back();$('#web-forward').onclick=()=>webFrame?.forward();$('#web-reload').onclick=()=>webFrame?.reload();$('#web-full').onclick=()=>{const target=$('#web-frames').hidden?$('#search'):$('#web-frames');target.requestFullscreen?.().catch(()=>toast('Fullscreen is unavailable in this browser.'))};
 async function start(){try{const response=await fetch('/catalog.json');if(!response.ok)throw new Error('Game catalog unavailable');catalog=await response.json();renderGames();for(const w of catalog.wallpapers){const b=document.createElement('button');b.className='wallpaper-choice glass';b.dataset.url=w.url;b.setAttribute('aria-pressed','false');const img=document.createElement('img');img.src=w.url;img.alt='';img.loading='lazy';const label=document.createElement('span');label.textContent=w.name;b.append(img,label);b.onclick=()=>wallpaper(w.url);$('#wallpaper-grid').append(b)}const defaultWallpaper=catalog.wallpapers.find(w=>w.url.includes('relaxing-fireplace'))||catalog.wallpapers[0];const saved=store.get('wallpaper',defaultWallpaper.url);wallpaper(catalog.wallpapers.some(w=>w.url===saved)?saved:defaultWallpaper.url);showPage(location.hash.slice(1)||'home')}catch(e){toast('Could not load your games. Refresh to try again.');console.error(e)}finally{setTimeout(()=>{$('#loading').classList.add('done');setTimeout(()=>$('#loading').hidden=true,550)},850)}}start();
+
+const SPORTS_URL='https://thetvapp.plus/v7';
+let sportsFrame, sportsLoading=false;
+async function openSports(reset=false){
+  if(sportsLoading)return;
+  if(sportsFrame&&!reset)return;
+  sportsLoading=true;
+  const status=$('#sports-status');
+  status.textContent='Connecting to sports…';
+  try{
+    const controller=await getController();
+    if(!sportsFrame){
+      sportsFrame=controller.createFrame();
+      sportsFrame.element.title='Sports — TheTVApp';
+      window.$scramjet.Tap.tap(sportsFrame.hooks.error.request,({rawrequest},props)=>{
+        if(!['document','iframe'].includes(rawrequest.destination))return;
+        props.setResponse={status:502,statusText:'Connection failed',headers:[['content-type','text/html; charset=utf-8']],body:new TextEncoder().encode('<!doctype html><html><body style="background:#101b27;color:#f2f6fb;font:16px system-ui;padding:32px"><h2>Sports could not connect</h2><p>The sports site could not be reached through the proxy. Use Reload above to try again.</p></body></html>').buffer};
+      });
+      sportsFrame.element.allow='autoplay; fullscreen; picture-in-picture';
+      sportsFrame.element.allowFullscreen=true;
+      sportsFrame.element.addEventListener('load',()=>{status.textContent=''});
+      $('#sports-frames').append(sportsFrame.element);
+    }
+    sportsFrame.go(SPORTS_URL);
+  }catch(error){status.textContent='Sports could not connect. '+error.message+' Use Reload to try again.'}
+  finally{sportsLoading=false}
+}
+$('#sports-home').onclick=()=>openSports(true);
+$('#sports-reload').onclick=()=>sportsFrame?sportsFrame.reload():openSports();
+$('#sports-full').onclick=()=>$('#sports-frames').requestFullscreen?.().catch(()=>toast('Fullscreen is unavailable in this browser.'));
