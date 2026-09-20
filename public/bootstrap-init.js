@@ -24,7 +24,7 @@ async function initBootstrap() {
   config.wasmPath = '/scram/scramjet.wasm';
   config.scramjetPath = '/scram/scramjet.js';
   // Address the function directly: deployment fallback routes can swallow /wisp/.
-  const wisp = new URL('/api/wisp', location.href);
+  const wisp = new URL('/api/wisp/', location.href);
   wisp.protocol = location.protocol === 'https:' ? 'wss:' : 'ws:';
   const transport = new window.LibcurlTransport.LibcurlClient({ wisp: wisp.href });
   const controller = new Controller({ serviceworker, transport });
