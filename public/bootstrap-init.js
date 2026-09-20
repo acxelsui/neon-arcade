@@ -23,7 +23,8 @@ async function initBootstrap() {
   config.injectPath = '/controller/controller.inject.js';
   config.wasmPath = '/scram/scramjet.wasm';
   config.scramjetPath = '/scram/scramjet.js';
-  const wisp = new URL('/wisp/', location.href);
+  // Address the function directly: deployment fallback routes can swallow /wisp/.
+  const wisp = new URL('/api/wisp', location.href);
   wisp.protocol = location.protocol === 'https:' ? 'wss:' : 'ws:';
   const transport = new window.LibcurlTransport.LibcurlClient({ wisp: wisp.href });
   const controller = new Controller({ serviceworker, transport });
