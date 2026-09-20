@@ -1,0 +1,24 @@
+{
+  "$schema": "https://openapi.vercel.sh/vercel.json",
+  "framework": null,
+  "installCommand": "pnpm install --frozen-lockfile",
+  "buildCommand": "pnpm build",
+  "outputDirectory": "public",
+  "functions": {
+    "api/wisp.js": {
+      "maxDuration": 300,
+      "excludeFiles": "{public,covers-main,math-tutors-main,Wallpapers,curl-master,scramjet-main,tests,scripts}/**"
+    }
+  },
+  "rewrites": [{ "source": "/wisp/:path*", "destination": "/api/wisp" }],
+  "headers": [
+    { "source": "/(.*)", "headers": [
+      { "key": "Cross-Origin-Opener-Policy", "value": "same-origin" },
+      { "key": "Cross-Origin-Embedder-Policy", "value": "credentialless" }
+    ] },
+    { "source": "/sw.js", "headers": [
+      { "key": "Cache-Control", "value": "no-cache" },
+      { "key": "Service-Worker-Allowed", "value": "/" }
+    ] }
+  ]
+}

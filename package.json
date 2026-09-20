@@ -4,11 +4,20 @@
   "private": true,
   "type": "module",
   "scripts": {
-    "start": "node server.mjs"
+    "build": "node scripts/build.mjs",
+    "prestart": "node scripts/build.mjs",
+    "start": "node server.mjs",
+    "test": "node --test tests/deployment.test.mjs"
   },
   "dependencies": {
-    "@mercuryworkshop/proxy-bootstrap": "0.0.5",
+    "@mercuryworkshop/wisp-js": "0.4.1",
     "express": "5.1.0"
+  },
+  "devDependencies": {
+    "@mercuryworkshop/scramjet": "2.0.67-alpha.2",
+    "@mercuryworkshop/scramjet-controller": "0.0.14",
+    "@mercuryworkshop/scramjet-utils": "0.0.3",
+    "@mercuryworkshop/libcurl-transport": "2.0.5"
   },
   "engines": {
     "node": ">=22"

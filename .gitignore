@@ -7,3 +7,10 @@ node_modules/
 .DS_Store
 Thumbs.db
 .vscode/
+.vercel/
+public/games/
+public/covers/
+public/wallpapers/
+public/scram/
+public/controller/
+public/clients/
