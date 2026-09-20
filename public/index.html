@@ -1,7 +1,12 @@
 <!doctype html>
 <html lang="en"><head><meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1"><meta name="theme-color" content="#101927"><title>Neon Arcade</title><link rel="icon" href="icon.svg"><link rel="stylesheet" href="style.css"></head>
 <body><div id="wallpaper"></div><div class="shade"></div>
-<div id="loading" role="status"><div class="load-mark">N<span>↗</span></div><h1>Neon Arcade</h1><p>A little escape.</p><div class="load-track"><i></i></div></div>
+<div id="loading" aria-label="Loading Neon Arcade">
+<div class="loading-grid" aria-hidden="true"></div><div class="loading-orb" aria-hidden="true"></div>
+<div class="loading-top"><span>N↗ / NEON ARCADE</span><span class="loading-online"><i></i> YOUR NEXT ESCAPE</span></div>
+<div class="loading-center"><div class="loading-emblem" aria-hidden="true"><span>N↗</span></div><div class="loading-kicker">PRESS PAUSE ON THE ORDINARY</div><h1>Neon<span>Arcade</span><b aria-hidden="true">✦</b></h1><p class="loading-tagline">A whole world. One little escape.</p>
+<div class="loading-progress"><div class="loading-meta"><span id="loading-message" role="status" aria-live="polite">Opening the arcade…</span><span id="loading-step" aria-hidden="true">01 / 03</span></div><div class="loading-track" aria-hidden="true"><i id="loading-fill"></i></div><button id="loading-retry" hidden>Try again ↗</button></div></div>
+<div class="loading-bottom"><span>PLAY. EXPLORE. REPEAT.</span><span>MAKE YOURSELF AT HOME <b>↗</b></span></div></div>
 <header><a class="brand" href="#home"><span class="brand-mark">N↗</span><span>Neon Arcade</span></a><nav class="glass" aria-label="Main navigation"><button data-page="home" class="active">⌂ <span>Home</span></button><button data-page="games">▦ <span>Games</span></button><button data-page="search">⌕ <span>Search</span></button><button data-page="sports">◉ <span>Sports</span></button><button data-page="settings">⚙ <span>Settings</span></button></nav></header>
 <main>
 <section id="home" class="page home"><div class="clock-block"><div class="eyebrow">YOUR OWN LITTLE WORLD</div><time id="clock"></time><p id="date"></p><button class="glass home-cta" data-page="games">Find your next game <span>↗</span></button></div><div class="home-bottom"><span><i class="live-dot"></i> Make yourself at home.</span><button class="glass" data-page="settings">◈ Change wallpaper</button></div></section>
