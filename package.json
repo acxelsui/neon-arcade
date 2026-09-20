@@ -7,7 +7,7 @@
     "build": "node scripts/build.mjs",
     "prestart": "node scripts/build.mjs",
     "start": "node server.mjs",
-    "test": "node --test tests/deployment.test.mjs"
+    "test": "node --test tests/*.test.mjs"
   },
   "dependencies": {
     "@mercuryworkshop/wisp-js": "0.4.1",

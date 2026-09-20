@@ -22,7 +22,7 @@ for (const [source, destination] of sources) {
 }
 const catalog = JSON.parse(await readFile(path.join(output, 'catalog.json'), 'utf8'));
 const required = [
-  'index.html', 'bootstrap-init.js', 'sw.js', 'scram/scramjet.js',
+  'index.html', 'bootstrap-init.js', 'game-runner.html', 'game-runner.js', 'game-transport.js', 'sw.js', 'scram/scramjet.js',
   'scram/scramjet.wasm', 'scram/scramjet-utils.js', 'controller/controller.api.js',
   'controller/controller.inject.js', 'controller/controller.sw.js', 'clients/index.js',
   ...catalog.games.flatMap(game => [game.url.slice(1), game.cover.slice(1)]),

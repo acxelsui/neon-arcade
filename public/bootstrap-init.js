@@ -1,5 +1,5 @@
 // Versions of these browser bundles are pinned in package.json and copied at build time.
-async function initBootstrap() {
+async function initBootstrap(configureTransport = transport => transport) {
   const registration = await navigator.serviceWorker.register('/sw.js', { scope: '/', updateViaCache: 'none' });
   const serviceworker = await new Promise((resolve, reject) => {
     const timeout = setTimeout(() => finish(new Error('Search setup timed out. Refresh and try again.')), 30000);
@@ -26,7 +26,7 @@ async function initBootstrap() {
   // Address the function directly: deployment fallback routes can swallow /wisp/.
   const wisp = new URL('/api/wisp/', location.href);
   wisp.protocol = location.protocol === 'https:' ? 'wss:' : 'ws:';
-  const transport = new window.LibcurlTransport.LibcurlClient({ wisp: wisp.href });
+  const transport = configureTransport(new window.LibcurlTransport.LibcurlClient({ wisp: wisp.href }));
   const controller = new Controller({ serviceworker, transport });
   await controller.wait();
   return controller;

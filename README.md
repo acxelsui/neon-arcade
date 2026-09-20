@@ -46,3 +46,8 @@ The library contains 842 entries after excluding the comment board. Balatro's su
 To reinstall dependencies, install pnpm and run `pnpm install` in this folder, then `pnpm start`. The server listens only on this computer. The source repositories and dependency store are not exposed by the web server.
 
 References: https://github.com/MercuryWorkshop/scramjet ; https://github.com/gn-math/assets/blob/main/zones.json
+
+## Game proxy
+
+All playable catalog entries now launch through game-runner.html, which owns a Scramjet controller and libcurl transport. Bundled /games/ files use a virtual origin and are fed into the rewriter from the local static server; external HTTP and WebSocket requests use the Wisp relay. The about:blank launcher embeds the same runner and does not depend on the main page's controller. Proxy compatibility still varies by game; routing every entry does not guarantee every engine or external host works. Existing direct-mode saves may not appear in the proxy's separate storage.
+
