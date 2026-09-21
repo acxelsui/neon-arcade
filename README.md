@@ -93,3 +93,7 @@ The single floating player stays mounted outside page sections and game frames. 
 ## Movies
 
 The Movies tab lazily opens `https://gaiaflix.live/` in its own Scramjet frame using the same server/libcurl transport as Search and Sports. Home returns to Gaiaflix, Reload retries the current page, and Fullscreen expands the viewing area. Connection failures show retry guidance. External availability and individual video playback are controlled by the destination site and are not guaranteed by the tab integration.
+
+## Browser-style interface
+
+The fixed left rail opens each section, while the top strip keeps visited pages available as closable shortcuts (Home remains pinned). Back/Forward navigate the current session’s section history; the address bar accepts neon:// page addresses or sends websites/search terms to the existing proxy search. The music indicator opens the music page and reflects the current dock title; it does not claim playback is active or provide unsupported provider controls. Home includes web search, circular shortcuts, the clock/date and recent games. The compact game grid shows titles on hover/focus and always on touch devices. All wallpaper and glass-opacity settings remain available.
