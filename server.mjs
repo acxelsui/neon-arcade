@@ -1,4 +1,5 @@
 import express from 'express';
+import chat from './api/chat.js';
 import http from 'node:http';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
@@ -6,6 +7,7 @@ import { handleUpgrade } from './lib/wisp.mjs';
 const root=path.dirname(fileURLToPath(import.meta.url));
 const app=express();
 app.use((req,res,next)=>{res.setHeader('Cross-Origin-Opener-Policy','same-origin');res.setHeader('Cross-Origin-Embedder-Policy','credentialless');next();});
+app.all('/api/chat',chat);
 app.use(express.static(path.join(root,'public')));
 const server=http.createServer(app);
 server.on('upgrade',handleUpgrade);

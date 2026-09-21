@@ -58,3 +58,18 @@ All playable catalog entries now launch through game-runner.html, which owns a S
 - Settings offers 16 bundled GIF wallpapers plus one personal PNG, JPG, WebP, GIF, or AVIF background up to 100 MB, subject to available browser storage. The personal image stays in IndexedDB on the device and is not uploaded to the server. Clearing site data removes it.
 - Brightness, background blur, and panel transparency have live controls and a reset button.
 - Search and game navigation errors offer retry controls. This improves recovery messages; it does not make incompatible third-party sites or streams work.
+
+## AI Chat setup
+
+The AI Chat tab includes local conversation history, new/delete chat, code blocks, copy, stop and retry. Chat messages are sent to the configured AI provider; history is kept only in this browser (up to 20 conversations). It does not browse the web or generate images.
+
+In Vercel project Settings → Environment Variables, add these for Production and redeploy:
+
+- `AI_API_KEY`: your private provider key. Never put it in public files or send it in chat.
+- `AI_BASE_URL`: `https://api.groq.com/openai/v1` for Groq.
+- `AI_MODEL`: `openai/gpt-oss-20b` for Groq (check availability in your account).
+- `AI_ACCESS_CODE`: a long random code you choose and share only with people allowed to use your AI chat. Visitors enter this in Chat access. This is separate from the API key.
+
+Create a Groq key at https://console.groq.com/keys. Free-plan limits apply; no provider account or billing upgrade is created automatically. Other HTTPS OpenAI-compatible Chat Completions providers can be configured with their own base URL and model.
+
+For local development, set the same variables in your server environment before starting Node. No credentials are bundled into the website. The endpoint has request/context limits, a 45-second timeout, and a best-effort limit of 12 requests/minute per address per server instance. This is not a global usage quota: use provider spending limits for paid accounts. Missing configuration shows an honest setup message, never a simulated AI answer.
