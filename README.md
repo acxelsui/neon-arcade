@@ -61,15 +61,20 @@ All playable catalog entries now launch through game-runner.html, which owns a S
 
 ## AI Chat setup
 
-The AI Chat tab includes local conversation history, new/delete chat, code blocks, copy, stop and retry. Chat messages are sent to the configured AI provider; history is kept only in this browser (up to 20 conversations). It does not browse the web or generate images.
+The AI Chat tab includes local conversation history, new/delete chat, code blocks, copy, stop and retry. Chat messages are sent to the configured AI provider; history is kept only in this browser (up to 20 conversations). It can analyze attached PNG, JPEG and WebP screenshots, but does not browse the web or generate images.
 
 In Vercel project Settings → Environment Variables, add these for Production and redeploy:
 
 - `AI_API_KEY`: your private provider key. Never put it in public files or send it in chat.
 - `AI_BASE_URL`: `https://api.groq.com/openai/v1` for Groq.
 - `AI_MODEL`: `openai/gpt-oss-20b` for Groq (check availability in your account).
-- `AI_ACCESS_CODE`: a long random code you choose and share only with people allowed to use your AI chat. Visitors enter this in Chat access. This is separate from the API key.
+- `AI_VISION_MODEL` (optional): the image model. Groq defaults to `qwen/qwen3.8-27b`; other providers fall back to `AI_MODEL`. Use a vision-capable model available to your account.
+
+AI Chat is public and no longer uses `AI_ACCESS_CODE`. You may remove that old Vercel variable. The API key remains private on the server.
 
 Create a Groq key at https://console.groq.com/keys. Free-plan limits apply; no provider account or billing upgrade is created automatically. Other HTTPS OpenAI-compatible Chat Completions providers can be configured with their own base URL and model.
 
 For local development, set the same variables in your server environment before starting Node. No credentials are bundled into the website. The endpoint has request/context limits, a 45-second timeout, and a best-effort limit of 12 requests/minute per address per server instance. This is not a global usage quota: use provider spending limits for paid accounts. Missing configuration shows an honest setup message, never a simulated AI answer.
+
+
+Screenshot support: attach with the plus button or paste into the message box. Up to three images per request, 8 MB per original image. Images are resized locally to 1600 pixels on the longest edge and compressed for Vercel request limits. Only pressing Send transmits them to the configured AI provider. Up to the last three attached images are included in follow-up questions in the current conversation. Image data lives in page memory; saved history keeps filenames and text only. After refreshing, reattach a screenshot to ask about it again. Provider access or billing is not configured automatically, and live vision replies require a working provider key/model.
