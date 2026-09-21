@@ -1,25 +1,49 @@
-import {soundcloudLink,soundcloudPlayer} from './music-links.js';
+import {musicLink,musicPlayer} from './music-links.js';
 const $=s=>document.querySelector(s);
-let saved=[];
-try{const value=JSON.parse(localStorage.getItem('neon-music')||'[]');if(Array.isArray(value))saved=value.slice(0,40).filter(item=>{try{return typeof item.name==='string'&&soundcloudLink(item.url)===item.url}catch{return false}})}catch{}
-let playing='',compact=false;
+function read(key,fallback){try{return JSON.parse(localStorage.getItem(key))||fallback}catch{return fallback}}
+let saved=read('neon-music',[]);if(!Array.isArray(saved))saved=[];
+saved=saved.filter(t=>{try{return typeof t.name==='string'&&musicLink(t.url)===t.url}catch{return false}}).slice(0,100);
+let liked=read('neon-music-liked',[]);if(!Array.isArray(liked))liked=[];
+let catalog=[],view='home',provider='All',playing='',compact=false;
 function message(text){$('#music-status').textContent=text}
-function persist(){try{localStorage.setItem('neon-music',JSON.stringify(saved))}catch{message('Could not save music in this browser. You can still listen.')}}
+function persist(){try{localStorage.setItem('neon-music',JSON.stringify(saved));localStorage.setItem('neon-music-liked',JSON.stringify(liked))}catch{message('Could not save music in this browser. You can still listen.')}}
+function normalize(item){return {...item,provider:item.provider||(item.url.includes('open.spotify.com')?'Spotify':'SoundCloud'),artist:item.artist||'Your library',id:item.id||item.url}}
+function library(){return [...catalog,...saved.filter(s=>!catalog.some(c=>c.url===s.url))].map(normalize)}
+function card(item){
+ const el=document.createElement('article');el.className='music-card';
+ const button=document.createElement('button');button.className='music-card-play';button.setAttribute('aria-label','Play '+item.name+' by '+item.artist);
+ const artwork=document.createElement('div');artwork.className='music-art';const img=document.createElement('img');img.src=item.cover||'/icon.svg';img.alt='';img.loading='lazy';img.referrerPolicy='no-referrer';img.onerror=()=>{img.onerror=null;img.src='/icon.svg'};
+ const play=document.createElement('span');play.className='music-play-symbol';play.textContent='▶';artwork.append(img,play);
+ const title=document.createElement('strong');title.textContent=item.name;title.title=item.name;const artist=document.createElement('span');artist.className='music-artist';artist.textContent=item.artist;button.append(artwork,title,artist);button.onclick=()=>load(item);
+ const footer=document.createElement('div');footer.className='music-card-footer';const source=document.createElement('a');source.href=item.url;source.target='_blank';source.rel='noopener noreferrer';source.textContent=item.provider+' ↗';const heart=document.createElement('button');heart.className='music-heart';heart.textContent=liked.includes(item.url)?'♥':'♡';heart.setAttribute('aria-label','Like '+item.name);heart.setAttribute('aria-pressed',String(liked.includes(item.url)));heart.onclick=()=>{liked=liked.includes(item.url)?liked.filter(u=>u!==item.url):[...liked,item.url];persist();render()};footer.append(source,heart);el.append(button,footer);
+ if(view==='saved'){const remove=document.createElement('button');remove.className='music-remove';remove.textContent='Remove';remove.onclick=()=>{saved=saved.filter(t=>t.url!==item.url);persist();render()};el.append(remove)}
+ return el;
+}
 function render(){
-  const list=$('#music-library');list.replaceChildren();$('#music-empty').hidden=saved.length>0;
-  for(const item of saved){const row=document.createElement('div');row.className='music-row glass';const play=document.createElement('button');play.className='music-row-play';play.setAttribute('aria-label','Load '+item.name);const symbol=document.createElement('span');symbol.className='music-row-symbol';symbol.textContent='♫';const name=document.createElement('span');name.textContent=item.name;play.append(symbol,name);play.onclick=()=>load(item.url,item.name);const remove=document.createElement('button');remove.textContent='×';remove.setAttribute('aria-label','Remove '+item.name+' from saved music');remove.onclick=()=>{saved=saved.filter(s=>s.url!==item.url);persist();render()};row.append(play,remove);list.append(row)}
+ const hour=new Date().getHours();$('#music-greeting').textContent=view==='home'?(hour<12?'Good morning':hour<18?'Good afternoon':'Good evening'):view==='liked'?'Liked Songs':view==='saved'?'Your additions':'Search';
+ $('#music-count').textContent=library().length+' tracks & mixes';$('#music-search-panel').hidden=view!=='search';document.querySelectorAll('[data-music-view]').forEach(b=>b.classList.toggle('selected',b.dataset.musicView===view));
+ let items=library().filter(t=>provider==='All'||t.provider===provider);if(view==='liked')items=items.filter(t=>liked.includes(t.url));if(view==='saved')items=items.filter(t=>saved.some(s=>s.url===t.url));
+ if(view==='search'){const query=$('#music-query').value.toLowerCase().trim();items=items.filter(t=>(t.name+' '+t.artist+' '+(t.group||'')).toLowerCase().includes(query));$('#music-search-spotify').href='https://open.spotify.com/search/'+encodeURIComponent(query);$('#music-search-soundcloud').href='https://soundcloud.com/search/sounds?q='+encodeURIComponent(query)}
+ const content=$('#music-discover');content.replaceChildren();$('#music-empty').hidden=items.length>0;
+ function section(name,tracks,hint){if(!tracks.length)return;const block=document.createElement('section');block.className='music-section';const heading=document.createElement('div');heading.className='music-section-heading';const h=document.createElement('h2');h.textContent=name;const small=document.createElement('span');small.textContent=hint||tracks.length+' selections';heading.append(h,small);const grid=document.createElement('div');grid.className='music-cards';tracks.forEach(t=>grid.append(card(t)));block.append(heading,grid);content.append(block)}
+ if(view==='home'){
+  const spotlight=['One More Time','Get Lucky','Around the World','Harder, Better','Instant Crush','Lose Yourself'];const daft=items.filter(t=>t.artist.includes('Daft Punk'));const picks=spotlight.map(name=>daft.find(t=>t.name.startsWith(name))).filter(Boolean);const urls=new Set(picks.map(t=>t.url));
+  section('Artist spotlight · Daft Punk',picks,'DISCOVER');section('After dark · The Weeknd',items.filter(t=>t.artist.includes('The Weeknd')));section('Chill & focus',items.filter(t=>t.provider==='SoundCloud'));section('More from Daft Punk',daft.filter(t=>!urls.has(t.url)));section('From your library',items.filter(t=>!catalog.some(c=>c.url===t.url)));
+ }else section(view==='search'?'Results':view==='liked'?'Your favorites':'Saved by you',items);
 }
-function load(value,title){
-  try{
-    const url=soundcloudLink(value);const name=title||decodeURIComponent(new URL(url).pathname.split('/').at(-1)).replaceAll('-',' ');
-    if(playing!==url){const frame=document.createElement('iframe');frame.title='SoundCloud music player';frame.allow='autoplay';frame.setAttribute('credentialless','');frame.src=soundcloudPlayer(url);$('#music-frame').replaceChildren(frame);playing=url}
-    $('#music-now').textContent=name;$('#music-source').href=url;$('#music-dock').hidden=false;$('#music-dock').classList.remove('compact');compact=false;const currentFrame=$('#music-frame iframe');if(currentFrame)currentFrame.tabIndex=0;$('#music-minimize').setAttribute('aria-expanded','true');$('#music-minimize').textContent='−';
-    message('Press Play in the SoundCloud player. Your music stays loaded while you play games.');
-  }catch(error){message(error.message)}
+function load(item){
+ try{const url=musicLink(item.url);const source=url.includes('open.spotify.com')?'Spotify':'SoundCloud';
+ if(playing!==url){const frame=document.createElement('iframe');frame.title=source+' music player';frame.allow='autoplay; encrypted-media; fullscreen; picture-in-picture';frame.setAttribute('credentialless','');frame.src=musicPlayer(url);$('#music-frame').replaceChildren(frame);playing=url}
+ $('#music-dock').dataset.provider=source;$('#music-now').textContent=item.name;$('#music-source').textContent='Listen on '+source+' ↗';$('#music-source').href=url;$('#music-dock').hidden=false;$('#music-dock').classList.remove('compact');compact=false;$('#music-minimize').setAttribute('aria-expanded','true');$('#music-minimize').textContent='−';const frame=$('#music-frame iframe');if(frame)frame.tabIndex=0;message('Press Play in the '+source+' player. Playback may be a preview; keep this tab open during games.');
+ }catch(error){message(error.message)}
 }
-$('#music-load-form').onsubmit=e=>{e.preventDefault();try{const url=soundcloudLink($('#music-link').value);const name=$('#music-name').value.trim()||new URL(url).pathname.split('/').at(-1).replaceAll('-',' ');if(!saved.some(item=>item.url===url)){saved.unshift({url,name:name.slice(0,100)});saved=saved.slice(0,40);persist();render()}load(url,name)}catch(error){message(error.message)}};
-$('#music-search-form').onsubmit=e=>{e.preventDefault();const query=$('#music-query').value.trim();if(query)window.open('https://soundcloud.com/search/sounds?q='+encodeURIComponent(query),'_blank','noopener,noreferrer')};
+$('#music-load-form').onsubmit=e=>{e.preventDefault();try{const url=musicLink($('#music-link').value);const known=catalog.find(t=>t.url===url);const name=$('#music-name').value.trim()||known?.name||new URL(url).pathname.split('/').at(-1).replaceAll('-',' ');const item=known||normalize({url,name});if(!saved.some(t=>t.url===url)){saved.unshift(item);saved=saved.slice(0,100);persist()}$('#music-add-panel').hidden=true;render();load(item)}catch(error){message(error.message)}};
+$('#music-query').oninput=render;
+$('#music-add-toggle').onclick=()=>{$('#music-add-panel').hidden=!$('#music-add-panel').hidden;if(!$('#music-add-panel').hidden)$('#music-link').focus()};$('#music-add-cancel').onclick=()=>$('#music-add-panel').hidden=true;
+document.querySelectorAll('[data-music-view]').forEach(b=>b.onclick=()=>{view=b.dataset.musicView;render();if(view==='search')$('#music-query').focus();$('.music-content').scrollTop=0});
+document.querySelectorAll('[data-music-provider]').forEach(b=>b.onclick=()=>{provider=b.dataset.musicProvider;document.querySelectorAll('[data-music-provider]').forEach(el=>el.setAttribute('aria-pressed',String(el===b)));render()});
 $('#music-minimize').onclick=()=>{compact=!compact;$('#music-dock').classList.toggle('compact',compact);$('#music-minimize').setAttribute('aria-expanded',String(!compact));$('#music-minimize').textContent=compact?'＋':'−';const frame=$('#music-frame iframe');if(frame)frame.tabIndex=compact?-1:0};
-$('#music-reload').onclick=()=>{if(playing){const url=playing;playing='';load(url,$('#music-now').textContent)}};
+$('#music-reload').onclick=()=>{if(playing){const url=playing;playing='';load({url,name:$('#music-now').textContent})}};
 $('#music-stop').onclick=()=>{$('#music-frame').replaceChildren();playing='';$('#music-dock').hidden=true;if(!$('#player').hidden)$('#close-game').focus();else document.querySelector('nav [data-page="music"]').focus()};
 render();
+fetch('/music-catalog.json').then(r=>{if(!r.ok)throw Error();return r.json()}).then(data=>{catalog=data;render()}).catch(()=>message('The music library could not load. Reload the page, or add your own music link.'));

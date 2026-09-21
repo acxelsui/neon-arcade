@@ -8,3 +8,16 @@ test('SoundCloud links support tracks and playlists without accepting other host
  const frame=new URL(soundcloudPlayer('https://soundcloud.com/artist/song'));
  assert.equal(frame.origin,'https://w.soundcloud.com');assert.equal(frame.searchParams.get('url'),'https://soundcloud.com/artist/song');assert.equal(frame.searchParams.get('auto_play'),'false');
 });
+import {readFile} from 'node:fs/promises';
+import {musicLink,musicPlayer} from '../public/music-links.js';
+test('Spotify track, album and playlist embeds use only the official player',()=>{
+ assert.equal(musicLink('https://open.spotify.com/intl-de/track/1pKYYY0dkg23sQQXi0Q5zN?si=test'),'https://open.spotify.com/track/1pKYYY0dkg23sQQXi0Q5zN');
+ assert.equal(musicPlayer('https://open.spotify.com/track/1pKYYY0dkg23sQQXi0Q5zN'),'https://open.spotify.com/embed/track/1pKYYY0dkg23sQQXi0Q5zN?theme=0');
+ for(const url of ['https://open.spotify.com.evil.test/track/1pKYYY0dkg23sQQXi0Q5zN','https://open.spotify.com/search/test','https://open.spotify.com/track/bad','https://name:pass@open.spotify.com/track/1pKYYY0dkg23sQQXi0Q5zN'])assert.throws(()=>musicLink(url));
+});
+test('bundled discovery catalog has unique playable provider links and HTTPS artwork',async()=>{
+ const catalog=JSON.parse(await readFile(new URL('../public/music-catalog.json',import.meta.url),'utf8'));
+ assert.ok(catalog.length>=40);assert.equal(new Set(catalog.map(t=>t.url)).size,catalog.length);
+ assert.ok(catalog.some(t=>t.provider==='Spotify'));assert.ok(catalog.some(t=>t.provider==='SoundCloud'));
+ for(const t of catalog){assert.equal(musicLink(t.url),t.url);assert.ok(t.name&&t.artist);assert.equal(new URL(t.cover).protocol,'https:')}
+});
