@@ -78,3 +78,9 @@ For local development, set the same variables in your server environment before 
 
 
 Screenshot support: attach with the plus button or paste into the message box. Up to three images per request, 8 MB per original image. Images are resized locally to 1600 pixels on the longest edge and compressed for Vercel request limits. Only pressing Send transmits them to the configured AI provider. Up to the last three attached images are included in follow-up questions in the current conversation. Image data lives in page memory; saved history keeps filenames and text only. After refreshing, reattach a screenshot to ask about it again. Provider access or billing is not configured automatically, and live vision replies require a working provider key/model.
+
+## SoundCloud Music
+
+Music lets visitors search SoundCloud in a separate tab, then paste public track or playlist links into Neon Arcade. Up to 40 links/names are saved in local browser storage. It uses the official SoundCloud widget; no developer credentials, downloaded audio, proxy stream rewriting, or catalogue scraping are involved. Search is a SoundCloud shortcut, not an in-app catalogue search API. Short share links must first be opened to obtain the full soundcloud.com track/playlist address.
+
+The single floating player stays mounted outside the page sections and game frame, so opening/closing games or changing tabs does not reload it. Minimize folds the controls without removing the frame. Stop unloads it and ends playback. Native SoundCloud controls handle play/pause, seeking, playlist selection and volume. The music continues in the original Neon Arcade tab if a game opens in about:blank; keep that original tab open. It does not automatically start on reload. SoundCloud/uploader availability and preview/subscription/region restrictions apply. Game audio can be adjusted with each game's own controls.
