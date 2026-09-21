@@ -12,10 +12,6 @@
     "api/chat.js": {
       "maxDuration": 60,
       "excludeFiles": "{public,covers-main,math-tutors-main,Wallpapers,curl-master,scramjet-main,tests,scripts}/**"
-    },
-    "api/music.js": {
-      "maxDuration": 60,
-      "excludeFiles": "{public,covers-main,math-tutors-main,Wallpapers,curl-master,scramjet-main,tests,scripts}/**"
     }
   },
   "rewrites": [

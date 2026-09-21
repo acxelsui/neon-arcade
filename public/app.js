@@ -1,4 +1,4 @@
-import {initMusicProxy} from './music.js';
+import './music.js';
 import './chat.js';
 import { watchFrame } from './proxy-feedback.js';
 import { filterLibrary, bookmarkUrl } from './library-tools.js';
@@ -6,8 +6,6 @@ import { initAppearance } from './appearance.js';
 const $=s=>document.querySelector(s);
 const store={get(k,f){try{return JSON.parse(localStorage.getItem('neon-'+k))??f}catch{return f}},set(k,v){try{localStorage.setItem('neon-'+k,JSON.stringify(v))}catch{}}};
 let catalog,selectedGame,previousFocus,controllerPromise,webFrame;
-initMusicProxy(getController);
-initMusicProxy(getController);
 function toast(message){$('#toast').textContent=message;$('#toast').hidden=false;setTimeout(()=>$('#toast').hidden=true,4000)}
 function showPage(name){if(!['home','games','search','sports','movies','ai','music','settings'].includes(name))name='home';document.querySelectorAll('.page').forEach(p=>p.hidden=p.id!==name);document.querySelectorAll('nav button').forEach(b=>{b.classList.toggle('active',b.dataset.page===name);b.setAttribute('aria-current',b.dataset.page===name?'page':'false')});if(location.hash!=='#'+name)history.replaceState(null,'','#'+name);window.scrollTo(0,0);if(name==='sports')openSports();if(name==='movies')openMovies()}
 document.querySelectorAll('[data-page]').forEach(b=>b.onclick=()=>showPage(b.dataset.page));window.addEventListener('hashchange',()=>showPage(location.hash.slice(1)));
