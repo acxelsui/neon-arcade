@@ -79,15 +79,20 @@ For local development, set the same variables in your server environment before 
 
 Screenshot support: attach with the plus button or paste into the message box. Up to three images per request, 8 MB per original image. Images are resized locally to 1600 pixels on the longest edge and compressed for Vercel request limits. Only pressing Send transmits them to the configured AI provider. Up to the last three attached images are included in follow-up questions in the current conversation. Image data lives in page memory; saved history keeps filenames and text only. After refreshing, reattach a screenshot to ask about it again. Provider access or billing is not configured automatically, and live vision replies require a working provider key/model.
 
-## Music discovery
+## SoundCloud music
 
-Music has a glass sidebar with Home, Search, Liked Songs and Your additions. The bundled catalog includes 49 real Spotify tracks and SoundCloud mixes with provider artwork, grouped into Daft Punk, The Weeknd and chill collections. Search filters this catalog and your additions by title/artist; provider shortcuts open broader search in a separate tab. It is not a live search of the complete Spotify/SoundCloud catalogs.
+Music keeps the glass cards, search, local liked songs and additions. Search calls the official SoundCloud API through the server's `/api/music` endpoint (30 results per page). The initial home selection contains the supplied SoundCloud mixes; search covers public tracks returned by SoundCloud. Spotify is no longer shown in the music UI.
 
-Hearts save favorites in this browser. The plus button accepts public Spotify track/album/playlist links or full SoundCloud track/playlist links. Up to 100 additions are saved locally. Short SoundCloud share links must first be opened to obtain the full track address. Existing saved SoundCloud links are preserved.
+Add these private environment variables in Vercel, then redeploy:
 
-All playback uses the providers' official embeds. Provider restrictions, account/region requirements, ads and preview limits apply; this does not provide unrestricted full-song streaming. No audio files or stream URLs are downloaded or bundled. Spotify metadata was read from public album embed pages, and artwork metadata from official oEmbed responses; the app does not scrape catalogs at runtime.
+- `SOUNDCLOUD_CLIENT_ID`
+- `SOUNDCLOUD_CLIENT_SECRET`
 
-The single floating player stays mounted outside page sections and game frames. Changing tabs and opening/closing a game do not reload it. Minimize folds the controls; Stop removes the iframe. Switching a track or provider replaces the old player to avoid overlapping audio. The original Neon Arcade tab must stay open when playing a game in about:blank. Reload and a direct provider link are available if an embed fails. Playback does not automatically start on page reload.
+Register an app at https://soundcloud.com/you/apps (see https://developers.soundcloud.com/docs/api/register-app for current eligibility). Do not put credentials in frontend files or commit them. For local use, set the same environment variables before starting the server. Missing credentials produce a clear setup message; saved mixes and pasted full SoundCloud links remain available.
+
+The server authenticates directly to SoundCloud using client credentials, keeps tokens private, refreshes expired tokens, and caches queries for a minute. Token and rate-limit caches are per running server instance. Vercel cold starts and multiple instances can hit SoundCloud's token issuance limits; larger deployments need shared secure token storage and a distributed refresh lock. No user sign-in, private tracks, or SoundCloud account-library synchronization is implemented.
+
+Playback uses the official SoundCloud widget inside the existing Scramjet/libcurl proxy, with a persistent dock during games. Stop removes the player; minimize keeps it mounted. API search requests originate on the server, while widget playback requests use the proxy. Provider restrictions, ads, regional availability and preview limits still apply. Keep the original Neon tab open while playing games in about:blank. Live authenticated search and audio playback must be checked after credentials are configured.
 
 
 ## Movies
