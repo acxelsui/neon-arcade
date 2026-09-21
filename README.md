@@ -51,3 +51,10 @@ References: https://github.com/MercuryWorkshop/scramjet ; https://github.com/gn-
 
 All playable catalog entries now launch through game-runner.html, which owns a Scramjet controller and libcurl transport. Bundled /games/ files use a virtual origin and are fed into the rewriter from the local static server; external HTTP and WebSocket requests use the Wisp relay. The about:blank launcher embeds the same runner and does not depend on the main page's controller. Proxy compatibility still varies by game; routing every entry does not guarantee every engine or external host works. Existing direct-mode saves may not appear in the proxy's separate storage.
 
+## Personalization and library tools
+
+- Star games to pin favorites first or filter to favorites only. Category filters use title-based grouping, with unmatched entries in More games. Surprise me chooses a playable entry from the current search/category/favorites selection.
+- Search bookmarks, favorites, recent games, and appearance values are stored in this browser. Bookmarks open through the existing proxy.
+- Settings offers 16 bundled GIF wallpapers plus one personal PNG, JPG, WebP, GIF, or AVIF background up to 100 MB, subject to available browser storage. The personal image stays in IndexedDB on the device and is not uploaded to the server. Clearing site data removes it.
+- Brightness, background blur, and panel transparency have live controls and a reset button.
+- Search and game navigation errors offer retry controls. This improves recovery messages; it does not make incompatible third-party sites or streams work.
