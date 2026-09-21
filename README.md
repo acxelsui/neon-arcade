@@ -88,3 +88,8 @@ Hearts save favorites in this browser. The plus button accepts public Spotify tr
 All playback uses the providers' official embeds. Provider restrictions, account/region requirements, ads and preview limits apply; this does not provide unrestricted full-song streaming. No audio files or stream URLs are downloaded or bundled. Spotify metadata was read from public album embed pages, and artwork metadata from official oEmbed responses; the app does not scrape catalogs at runtime.
 
 The single floating player stays mounted outside page sections and game frames. Changing tabs and opening/closing a game do not reload it. Minimize folds the controls; Stop removes the iframe. Switching a track or provider replaces the old player to avoid overlapping audio. The original Neon Arcade tab must stay open when playing a game in about:blank. Reload and a direct provider link are available if an embed fails. Playback does not automatically start on page reload.
+
+
+## Movies
+
+The Movies tab lazily opens `https://gaiaflix.live/` in its own Scramjet frame using the same server/libcurl transport as Search and Sports. Home returns to Gaiaflix, Reload retries the current page, and Fullscreen expands the viewing area. Connection failures show retry guidance. External availability and individual video playback are controlled by the destination site and are not guaranteed by the tab integration.

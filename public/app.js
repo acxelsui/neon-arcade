@@ -7,7 +7,7 @@ const $=s=>document.querySelector(s);
 const store={get(k,f){try{return JSON.parse(localStorage.getItem('neon-'+k))??f}catch{return f}},set(k,v){try{localStorage.setItem('neon-'+k,JSON.stringify(v))}catch{}}};
 let catalog,selectedGame,previousFocus,controllerPromise,webFrame;
 function toast(message){$('#toast').textContent=message;$('#toast').hidden=false;setTimeout(()=>$('#toast').hidden=true,4000)}
-function showPage(name){if(!['home','games','search','sports','ai','music','settings'].includes(name))name='home';document.querySelectorAll('.page').forEach(p=>p.hidden=p.id!==name);document.querySelectorAll('nav button').forEach(b=>{b.classList.toggle('active',b.dataset.page===name);b.setAttribute('aria-current',b.dataset.page===name?'page':'false')});if(location.hash!=='#'+name)history.replaceState(null,'','#'+name);window.scrollTo(0,0);if(name==='sports')openSports()}
+function showPage(name){if(!['home','games','search','sports','movies','ai','music','settings'].includes(name))name='home';document.querySelectorAll('.page').forEach(p=>p.hidden=p.id!==name);document.querySelectorAll('nav button').forEach(b=>{b.classList.toggle('active',b.dataset.page===name);b.setAttribute('aria-current',b.dataset.page===name?'page':'false')});if(location.hash!=='#'+name)history.replaceState(null,'','#'+name);window.scrollTo(0,0);if(name==='sports')openSports();if(name==='movies')openMovies()}
 document.querySelectorAll('[data-page]').forEach(b=>b.onclick=()=>showPage(b.dataset.page));window.addEventListener('hashchange',()=>showPage(location.hash.slice(1)));
 function updateClock(){const now=new Date();$('#clock').textContent=now.toLocaleTimeString([],{hour:'2-digit',minute:'2-digit',hour12:!store.get('24hour',false)}).replace(/\s?[AP]M/i,'');$('#date').textContent=now.toLocaleDateString([],{weekday:'long',month:'long',day:'numeric',year:'numeric'});$('#clock').dateTime=now.toISOString();$('#clock-period').textContent=store.get('24hour',false)?'':(now.getHours()<12?'AM':'PM');$('#home-greeting').textContent=now.getHours()<12?'Good morning':now.getHours()<18?'Good afternoon':'Good evening'}
 $('#clock-format').checked=store.get('24hour',false);$('#clock-format').onchange=e=>{store.set('24hour',e.target.checked);updateClock()};updateClock();setInterval(updateClock,1000);
@@ -63,6 +63,33 @@ async function openSports(reset=false){
 $('#sports-home').onclick=()=>openSports(true);
 $('#sports-reload').onclick=()=>sportsFrame?sportsFrame.reload():openSports();
 $('#sports-full').onclick=()=>$('#sports-frames').requestFullscreen?.().catch(()=>toast('Fullscreen is unavailable in this browser.'));
+
+const MOVIES_URL='https://gaiaflix.live/';
+let moviesFrame, moviesLoading=false;
+async function openMovies(reset=false){
+  if(moviesLoading)return;
+  if(moviesFrame&&!reset)return;
+  moviesLoading=true;
+  const status=$('#movies-status');
+  status.textContent='Connecting to movies…';
+  try{
+    const controller=await getController();
+    if(!moviesFrame){
+      moviesFrame=controller.createFrame();
+      moviesFrame.element.title='Movies — Gaiaflix';
+      watchFrame(moviesFrame,message=>{status.textContent=message+' Use Reload above to retry.'},()=>{status.textContent=''});
+      moviesFrame.element.allow='autoplay; fullscreen; picture-in-picture';
+      moviesFrame.element.allowFullscreen=true;
+      moviesFrame.element.addEventListener('load',()=>{if(status.textContent==='Connecting to movies…')status.textContent='' });
+      $('#movies-frames').append(moviesFrame.element);
+    }
+    moviesFrame.go(MOVIES_URL);
+  }catch(error){status.textContent='Movies could not connect. '+error.message+' Use Reload to try again.'}
+  finally{moviesLoading=false}
+}
+$('#movies-home').onclick=()=>openMovies(true);
+$('#movies-reload').onclick=()=>{if(moviesFrame){$('#movies-status').textContent='Connecting to movies…';moviesFrame.reload()}else openMovies()};
+$('#movies-full').onclick=()=>$('#movies-frames').requestFullscreen?.().catch(()=>toast('Fullscreen is unavailable in this browser.'));
 
 function recentIds(){const ids=store.get('recent-games',[]);return Array.isArray(ids)?ids.filter(id=>typeof id==='string'):[]}
 function rememberGame(game){store.set('recent-games',[game.id,...recentIds().filter(id=>id!==game.id)].slice(0,6));renderRecent()}
