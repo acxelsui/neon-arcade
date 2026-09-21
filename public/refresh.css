@@ -1,0 +1,57 @@
+/* Shared visual polish; wallpaper and panel opacity remain user-controlled. */
+:root{--line:rgba(234,249,246,.16)}
+body{line-height:1.45}
+.shade{background:linear-gradient(180deg,#07121c80,transparent 44%,#07121cb3)}
+header{max-width:1600px;margin:auto;padding:22px 34px;gap:24px}
+.brand{white-space:nowrap;font-family:Outfit,system-ui;font-size:21px;letter-spacing:-.4px}
+.brand-mark{display:grid;place-items:center;width:38px;height:38px;border:1px solid #bdf6df35;border-radius:12px;background:#bdf6df0c}
+nav{padding:5px;border-radius:18px;box-shadow:0 8px 30px #0002,inset 0 1px #ffffff12}
+nav button{font-size:13px;padding:11px 13px;gap:7px;color:#e1eae7;white-space:nowrap}
+nav .active{background:var(--mint);color:#102a24;box-shadow:0 3px 14px #0002;font-weight:600}
+.glass{box-shadow:0 8px 28px #00000015,inset 0 1px #ffffff10}
+.page:not(.home):not(.search-page){max-width:1600px;margin-inline:auto}
+.home{padding:12px 6vw 30px;height:auto;min-height:calc(100svh - 95px)}
+.home-dashboard{max-width:1120px}
+.home-welcome{padding:4px 0}
+.welcome-pill,.home-personalize{font-size:11px;padding:9px 14px;border-color:#ffffff1c}
+.home-personalize:hover{border-color:#bdf6df70}
+.home .clock-block{position:relative;isolation:isolate;margin:35px auto 38px;padding:12px 0 18px}
+.clock-block:before{content:'';position:absolute;inset:0 18%;z-index:-1;background:radial-gradient(ellipse,#08182455,transparent 70%);filter:blur(18px);pointer-events:none}
+.home .clock-block .eyebrow{font-size:9px;letter-spacing:4px;color:#e0eee8}
+.home #clock{font-size:clamp(86px,11vw,150px);font-weight:400;letter-spacing:-7px;line-height:1.13;text-shadow:0 5px 38px #0004}
+.home #clock-period{font-size:13px;letter-spacing:2px}
+.home #date{font-size:15px;margin:8px 0 12px;color:#f0f7f4;letter-spacing:1px}
+.home-tagline{font-size:12px;letter-spacing:.3px;color:#d4e3dd}
+.launch-heading{display:flex;justify-content:space-between;align-items:end;gap:16px;margin-bottom:16px}
+.launch-heading .eyebrow,.recent-heading .eyebrow{font-size:9px;letter-spacing:2px;color:#d7e6df}
+.launch-heading h2{font:500 26px Outfit,system-ui;letter-spacing:-.5px;margin:5px 0 0}
+.launch-heading>span{font-size:11px;color:#d0ded8}
+.home-launchers{gap:12px}
+.home-launch{position:relative;overflow:hidden;min-height:104px;padding:22px 19px;border-radius:19px;background-image:linear-gradient(125deg,#ffffff09,transparent 70%);transition:transform .22s,border-color .22s,box-shadow .22s}
+.home-launch:hover{background-color:rgb(22 37 47 / var(--panel-opacity));border-color:#bdf6df80;box-shadow:0 12px 32px #0003,inset 0 1px #fff2;transform:translateY(-3px)}
+.launch-symbol{width:46px;height:46px;border-radius:15px;font-size:25px;background:#bdf6df12;border-color:#bdf6df25}
+.home-launch[data-page=music] .launch-symbol{color:#dac6ff;background:#dac6ff12;border-color:#dac6ff25}
+.home-launch[data-page=movies] .launch-symbol{color:#ffd7b0;background:#ffd7b012;border-color:#ffd7b025}
+.home-launch[data-page=search] .launch-symbol{color:#b8dfff;background:#b8dfff12;border-color:#b8dfff25}
+.home-launch[data-page=sports] .launch-symbol{color:#ffe8a8;background:#ffe8a812;border-color:#ffe8a825}
+.home-launch[data-page=ai] .launch-symbol{color:#ffc9e8;background:#ffc9e812;border-color:#ffc9e825}
+.launch-copy strong{font-size:15px;font-weight:600;letter-spacing:-.2px}
+.launch-copy small{font-size:11px;color:#d5e1dc;line-height:1.5}
+.launch-arrow{align-self:flex-start;font-size:16px;opacity:.7}
+.home-recent{margin-top:30px}
+.recent-heading h2{font-weight:500;font-size:23px}
+.recent-empty{padding:21px 24px;border-style:dashed;background-image:linear-gradient(100deg,#bdf6df05,transparent)}
+.recent-empty-icon{display:grid;place-items:center;width:42px;height:42px;border-radius:50%;background:#bdf6df10;flex-shrink:0}
+.recent-empty>button{color:var(--mint)}
+.recent-game{border:1px solid var(--line);transition:transform .2s,border-color .2s}
+.recent-game:hover{border-color:#bdf6df66}
+.home-footer{margin-top:28px;padding-top:18px;border-top:1px solid #ffffff16;letter-spacing:1.7px}
+.game-card{box-shadow:0 8px 22px #0001}
+.game-card:hover{border-color:#bdf6df65}
+.filter:focus-within,.big-search:focus-within{border-color:var(--mint);box-shadow:0 0 0 3px #bdf6df12}
+.section-head h1,.settings>h1{font-weight:500;letter-spacing:-2px}
+@media(min-width:1600px){.home .clock-block{margin-block:55px}}
+@media(max-width:1150px){header{flex-direction:column;padding:20px 24px 18px;gap:17px}nav{max-width:100%;justify-content:center}nav button{padding:10px 12px}.home .clock-block{margin-block:25px}}
+@media(max-width:750px){header{padding:18px 16px;gap:14px}nav{flex-wrap:wrap;width:100%;gap:3px}nav button{font-size:12px;padding:9px 11px}.home{padding:8px 20px 28px}.home-launchers{grid-template-columns:repeat(2,minmax(0,1fr))}.home-launch{padding:17px 14px;gap:12px;min-height:100px}.launch-symbol{width:36px;height:40px;font-size:23px;border-radius:12px}.launch-copy strong{font-size:14px}.launch-copy small{font-size:10px}.launch-arrow{display:none}.launch-heading>span{display:none}.home #clock{letter-spacing:-5px}.home-footer{letter-spacing:1px}}
+@media(max-width:430px){nav button{font-size:11px;padding:8px 10px}.home-launch{align-items:flex-start;flex-direction:column;gap:12px;padding:16px;min-height:140px}.home .clock-block .eyebrow{letter-spacing:2.3px}.home #clock{font-size:82px}.home #date{font-size:13px}.home-personalize span{display:none}.recent-empty{padding:18px}.home-footer{font-size:8px}.launch-copy small{font-size:11px}}
+@media(prefers-reduced-motion:reduce){.home-launch,.recent-game{transition:none}}
