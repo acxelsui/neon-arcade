@@ -75,3 +75,8 @@ main{min-width:0}
 @media(min-width:1001px) and (max-width:1250px){.home .home-launchers{gap:14px}.home .recent-games{grid-template-columns:repeat(3,minmax(0,1fr))}}
 @media(max-width:1000px){.home:not([hidden]){grid-template-columns:1fr}.home-updates{position:static;max-height:none;width:100%;box-sizing:border-box}#updates-latest{display:grid;grid-template-columns:1fr 1fr;gap:0 24px}}
 @media(max-width:550px){#updates-latest{grid-template-columns:1fr}.home-updates{padding:20px}}
+
+/* Light-blue neon accents only on the Home title and clock. */
+.home .home-identity h1{color:#a9eaff;text-shadow:0 0 3px #d5f6ff99,0 0 16px #43caff80,0 0 38px #169ee34d}
+.home .home-identity h1 span{color:inherit;text-shadow:inherit}
+.home #clock,.home #clock-period,.home #date{color:#a9eaff;text-shadow:0 0 7px #43caff80,0 0 17px #169ee34d}
