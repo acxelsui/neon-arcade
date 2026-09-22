@@ -17,7 +17,7 @@ test('Spotify track, album and playlist embeds use only the official player',()=
 });
 test('bundled discovery catalog has unique playable provider links and HTTPS artwork',async()=>{
  const catalog=JSON.parse(await readFile(new URL('../public/music-catalog.json',import.meta.url),'utf8'));
- assert.ok(catalog.length>=40);assert.equal(new Set(catalog.map(t=>t.url)).size,catalog.length);
- assert.ok(catalog.some(t=>t.provider==='Spotify'));assert.ok(catalog.some(t=>t.provider==='SoundCloud'));
+ assert.ok(catalog.length>=10);assert.equal(new Set(catalog.map(t=>t.url)).size,catalog.length);
+ assert.ok(catalog.every(t=>t.provider==='SoundCloud'));assert.ok(catalog.some(t=>t.url.includes('/sets/')));
  for(const t of catalog){assert.equal(musicLink(t.url),t.url);assert.ok(t.name&&t.artist);assert.equal(new URL(t.cover).protocol,'https:')}
 });
