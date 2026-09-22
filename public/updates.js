@@ -1,5 +1,6 @@
 // Keep newest first. Dates describe when the change was added, not when a visitor opened Home.
 export const updates = [
+ {date:'2026-09-22',title:'Neon Cloud Gaming',text:'A Roblox-only launcher now opens now.gg through Neon, with fullscreen, reload, and close controls. Includes an alternate Roblox link if the official page redirects away. Stream availability depends on the external provider.'},
  {date:'2026-09-22',title:'A little neon glow',text:'The Neon Arcade title, time, and date on Home now glow light blue.'},
  {date:'2026-09-22',title:'Your update corner',text:'Home now has a dated update feed. Check here for new features and improvements.'},
  {date:'2026-09-22',title:'Music, without the clutter',text:'The floating music box is gone outside Music. Play, pause, or stop your soundtrack from the compact top bar while you browse.'},

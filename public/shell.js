@@ -1,4 +1,4 @@
-const labels={home:'Home',games:'Games',search:'Search',sports:'Sports',movies:'Movies',neontube:'NeonTube',weather:'Weather',ai:'AI Chat',music:'Music',settings:'Settings'};
+const labels={home:'Home',games:'Games',search:'Search',sports:'Sports',movies:'Movies',neontube:'NeonTube',cloud:'Neon Cloud Gaming',weather:'Weather',ai:'AI Chat',music:'Music',settings:'Settings'};
 export function initShell({navigate,search,reload}){
  const $=s=>document.querySelector(s),tabs=['home'];let active='home',history=[],position=-1,travelling=false;
  function render(){
