@@ -1,5 +1,5 @@
 import {initShell} from './shell.js';
-import './music.js';
+import {initMusic} from './music.js';
 import './chat.js';
 import { watchFrame } from './proxy-feedback.js';
 import { filterLibrary, bookmarkUrl } from './library-tools.js';
@@ -115,4 +115,6 @@ $('#bookmark-cancel').onclick=()=>{$('#bookmark-form').hidden=true;$('#bookmark-
 $('#bookmark-form').onsubmit=e=>{e.preventDefault();try{const url=bookmarkUrl($('#bookmark-url').value);const name=$('#bookmark-name').value.trim();if(!name)throw new Error('Give your bookmark a name.');const items=bookmarks().filter(b=>b.url!==url);if(items.length>=24)throw new Error('You can save up to 24 bookmarks. Remove one first.');store.set('bookmarks',[...items,{name,url}]);renderBookmarks();e.target.reset();$('#bookmark-form').hidden=true;$('#bookmark-error').textContent='';$('#add-bookmark').focus()}catch(error){$('#bookmark-error').textContent=error.message}};
 renderBookmarks();
 
-initShell({navigate:showPage,search:text=>{showPage("search");browse(text)},reload:()=>{const page=location.hash.slice(1);if(page==="search"&&webFrame)webFrame.reload();else if(page==="sports"&&sportsFrame)sportsFrame.reload();else if(page==="movies"&&moviesFrame)moviesFrame.reload();else location.reload()}});
+initShell({navigate:showPage,search:text=>{showPage("search");browse(text)},reload:()=>{const page=location.hash.slice(1);if(page==="search"&&webFrame)webFrame.reload();else if(page==="sports"&&sportsFrame)sportsFrame.reload();else if(page==="movies"&&moviesFrame)moviesFrame.reload();else if(page==="music")document.querySelector("#music-reload").click();else location.reload()}});
+
+initMusic(getController);

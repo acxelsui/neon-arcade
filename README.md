@@ -79,13 +79,13 @@ For local development, set the same variables in your server environment before 
 
 Screenshot support: attach with the plus button or paste into the message box. Up to three images per request, 8 MB per original image. Images are resized locally to 1600 pixels on the longest edge and compressed for Vercel request limits. Only pressing Send transmits them to the configured AI provider. Up to the last three attached images are included in follow-up questions in the current conversation. Image data lives in page memory; saved history keeps filenames and text only. After refreshing, reattach a screenshot to ask about it again. Provider access or billing is not configured automatically, and live vision replies require a working provider key/model.
 
-## SoundCloud music player
+## Neon Music
 
-Music uses SoundCloud's official embedded player without API credentials. The custom glass layout includes 13 curated mixes and playlists from Lofi Girl, NCS and Monstercat. Playlist cards contain multiple songs selectable inside the expanded player. Artwork and titles for the added playlists were verified through SoundCloud oEmbed; this does not verify full playback of every song.
+The Music tab now loads the user-supplied page at `https://bcsdny.net/learning/health/unit-11-OGJhYjgzNmJ1LjdYeFRtUDFBZVZCcg` in an existing Scramjet/libcurl proxy frame. Its original search, song list, audio playback and controls remain in the embedded source. The previous SoundCloud catalog is retained as a file but is no longer the active music interface.
 
-Search filters the local catalog and additions. The SoundCloud search link opens SoundCloud to discover more tracks; paste a full track or playlist URL into Your additions to play it here. There is no live catalog search API. Previous Spotify additions remain in browser storage but are hidden. Likes and SoundCloud additions remain local.
+A local DOM adapter changes a visible Voidify heading to Neon Music and hides only a header/nav containing both Void Network and VoidCraft. It does not change media URLs, audio elements, player controls or account flows. This depends on the source markup and same-origin access to the rewritten document. If the host returns Student Learning Portal instead, the app shows a source/session warning. A screenshot confirms the desired layout, but live proxy playback and branding have not been verified.
 
-The official SoundCloud iframe stays mounted in a floating dock when navigating or playing games. Minimize keeps audio running, Stop removes the frame, and Reload retries the embed. Playlist players expand to show their song list. Keep the original Neon tab open when playing games in about:blank. The player connects directly to SoundCloud. Full playback depends on uploader settings, SoundCloud availability, region and account; previews and unavailable tracks may still occur. No audio is downloaded or bundled. Live audio playback remains unverified.
+The frame stays mounted outside the page sections. Leaving Music folds it into a dock without replacing the document; returning expands it. Home and Reload navigate the original source; Stop removes the frame. Keep the original Neon tab open during about:blank games. No Audiomack or SoundCloud API keys are used.
 
 ## Movies
 
