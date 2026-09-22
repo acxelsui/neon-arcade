@@ -4,3 +4,6 @@
 #music-frame{height:350px;background:#11151b}#music-frame iframe{display:block;width:100%;height:100%;border:0}#music-status{padding:10px 16px;margin:0;font-size:12px;line-height:1.5;background:#172631}#music-status:empty{display:none}#music-dock.compact #music-frame{height:0;visibility:hidden}#music-dock.compact #music-status{display:none}
 .music-view #music-dock{left:calc(var(--rail,52px) + 18px);right:18px;top:calc(var(--chrome,94px) + 15px);bottom:18px;width:auto;display:flex;flex-direction:column;z-index:9}.music-view #music-frame{flex:1;height:0;min-height:0}.music-view #music-return{display:none}.music-view #music-minimize{display:none}.music-view .music-dock-heading{flex-shrink:0}.music-view .music-dock-footer{flex-shrink:0}
 @media(max-width:600px){.music-view #music-dock{left:calc(var(--rail,44px) + 8px);right:8px;top:calc(var(--chrome,90px) + 8px);bottom:8px}.music-welcome{padding:25px 15px}.music-dock-heading{padding:9px 12px}#music-dock{right:10px}}
+
+/* Keep the media document mounted, with controls in the top bar away from Music. */
+body:not(.music-view) #music-dock{left:-10000px;right:auto;bottom:auto;top:0;width:1px;height:1px;overflow:hidden;visibility:hidden;pointer-events:none}

@@ -22,6 +22,5 @@ export function initShell({navigate,search,reload}){
  $('#shell-address').oninput=()=>$('#shell-address').setCustomValidity('');
  $('#home-search-form').onsubmit=event=>{event.preventDefault();const text=$('#home-search-input').value.trim();if(text)search(text)};
  $('#shell-fullscreen').onclick=async()=>{try{if(document.fullscreenElement)await document.exitFullscreen();else await document.documentElement.requestFullscreen()}catch{$('#shell-fullscreen').title='Fullscreen is unavailable in this browser'}};
- const dock=$('#music-dock');function music(){const title=dock.hidden?'Nothing playing':$('#music-now').textContent;$('#shell-now').textContent=title;$('#shell-music').title='Open music · '+title}
- new MutationObserver(music).observe(dock,{attributes:true,attributeFilter:['hidden'],childList:true,subtree:true,characterData:true});music();change(location.hash.slice(1));
+ change(location.hash.slice(1));
 }

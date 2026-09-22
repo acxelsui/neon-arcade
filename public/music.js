@@ -4,6 +4,16 @@ const MUSIC_URL='https://bcsdny.net/~a/';
 export function initMusic(getController){
  const $=s=>document.querySelector(s);let frame,loading=false,version=0,cleanup=()=>{};
  const status=text=>$('#music-status').textContent=text;
+ function audio(){try{return frame?.element.contentDocument?.querySelector('audio')}catch{return null}}
+ function updateMini(){const media=audio(),ready=!!(media&&(media.currentSrc||media.getAttribute('src'))),playing=ready&&!media.paused&&!media.ended;
+  $('#shell-now').textContent=ready?(playing?'Neon Music':'Music paused'):(frame?'Choose a song':'Nothing playing');
+  $('#shell-music-toggle').disabled=!ready;$('#shell-music-toggle').textContent=playing?'Ⅱ':'▷';
+  $('#shell-music-toggle').title=playing?'Pause music':'Play music';$('#shell-music-toggle').setAttribute('aria-label',playing?'Pause music':'Play music');$('#shell-music-stop').disabled=!frame;
+ }
+ $('#shell-music-toggle').onclick=async()=>{const media=audio();if(!media)return;try{if(media.paused)await media.play();else media.pause()}catch{status('Playback could not start. Open Music and choose the song again.')}updateMini()};
+ $('#shell-music-stop').onclick=()=>$('#music-stop').click();
+ setInterval(updateMini,500);updateMini();
+
  function brand(){
   cleanup();
   try{

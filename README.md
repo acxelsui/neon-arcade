@@ -85,7 +85,7 @@ The Music tab loads `https://bcsdny.net/~a/`, the actual music iframe discovered
 
 A local DOM adapter changes a visible Voidify heading to Neon Music and hides only a header/nav containing both Void Network and VoidCraft. It does not change media URLs, audio elements, player controls or account flows. This depends on the source markup and same-origin access to the rewritten document. If the host returns Student Learning Portal instead, the app shows a source/session warning. Verified locally in the browser: charts render with the Neon Music heading; a selected track reports a 209.76-second duration with playback advancing from 13 to 37 seconds, including a switch to Games and back. This checks playback continuity, not the entire catalog or full-track completion. The earlier local SSL error was caused by an EACCES network denial in the preview server; restarting it with granted network access resolved that local error.
 
-The frame stays mounted outside the page sections. Leaving Music folds it into a dock without replacing the document; returning expands it. Home and Reload navigate the original source; Stop removes the frame. Keep the original Neon tab open during about:blank games. No Audiomack or SoundCloud API keys are used.
+The frame stays mounted outside the page sections. Leaving Music hides the floating player without replacing its document; returning expands it. A compact top-bar control opens Music, pauses/resumes the loaded audio, or stops it. Playback state is read from the source audio element, and unavailable controls are disabled. Home and Reload navigate the original source; Stop removes the frame. Keep the original Neon tab open during about:blank games. No Audiomack or SoundCloud API keys are used.
 
 ## NeonTube
 
@@ -97,7 +97,7 @@ The Movies tab lazily opens `https://gaiaflix.live/` in its own Scramjet frame u
 
 ## Browser-style interface
 
-The fixed left rail opens each section, while the top strip keeps visited pages available as closable shortcuts (Home remains pinned). Back/Forward navigate the current session’s section history; the address bar accepts neon:// page addresses or sends websites/search terms to the existing proxy search. The music indicator opens the music page and reflects the current dock title; it does not claim playback is active or provide unsupported provider controls. Home includes web search, circular shortcuts, the clock/date and recent games. The compact game grid shows titles on hover/focus and always on touch devices. All wallpaper and glass-opacity settings remain available.
+The fixed left rail opens each section, while the top strip keeps visited pages available as closable shortcuts (Home remains pinned). Back/Forward navigate the current session’s section history; the address bar accepts neon:// page addresses or sends websites/search terms to the existing proxy search. The music indicator opens the music page and reflects the current dock title; it includes play/pause and stop controls linked to the source audio element. Home includes web search, circular shortcuts, the clock/date and recent games. The compact game grid shows titles on hover/focus and always on touch devices. All wallpaper and glass-opacity settings remain available.
 
 
 ## Weather
