@@ -1,3 +1,4 @@
+import {initUpdates} from './updates.js';
 import {initWeather} from './weather.js';
 import {initTube} from './tube.js';
 import {initShell} from './shell.js';
@@ -124,3 +125,5 @@ initMusic(getController);
 initTube(getController);
 
 initWeather();
+
+initUpdates();

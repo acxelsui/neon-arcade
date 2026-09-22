@@ -67,3 +67,11 @@ main{min-width:0}
 .shell-music-player>button:disabled{opacity:.3;cursor:default}
 .shell-music-player>button:last-child{margin-right:5px}
 @media(max-width:750px){.shell-toolbar .shell-music-player #shell-music{width:28px;padding:0;justify-content:center}.shell-music-player>button:not(#shell-music){width:24px}}
+
+.home:not([hidden]){display:grid;grid-template-columns:minmax(0,1fr) 290px;gap:28px;align-items:start;max-width:1600px;margin:0 auto}
+.home-dashboard{width:100%;min-width:0;margin:0 auto}
+.home-updates{border-radius:21px;padding:22px;position:sticky;top:calc(var(--chrome) + 20px);max-height:calc(100svh - var(--chrome) - 60px);overflow:auto;scrollbar-width:thin;text-align:left}
+.updates-heading{display:flex;align-items:center;justify-content:space-between;gap:15px}.updates-heading h2{font-size:22px;font-weight:500;letter-spacing:-.4px;margin:8px 0}.updates-heading .eyebrow{font-size:8px;letter-spacing:1.6px}.updates-dot{width:7px;height:7px;background:var(--mint);border-radius:50%;box-shadow:0 0 16px #9bffd766;flex-shrink:0}.updates-intro{font-size:11px;color:#bdcec9;margin:0 0 20px}.update-entry{padding:17px 0;border-top:1px solid #ffffff16}.update-entry time{font-size:9px;letter-spacing:.7px;color:var(--mint)}.update-entry h3{font-size:13px;font-weight:500;margin:8px 0}.update-entry p{font-size:11px;line-height:1.7;color:#d1dcd7;margin:0}#updates-history summary{cursor:pointer;font-size:12px;padding:12px 0;color:var(--mint)}#updates-history summary:focus-visible{outline:2px solid var(--mint);outline-offset:3px}
+@media(min-width:1001px) and (max-width:1250px){.home .home-launchers{gap:14px}.home .recent-games{grid-template-columns:repeat(3,minmax(0,1fr))}}
+@media(max-width:1000px){.home:not([hidden]){grid-template-columns:1fr}.home-updates{position:static;max-height:none;width:100%;box-sizing:border-box}#updates-latest{display:grid;grid-template-columns:1fr 1fr;gap:0 24px}}
+@media(max-width:550px){#updates-latest{grid-template-columns:1fr}.home-updates{padding:20px}}
