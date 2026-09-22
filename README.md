@@ -87,6 +87,10 @@ A local DOM adapter changes a visible Voidify heading to Neon Music and hides on
 
 The frame stays mounted outside the page sections. Leaving Music folds it into a dock without replacing the document; returning expands it. Home and Reload navigate the original source; Stop removes the frame. Keep the original Neon tab open during about:blank games. No Audiomack or SoundCloud API keys are used.
 
+## NeonTube
+
+NeonTube opens the inner video app at `https://bcsdny.net/~v/`, discovered in the supplied world-history page, through the existing Scramjet/libcurl proxy. It omits the outer network header and changes the VoidTube heading to NeonTube while preserving search, Shorts, and player controls. The tab includes Home, Reload, Fullscreen, and Stop. The service worker now waits for its controller to reconnect after an idle restart instead of letting proxy navigation fall through to a server 404. Local browser verification: video cards render and a selected 910.64-second video played past 10 seconds with no media error. Third-party video availability remains dependent on the source.
+
 ## Movies
 
 The Movies tab lazily opens `https://gaiaflix.live/` in its own Scramjet frame using the same server/libcurl transport as Search and Sports. Home returns to Gaiaflix, Reload retries the current page, and Fullscreen expands the viewing area. Connection failures show retry guidance. External availability and individual video playback are controlled by the destination site and are not guaranteed by the tab integration.

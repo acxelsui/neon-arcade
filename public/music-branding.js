@@ -1,16 +1,16 @@
-// Adapt only the music page identified by its visible brand, not other destinations.
-export function brandMusicDocument(doc){
+// Adapt the source app's branding without changing media or player controls.
+export function brandMusicDocument(doc,original='Voidify',replacement='Neon Music'){
  let queued=false,stopped=false;
  function apply(){
   queued=false;if(stopped)return;
   const headings=[...doc.querySelectorAll('h1,h2,[role="heading"]')];
-  const branded=headings.filter(el=>/^(Voidify|Neon Music)$/i.test(el.textContent.trim()));
+  const branded=headings.filter(el=>[original.toLowerCase(),replacement.toLowerCase()].includes(el.textContent.trim().toLowerCase()));
+  if(doc.title.toLowerCase().includes(original.toLowerCase()))doc.title=doc.title.replace(new RegExp(original,'ig'),replacement);
   if(!branded.length)return;
   for(const heading of branded){
    const walker=doc.createTreeWalker(heading,4);let node;
-   while(node=walker.nextNode())if(node.nodeValue.trim()==='Voidify')node.nodeValue=node.nodeValue.replace('Voidify','Neon Music');
+   while(node=walker.nextNode())if(node.nodeValue.trim()===original)node.nodeValue=node.nodeValue.replace(original,replacement);
   }
-  if(/voidify/i.test(doc.title))doc.title='Neon Music';
   // Remove the outer site navigation only. Preserve music navigation and controls.
   const candidates=[...doc.querySelectorAll('header,nav,[role="banner"]')];
   for(const el of candidates){

@@ -1,3 +1,4 @@
+import {initTube} from './tube.js';
 import {initShell} from './shell.js';
 import {initMusic} from './music.js';
 import './chat.js';
@@ -8,7 +9,7 @@ const $=s=>document.querySelector(s);
 const store={get(k,f){try{return JSON.parse(localStorage.getItem('neon-'+k))??f}catch{return f}},set(k,v){try{localStorage.setItem('neon-'+k,JSON.stringify(v))}catch{}}};
 let catalog,selectedGame,previousFocus,controllerPromise,webFrame;
 function toast(message){$('#toast').textContent=message;$('#toast').hidden=false;setTimeout(()=>$('#toast').hidden=true,4000)}
-function showPage(name){if(!['home','games','search','sports','movies','ai','music','settings'].includes(name))name='home';document.querySelectorAll('.page').forEach(p=>p.hidden=p.id!==name);document.querySelectorAll('nav button').forEach(b=>{b.classList.toggle('active',b.dataset.page===name);b.setAttribute('aria-current',b.dataset.page===name?'page':'false')});if(location.hash!=='#'+name)history.replaceState(null,'','#'+name);window.scrollTo(0,0);if(name==='sports')openSports();if(name==='movies')openMovies();window.dispatchEvent(new CustomEvent('neon-page',{detail:name}))}
+function showPage(name){if(!['home','games','search','sports','movies','neontube','ai','music','settings'].includes(name))name='home';document.querySelectorAll('.page').forEach(p=>p.hidden=p.id!==name);document.querySelectorAll('nav button').forEach(b=>{b.classList.toggle('active',b.dataset.page===name);b.setAttribute('aria-current',b.dataset.page===name?'page':'false')});if(location.hash!=='#'+name)history.replaceState(null,'','#'+name);window.scrollTo(0,0);if(name==='sports')openSports();if(name==='movies')openMovies();window.dispatchEvent(new CustomEvent('neon-page',{detail:name}))}
 document.querySelectorAll('[data-page]').forEach(b=>b.onclick=()=>showPage(b.dataset.page));window.addEventListener('hashchange',()=>showPage(location.hash.slice(1)));
 function updateClock(){const now=new Date();$('#clock').textContent=now.toLocaleTimeString([],{hour:'2-digit',minute:'2-digit',hour12:!store.get('24hour',false)}).replace(/\s?[AP]M/i,'');$('#date').textContent=now.toLocaleDateString([],{weekday:'long',month:'long',day:'numeric',year:'numeric'});$('#clock').dateTime=now.toISOString();$('#clock-period').textContent=store.get('24hour',false)?'':(now.getHours()<12?'AM':'PM');$('#home-greeting').textContent=now.getHours()<12?'Good morning':now.getHours()<18?'Good afternoon':'Good evening'}
 $('#clock-format').checked=store.get('24hour',false);$('#clock-format').onchange=e=>{store.set('24hour',e.target.checked);updateClock()};updateClock();setInterval(updateClock,1000);
@@ -115,6 +116,8 @@ $('#bookmark-cancel').onclick=()=>{$('#bookmark-form').hidden=true;$('#bookmark-
 $('#bookmark-form').onsubmit=e=>{e.preventDefault();try{const url=bookmarkUrl($('#bookmark-url').value);const name=$('#bookmark-name').value.trim();if(!name)throw new Error('Give your bookmark a name.');const items=bookmarks().filter(b=>b.url!==url);if(items.length>=24)throw new Error('You can save up to 24 bookmarks. Remove one first.');store.set('bookmarks',[...items,{name,url}]);renderBookmarks();e.target.reset();$('#bookmark-form').hidden=true;$('#bookmark-error').textContent='';$('#add-bookmark').focus()}catch(error){$('#bookmark-error').textContent=error.message}};
 renderBookmarks();
 
-initShell({navigate:showPage,search:text=>{showPage("search");browse(text)},reload:()=>{const page=location.hash.slice(1);if(page==="search"&&webFrame)webFrame.reload();else if(page==="sports"&&sportsFrame)sportsFrame.reload();else if(page==="movies"&&moviesFrame)moviesFrame.reload();else if(page==="music")document.querySelector("#music-reload").click();else location.reload()}});
+initShell({navigate:showPage,search:text=>{showPage("search");browse(text)},reload:()=>{const page=location.hash.slice(1);if(page==="search"&&webFrame)webFrame.reload();else if(page==="sports"&&sportsFrame)sportsFrame.reload();else if(page==="movies"&&moviesFrame)moviesFrame.reload();else if(page==="neontube")document.querySelector("#tube-reload").click();else if(page==="music")document.querySelector("#music-reload").click();else location.reload()}});
 
 initMusic(getController);
+
+initTube(getController);
