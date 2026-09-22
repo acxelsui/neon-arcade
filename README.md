@@ -98,3 +98,8 @@ The Movies tab lazily opens `https://gaiaflix.live/` in its own Scramjet frame u
 ## Browser-style interface
 
 The fixed left rail opens each section, while the top strip keeps visited pages available as closable shortcuts (Home remains pinned). Back/Forward navigate the current session’s section history; the address bar accepts neon:// page addresses or sends websites/search terms to the existing proxy search. The music indicator opens the music page and reflects the current dock title; it does not claim playback is active or provide unsupported provider controls. Home includes web search, circular shortcuts, the clock/date and recent games. The compact game grid shows titles on hover/focus and always on touch devices. All wallpaper and glass-opacity settings remain available.
+
+
+## Weather
+
+The Weather tab uses Open-Meteo's global geocoding and forecast APIs directly over HTTPS. Search for a city or postal code (optionally qualified by state/country), then select a specific location. It shows current model-based conditions, feels-like temperature, humidity, wind/gusts, daily rain probability, 24 hourly entries and a seven-day forecast in the location's timezone. New York is the initial example, not a detected location. Recent places, selected location and Celsius/Fahrenheit preference are stored only in this browser. Forecasts refresh every 15 minutes while viewing Weather, with a manual Refresh button and explicit loading/error states. No location permission or API key is needed. Open-Meteo's free endpoint is for non-commercial use and has usage limits; commercial deployments need an appropriate provider plan. Attribution links remain visible on all screen sizes.
