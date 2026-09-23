@@ -1,5 +1,6 @@
 import {watchFrame} from './proxy-feedback.js';
 import {brandMusicDocument} from './music-branding.js';
+import {bindTubeSearch} from './tube-navigation.js';
 const URL='https://bcsdny.net/~v/';
 export function initTube(getController){
  const $=s=>document.querySelector(s);let frame,loading=false,version=0,cleanup=()=>{};
@@ -12,7 +13,7 @@ export function initTube(getController){
    const controller=await getController();if(current!==version)return;
    frame=controller.createFrame();frame.element.title='NeonTube';frame.element.allow='autoplay; fullscreen; encrypted-media; picture-in-picture';frame.element.allowFullscreen=true;
    watchFrame(frame,error=>status(error+' Use Reload to retry.'),()=>status(''));
-   frame.element.addEventListener('load',()=>{cleanup();try{const doc=frame.element.contentDocument;if(doc?.body)cleanup=brandMusicDocument(doc,'VoidTube','NeonTube')}catch{status('The video page opened, but its heading could not be renamed.')}});
+   frame.element.addEventListener('load',()=>{cleanup();try{const doc=frame.element.contentDocument;if(doc?.body){const unbrand=brandMusicDocument(doc,'VoidTube','NeonTube');const unbind=bindTubeSearch(doc,url=>{status('Searching videos…');frame.go(url)});cleanup=()=>{unbrand();unbind()}}}catch{status('The video page opened, but its search controls could not be connected. Use Home to retry.')}});
    $('#tube-frame').replaceChildren(frame.element);frame.go(URL);
   }catch(error){if(current===version)status('NeonTube could not connect. '+error.message)}finally{if(current===version)loading=false}
  }
