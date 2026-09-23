@@ -6,10 +6,10 @@ export function initCloud(getController){
  const status=text=>$('#cloud-status').textContent=text;
  async function open(url=ROBLOX_URL){
   if(loading)return;activeUrl=url;observer?.disconnect();if(frame){status('Opening Roblox provider…');frame.go(activeUrl);return}
-  const current=++version;loading=true;status('Opening Roblox provider…');$('#cloud-play').disabled=true;
+  const current=++version;loading=true;status('Opening Roblox provider…');$('#cloud-tile').disabled=true;
   try{const controller=await getController();if(current!==version)return;
    frame=controller.createFrame();frame.element.title='Roblox cloud provider';frame.element.allow='autoplay; fullscreen; encrypted-media; gamepad';frame.element.allowFullscreen=true;
-   watchFrame(frame,error=>status(error+' Try the alternate link or Reload.'),()=>status('Provider page connected. A working Roblox stream has not yet been confirmed.'));
+   watchFrame(frame,error=>status(error+' Use Reload to retry.'),()=>status('Provider page connected. A working Roblox stream has not yet been confirmed.'));
    frame.element.addEventListener('load',()=>{
     try{
      observer?.disconnect();const doc=frame.element.contentDocument;
@@ -22,10 +22,10 @@ export function initCloud(getController){
      observer=new MutationObserver(check);observer.observe(doc.documentElement,{childList:true,subtree:true,characterData:true});check();
     }catch{}
    });
-   $('#cloud-frame').replaceChildren(frame.element);$('#cloud-session').hidden=false;frame.go(activeUrl);
-  }catch(error){if(current===version)status('Could not connect to now.gg. '+error.message)}finally{if(current===version){loading=false;$('#cloud-play').disabled=false}}
+   $('#cloud-frame').replaceChildren(frame.element);$('#cloud-session').hidden=false;frame.go(activeUrl);$('#cloud-session').scrollIntoView({block:'start'});
+  }catch(error){if(current===version)status('Could not connect to now.gg. '+error.message)}finally{if(current===version){loading=false;$('#cloud-tile').disabled=false}}
  }
- $('#cloud-tile').onclick=()=>open();$('#cloud-play').onclick=()=>open();$('#cloud-alternate').onclick=()=>open(FALLBACK_URL);$('#cloud-reload').onclick=()=>frame?frame.reload():open(activeUrl);
+ $('#cloud-tile').onclick=()=>open();$('#cloud-reload').onclick=()=>frame?frame.reload():open(activeUrl);
  $('#cloud-full').onclick=()=>$('#cloud-frame').requestFullscreen?.().catch(()=>status('Fullscreen is unavailable in this browser.'));
- $('#cloud-stop').onclick=()=>{version++;loading=false;observer?.disconnect();$('#cloud-play').disabled=false;$('#cloud-frame').replaceChildren();frame=null;$('#cloud-session').hidden=true;status('Session closed.')};
+ $('#cloud-stop').onclick=()=>{version++;loading=false;observer?.disconnect();$('#cloud-tile').disabled=false;$('#cloud-frame').replaceChildren();frame=null;$('#cloud-session').hidden=true;status('');$('#cloud-tile').focus()};
 }
