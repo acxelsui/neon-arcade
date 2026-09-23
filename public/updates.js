@@ -1,5 +1,6 @@
 // Keep newest first. Dates describe when the change was added, not when a visitor opened Home.
 export const updates = [
+ {date:'2026-09-23',title:'Proxy compatibility after sign-in',text:'Aligned the account and arcade frame policies so the proxy can display games, Search, NeonTube, Music, Movies, and Sports inside the signed-in site.'},
  {date:'2026-09-23',title:'Login at the arcade entrance',text:'The original arcade address now routes signed-out visitors to Neon accounts. Game files and new proxy connections require a server-checked arcade session.'},
  {date:'2026-09-23',title:'Preparing Neon accounts',text:'Added support for an isolated account entrance, profile pictures, and an online-player panel. These become available through the account site once its deployment and signup settings are finished.'},
  {date:'2026-09-22',title:'NeonTube search repaired',text:'Searches and category buttons now stay inside the video proxy instead of opening a broken Neon Arcade page.'},
