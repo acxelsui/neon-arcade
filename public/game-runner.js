@@ -11,6 +11,16 @@ try {
   const game = catalog.games.find(game => game.id === new URLSearchParams(location.search).get('id'));
   if (!game || game.unavailable) throw new Error('This game is unavailable.');
   document.title = game.name + ' · Neon Arcade';
+  if (game.launch === 'direct' && game.url.startsWith('/games/') && !game.url.includes('..')) {
+    const frame = document.createElement('iframe');
+    frame.title = game.name;
+    frame.allow = 'autoplay; fullscreen; gamepad';
+    frame.allowFullscreen = true;
+    frame.setAttribute('sandbox', 'allow-scripts allow-same-origin allow-forms allow-pointer-lock allow-downloads allow-modals');
+    frame.addEventListener('load', () => { clearTimeout(slow); status.hidden = true; });
+    frame.src = game.url;
+    document.body.append(frame);
+  } else {
   const controller = await initBootstrap(transport => gameTransport(transport, location.origin));
   const frame = controller.createFrame();
   watchFrame(frame,message=>{clearTimeout(slow);showFailure(message)},()=>{clearTimeout(slow);failed=false;status.hidden=true});
@@ -21,6 +31,7 @@ try {
   frame.element.addEventListener('load', () => { if(!failed && frame.element.src) {clearTimeout(slow);status.hidden = true;} });
   document.body.append(frame.element);
   frame.go(new URL(game.url, GAME_ORIGIN).href);
+  }
 } catch (error) {
   clearTimeout(slow);showFailure('Could not start the game. '+error.message);
 }
