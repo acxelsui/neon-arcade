@@ -23,7 +23,9 @@ Keep the existing **neongoatarcadd** project as-is; it serves the games and prox
 3. Set **Root Directory** to **accounts**. Framework: **Other**.
 4. The included configuration installs with `pnpm install --frozen-lockfile`, builds with
    `pnpm build`, and serves `dist`. No secret environment variables are required.
-5. Deploy and share the NEW address as the account entrance. Existing links do not redirect.
+5. Deploy and share the NEW address as the account entrance. The production account address
+   is `https://neon-arcade-improvedv3.vercel.app`. Signed-out visits to the original arcade
+   redirect there after the access-gate deployment.
 
 The new site opens `https://neongoatarcadd.vercel.app` in a sandboxed cross-origin iframe after
 login. Keep these origins different. The account site serves no games, relay, or service worker.
@@ -43,8 +45,14 @@ image URLs do. Do not put login under a path on the existing proxy origin.
 - Settings opens profile controls outside the proxy. Images are decoded, center-cropped and
   resized to 256×256 JPEG, uploaded to an owner-only path. Storage reads require authentication.
 - Sign out closes the embedded arcade; other account tabs respond to the auth sign-out event.
-- The original arcade address and game assets remain public. This is a member entrance,
-  not server-enforced private-content access control.
+- The arcade middleware requires a server-verified access cookie for assets and API requests.
+  The account origin obtains an arcade-only random pass from `neon_issue_access`; passwords
+  and Supabase auth tokens stay on the account origin. The bridge installs an HttpOnly,
+  Secure, partitioned cookie after checking that pass. Browsers must allow this cookie.
+- Run `../supabase/access.sql` before deploying this lock. Passes expire after eight hours;
+  reload the account site to reconnect. Verification caches last up to 15 seconds, so a
+  revocation may take that long to affect another request. Already downloaded resources and
+  established connections cannot be recalled; signout closes the current embedded arcade.
 
 ## Validation
 

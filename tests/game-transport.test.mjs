@@ -15,7 +15,7 @@ test('bundled games enter the rewriter while external assets use the relay', asy
   assert.equal(result.status, 200);
   assert.equal(await new Response(result.body).text(), '<html>game</html>');
   assert.deepEqual(local.options.headers, [['Range', 'bytes=0-99']]);
-  assert.equal(local.options.credentials, 'omit');
+  assert.equal(local.options.credentials, 'same-origin');
   assert.equal(requests.length, 0);
   for (const url of ['https://cdn.example/game.wasm', 'https://other.example/games/114.html', 'http://localhost:3001/api/private']) {
     assert.equal(await transport.request(new URL(url), 'GET', null, [], undefined), 'relayed');

@@ -11,6 +11,9 @@ importers:
       '@mercuryworkshop/wisp-js':
         specifier: 0.4.1
         version: 0.4.1
+      '@vercel/edge':
+        specifier: 1.3.3
+        version: 1.3.3
       express:
         specifier: 5.1.0
         version: 5.1.0
@@ -56,6 +59,9 @@ packages:
   '@mercuryworkshop/wisp-js@0.4.1':
     resolution: {integrity: sha512-104LwiXiuhti/e32gmv0Da0u0yuLFDHX8JawCzleTPWJ5t5qTX4EYi4E7/ucbjBPN9wwVPWHE5g5yGqzl/NzQA==}
     hasBin: true
+
+  '@vercel/edge@1.3.3':
+    resolution: {integrity: sha512-B4zu4g81nI1JHoOqc2FnXmh1DUpAJlZKPQsZck6iLp23kQ/zZF4ma6+Wejn8p9bKB6WPTbYPqEYrRXx4yl0qaw==}
 
   accepts@2.0.0:
     resolution: {integrity: sha512-5cvg6CtKwfgdmVqY1WIiXKc3Q1bkRqGLi+2W/6ao+6Y7gu/RCwRuAhGEzh5B4KlszSuTLgZYuqFqo5bImjNKng==}
@@ -465,6 +471,8 @@ snapshots:
       ws: 8.21.3(bufferutil@4.1.0)
     transitivePeerDependencies:
       - utf-8-validate
+
+  '@vercel/edge@1.3.3': {}
 
   accepts@2.0.0:
     dependencies:

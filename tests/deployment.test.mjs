@@ -3,10 +3,12 @@ import assert from 'node:assert/strict';
 import http from 'node:http';
 import { randomBytes } from 'node:crypto';
 import { once } from 'node:events';
-import server from '../api/wisp.js';
+import productionServer,{createWispServer} from '../api/wisp.js';
+const server=createWispServer(async()=>null);
 
 test('Vercel endpoint exports an unbound server and handles Wisp upgrades', async () => {
   assert.equal(server.listening, false, 'Importing the Vercel endpoint must not bind a port');
+  assert.equal(productionServer.listening,false);
   server.listen(0, '127.0.0.1');
   await once(server, 'listening');
   const port = server.address().port;
@@ -46,4 +48,13 @@ test('Vercel endpoint exports an unbound server and handles Wisp upgrades', asyn
   } finally {
     await new Promise(resolve => server.close(resolve));
   }
+});
+
+test('production Wisp upgrade rejects signed-out clients',async()=>{
+ productionServer.listen(0,'127.0.0.1');await once(productionServer,'listening');
+ const port=productionServer.address().port;
+ try{const status=await new Promise((resolve,reject)=>{
+ const req=http.request(`http://127.0.0.1:${port}/api/wisp`,{headers:{Connection:'Upgrade',Upgrade:'websocket','Sec-WebSocket-Version':'13','Sec-WebSocket-Key':randomBytes(16).toString('base64'),Origin:`http://127.0.0.1:${port}`}});
+ req.on('error',reject);req.on('response',res=>{res.resume();resolve(res.statusCode)});req.on('upgrade',(_,socket)=>{socket.destroy();reject(new Error('Unauthorized upgrade accepted'))});req.end();
+ });assert.equal(status,401)}finally{await new Promise(resolve=>productionServer.close(resolve))}
 });

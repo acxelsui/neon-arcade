@@ -1,7 +1,7 @@
 // No auth SDK, passwords or tokens live on this proxy/content origin.
 export function initMembers(){
  if(window.parent===window)return;
- const origin=(()=>{try{return new URL(document.referrer).origin}catch{return null}})();if(!origin||origin===location.origin)return;
+ const origin=location.hostname==='localhost'?'http://localhost:3002':'https://neon-arcade-improvedv3.vercel.app';
  const send=(type,extra={})=>window.parent.postMessage({channel:'neon-members-v1',type,...extra},origin);
  const aside=document.querySelector('.home-updates');const panel=document.createElement('section');panel.className='member-panel';
  const heading=document.createElement('h2');heading.textContent='Playing now';const status=document.createElement('p');status.textContent='Connecting to your account…';

@@ -5,18 +5,19 @@ const KEY='sb_publishable_5xjkSLY22XORDMqM1Qp4HQ_J8Ez86mX';
 const $=s=>document.querySelector(s),frame=$('#arcade');
 const contentOrigin=separateOrigin(location.hostname==='localhost'?'http://localhost:3001':'https://neongoatarcadd.vercel.app',location.origin);
 const client=createClient(PROJECT,KEY,{auth:{persistSession:true,autoRefreshToken:true,detectSessionInUrl:false,storageKey:'neon-member-session'}});
-const tabId=crypto.randomUUID();let profile=null,mode='signup',game=null,busy=false,epoch=0,booting=true,lastActivity=0,avatarCache=new Map();
+const tabId=crypto.randomUUID();let profile=null,mode='signup',game=null,busy=false,epoch=0,booting=true,lastActivity=0,avatarCache=new Map(),accessPass=null;
 function send(type,extra={}){frame.contentWindow?.postMessage({channel:'neon-members-v1',type,...extra},contentOrigin)}
 function message(text){$('#auth-status').textContent=text}
 function selectMode(next){mode=next;const setup=next==='profile';$('#auth-tabs').hidden=setup;$('#password-label').hidden=setup;$('#password').required=!setup;$('#password').autocomplete=next==='login'?'current-password':'new-password';$('#signup-note').hidden=next==='login';$('#gate-title').textContent=setup?'Choose your player name.':next==='login'?'Welcome back.':'Welcome to Neon.';$('#gate-description').textContent=setup?'One last step before you enter the arcade.':next==='login'?'Your next adventure is waiting.':'Create your player profile and make yourself at home.';$('#submit-auth').textContent=setup?'Save username ↗':next==='login'?'Sign in ↗':'Create account ↗';$('#choose-signup').setAttribute('aria-pressed',String(next==='signup'));$('#choose-login').setAttribute('aria-pressed',String(next==='login'));$('#gate-signout').hidden=!setup;message('')}
-function gate(){epoch++;profile=null;game=null;frame.hidden=true;frame.removeAttribute('src');$('#account-button').hidden=true;$('#gate').hidden=false;$('#profile-dialog').close()}
+function gate(){epoch++;profile=null;game=null;accessPass=null;frame.hidden=true;frame.removeAttribute('src');$('#account-button').hidden=true;$('#gate').hidden=false;$('#profile-dialog').close()}
 async function rpc(name,args){const {data,error}=await client.rpc(name,args);if(error)throw error;return data}
 async function enter(){
  const {data,error}=await client.auth.getUser();if(error||!data.user){gate();return}
  const rows=await rpc('neon_my_profile');profile=rows?.[0]||null;
  if(!profile){gate();selectMode('profile');$('#username').value=data.user.user_metadata?.username||'';return}
+ if(!accessPass)accessPass=await rpc('neon_issue_access');
  $('#gate').hidden=true;$('#profile-name').textContent=profile.username;$('#avatar-preview').textContent=profile.username[0].toUpperCase();$('#account-button').hidden=false;
- if(!frame.getAttribute('src'))frame.src=contentOrigin+'/#home';frame.hidden=false;
+ if(!frame.getAttribute('src'))frame.src=contentOrigin+'/neon-access';frame.hidden=false;
  await sync();
 }
 async function sync(){
@@ -53,6 +54,7 @@ function openProfile(){if(!profile)return;$('#profile-status').textContent='';$(
 $('#account-button').onclick=openProfile;
 async function signout(){
  $('#signout').disabled=true;
+ if(accessPass){try{await rpc('neon_revoke_access',{pass:accessPass});accessPass=null}catch{$('#signout').disabled=false;$('#profile-status').textContent='Could not close your arcade session. Check your connection and try again.';return}}
  try{await rpc('neon_leave',{tab_id:tabId})}catch{}
  const {error}=await client.auth.signOut({scope:'local'});
  $('#signout').disabled=false;
@@ -74,6 +76,7 @@ $('#avatar-file').onchange=async event=>{
 };
 window.addEventListener('message',event=>{
  if(!allowedMessage(event,frame.contentWindow,contentOrigin)||!profile)return;
+ if(event.data.type==='access-ready'&&accessPass){send('access-pass',{pass:accessPass});return}
  if(event.data.type==='ready'){sync();return}
  if(event.data.type==='profile'){openProfile();return}
  if(event.data.type==='activity'){
