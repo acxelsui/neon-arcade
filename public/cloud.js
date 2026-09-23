@@ -25,7 +25,7 @@ export function initCloud(getController){
    $('#cloud-frame').replaceChildren(frame.element);$('#cloud-session').hidden=false;frame.go(activeUrl);
   }catch(error){if(current===version)status('Could not connect to now.gg. '+error.message)}finally{if(current===version){loading=false;$('#cloud-play').disabled=false}}
  }
- $('#cloud-play').onclick=()=>open();$('#cloud-alternate').onclick=()=>open(FALLBACK_URL);$('#cloud-reload').onclick=()=>frame?frame.reload():open(activeUrl);
+ $('#cloud-tile').onclick=()=>open();$('#cloud-play').onclick=()=>open();$('#cloud-alternate').onclick=()=>open(FALLBACK_URL);$('#cloud-reload').onclick=()=>frame?frame.reload():open(activeUrl);
  $('#cloud-full').onclick=()=>$('#cloud-frame').requestFullscreen?.().catch(()=>status('Fullscreen is unavailable in this browser.'));
  $('#cloud-stop').onclick=()=>{version++;loading=false;observer?.disconnect();$('#cloud-play').disabled=false;$('#cloud-frame').replaceChildren();frame=null;$('#cloud-session').hidden=true;status('Session closed.')};
 }
