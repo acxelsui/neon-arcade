@@ -9,14 +9,14 @@ const tabId=crypto.randomUUID();let profile=null,mode='signup',game=null,busy=fa
 function send(type,extra={}){frame.contentWindow?.postMessage({channel:'neon-members-v1',type,...extra},contentOrigin)}
 function message(text){$('#auth-status').textContent=text}
 function selectMode(next){mode=next;const setup=next==='profile';$('#auth-tabs').hidden=setup;$('#password-label').hidden=setup;$('#password').required=!setup;$('#password').autocomplete=next==='login'?'current-password':'new-password';$('#signup-note').hidden=next==='login';$('#gate-title').textContent=setup?'Choose your player name.':next==='login'?'Welcome back.':'Welcome to Neon.';$('#gate-description').textContent=setup?'One last step before you enter the arcade.':next==='login'?'Your next adventure is waiting.':'Create your player profile and make yourself at home.';$('#submit-auth').textContent=setup?'Save username ↗':next==='login'?'Sign in ↗':'Create account ↗';$('#choose-signup').setAttribute('aria-pressed',String(next==='signup'));$('#choose-login').setAttribute('aria-pressed',String(next==='login'));$('#gate-signout').hidden=!setup;message('')}
-function gate(){epoch++;profile=null;game=null;accessPass=null;frame.hidden=true;frame.removeAttribute('src');$('#account-button').hidden=true;$('#gate').hidden=false;$('#profile-dialog').close()}
+function gate(){epoch++;profile=null;game=null;accessPass=null;frame.hidden=true;frame.removeAttribute('src');$('#gate').hidden=false;$('#profile-dialog').close()}
 async function rpc(name,args){const {data,error}=await client.rpc(name,args);if(error)throw error;return data}
 async function enter(){
  const {data,error}=await client.auth.getUser();if(error||!data.user){gate();return}
  const rows=await rpc('neon_my_profile');profile=rows?.[0]||null;
  if(!profile){gate();selectMode('profile');$('#username').value=data.user.user_metadata?.username||'';return}
  if(!accessPass)accessPass=await rpc('neon_issue_access');
- $('#gate').hidden=true;$('#profile-name').textContent=profile.username;$('#avatar-preview').textContent=profile.username[0].toUpperCase();$('#account-button').hidden=false;
+ $('#gate').hidden=true;$('#profile-name').textContent=profile.username;$('#avatar-preview').textContent=profile.username[0].toUpperCase();
  if(!frame.getAttribute('src'))frame.src=contentOrigin+'/neon-access';frame.hidden=false;
  await sync();
 }
@@ -51,7 +51,6 @@ $('#auth-form').onsubmit=async event=>{
  }catch(error){message(error.code==='23505'?'That username is already taken. Choose another.':error.message||'Could not connect. Try again.')}finally{submit.disabled=false}
 };
 function openProfile(){if(!profile)return;$('#profile-status').textContent='';$('#profile-dialog').showModal();const url=avatarCache.get(profile.id)?.url;if(url){const img=new Image();img.alt='Your profile picture';img.src=url;$('#avatar-preview').replaceChildren(img)}}
-$('#account-button').onclick=openProfile;
 async function signout(){
  $('#signout').disabled=true;
  if(accessPass){try{await rpc('neon_revoke_access',{pass:accessPass});accessPass=null}catch{$('#signout').disabled=false;$('#profile-status').textContent='Could not close your arcade session. Check your connection and try again.';return}}
