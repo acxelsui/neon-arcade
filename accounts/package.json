@@ -1,0 +1,1 @@
+{"name":"neon-accounts","private":true,"type":"module","packageManager":"pnpm@11.19.0","scripts":{"build":"node build.mjs"},"dependencies":{"@supabase/supabase-js":"2.117.0"}}

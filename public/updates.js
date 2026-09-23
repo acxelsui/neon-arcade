@@ -1,5 +1,6 @@
 // Keep newest first. Dates describe when the change was added, not when a visitor opened Home.
 export const updates = [
+ {date:'2026-09-23',title:'Preparing Neon accounts',text:'Added support for an isolated account entrance, profile pictures, and an online-player panel. These become available through the account site once its deployment and signup settings are finished.'},
  {date:'2026-09-22',title:'NeonTube search repaired',text:'Searches and category buttons now stay inside the video proxy instead of opening a broken Neon Arcade page.'},
  {date:'2026-09-22',title:'Click Roblox and go',text:'Removed the extra cloud gaming description and launch buttons. Click the Roblox tile to open the player directly.'},
  {date:'2026-09-22',title:'A console feel for cloud gaming',text:'Neon Cloud Gaming now has a highlighted Roblox tile and a clean console-style layout. Roblox remains the only cloud game.'},

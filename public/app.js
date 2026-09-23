@@ -1,3 +1,4 @@
+import {initMembers} from './members.js';
 import {initCloud} from './cloud.js';
 import {initUpdates} from './updates.js';
 import {initWeather} from './weather.js';
@@ -25,8 +26,8 @@ $('#favorites-filter').onclick=()=>{const b=$('#favorites-filter');const active=
 $('#random-game').onclick=()=>{const games=librarySelection().filter(g=>!g.unavailable);if(games.length)openGame(games[Math.floor(Math.random()*games.length)],$('#random-game'))};
 $('#game-filter').oninput=renderGames;
 function makeGameFrame(game,doc=document){const frame=doc.createElement('iframe');frame.src=new URL("/game-runner.html?id="+encodeURIComponent(game.id),location.origin).href;frame.title=game.name;frame.allow='autoplay; fullscreen; gamepad';frame.allowFullscreen=true;frame.setAttribute('sandbox','allow-scripts allow-same-origin allow-forms allow-pointer-lock allow-downloads allow-modals');return frame}
-function openGame(game,button){if(game.unavailable){toast('This supplied game file contains a removal notice instead of a playable game.');return}selectedGame=game;rememberGame(game);previousFocus=button;$('#playing-name').textContent=game.name;$('#game-frame-wrap').replaceChildren(makeGameFrame(game));$('#player').hidden=false;$('header').inert=true;$('main').inert=true;document.body.style.overflow='hidden';$('#close-game').focus()}
-function closeGame(){$('#game-frame-wrap').replaceChildren();$('#player').hidden=true;$('header').inert=false;$('main').inert=false;document.body.style.overflow='';showPage('games');previousFocus?.focus()}
+function openGame(game,button){if(game.unavailable){toast('This supplied game file contains a removal notice instead of a playable game.');return}selectedGame=game;window.dispatchEvent(new CustomEvent('neon-game',{detail:{id:game.id,name:game.name}}));rememberGame(game);previousFocus=button;$('#playing-name').textContent=game.name;$('#game-frame-wrap').replaceChildren(makeGameFrame(game));$('#player').hidden=false;$('header').inert=true;$('main').inert=true;document.body.style.overflow='hidden';$('#close-game').focus()}
+function closeGame(){window.dispatchEvent(new CustomEvent('neon-game',{detail:null}));$('#game-frame-wrap').replaceChildren();$('#player').hidden=true;$('header').inert=false;$('main').inert=false;document.body.style.overflow='';showPage('games');previousFocus?.focus()}
 $('#close-game').onclick=closeGame;
 $('#retry-game').onclick=()=>{if(selectedGame)$('#game-frame-wrap').replaceChildren(makeGameFrame(selectedGame))};
 $('#blank-button').onclick=()=>{if(!selectedGame)return;const tab=window.open('about:blank','_blank');if(!tab){toast('Allow pop-ups to open your game in a new tab.');return}const doc=tab.document;doc.title=selectedGame.name+' · Neon Arcade';doc.body.style.cssText='margin:0;background:#0b1018;height:100vh;overflow:hidden';const frame=makeGameFrame(selectedGame,doc);frame.style.cssText='width:100%;height:100%;border:0';doc.body.append(frame);tab.opener=null;closeGame()};
@@ -130,3 +131,5 @@ initWeather();
 initUpdates();
 
 initCloud(getController);
+
+initMembers();
