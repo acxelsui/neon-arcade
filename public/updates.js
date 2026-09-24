@@ -1,5 +1,7 @@
 // Keep newest first. Dates describe when the change was added, not when a visitor opened Home.
 export const updates = [
+ {date:'2026-09-24',title:'Game tabs restored',text:'The about:blank launcher now falls back to a regular game tab when the browser cannot run the proxy in a blank tab.'},
+ {date:'2026-09-24',title:'Retro Bowl College refreshed',text:'Replaced Retro Bowl College with the supplied version and adapted its startup data loading for the proxy.'},
  {date:'2026-09-24',title:'Nine new animated backgrounds',text:'Choose new space, BMW, Luffy, Spider-Man, polygon, moon, and synth-wave wallpapers in Settings. Background choices save automatically.'},
  {date:'2026-09-24',title:'Fullscreen games and Retro Bowl proxy',text:'Added a Fullscreen toggle beside Retry in every game player. Retro Bowl now loads its data before starting so it can use the proxy.'},
  {date:'2026-09-23',title:'Retro Bowl refreshed',text:'Replaced Retro Bowl with the newly supplied game version, available from its existing tile in Games.'},
