@@ -78,7 +78,29 @@
     <!-- Run the game code -->
     <script type="text/javascript" src="html5game/RetroBowl.js?WAEAC=1633155445"></script>
     <script>
-      window.onload = GameMaker_Init;
+      // GameMaker uses synchronous file reads, unsupported by this proxy version.
+      // Fetch its bundled text data through the proxy before starting the engine.
+      window.onload = async function () {
+        const files = ['Achievements.txt','Charities.txt','Colleges.txt','LanguageUS.txt','LanguageUS_FR.txt','Names_F0.txt','Names_F1.txt','Names_L.txt','PlayerRecords.txt','RetroBowlHOF.txt','Schedule17.txt','Shopping.txt','Teams.txt','uniforms_custom_1.txt','uniforms_default.txt'];
+        const data = new Map();
+        const key = value => new URL(value, document.baseURI).href;
+        try {
+          await Promise.all(files.map(async name => {
+            const url = key('html5game/' + name);
+            const response = await fetch(url);
+            if (!response.ok) throw new Error('Could not load ' + name);
+            data.set(url, await response.text());
+          }));
+          _Ux5 = function (url) { const found = data.has(key(url)); _rx5 = found ? 200 : 404; return found; };
+          _Xx5 = _Yx5 = function (url, body) { const found = !body && data.has(key(url)); _rx5 = found ? 200 : 404; return found ? data.get(key(url)) : null; };
+          GameMaker_Init();
+        } catch (error) {
+          const message = document.createElement('p');
+          message.textContent = 'Retro Bowl could not load its data. Use Retry to try again.';
+          document.body.prepend(message);
+          console.error(error);
+        }
+      };
     </script>
   </body>
 </html>

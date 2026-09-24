@@ -1,5 +1,6 @@
 // Keep newest first. Dates describe when the change was added, not when a visitor opened Home.
 export const updates = [
+ {date:'2026-09-24',title:'Fullscreen games and Retro Bowl proxy',text:'Added a Fullscreen toggle beside Retry in every game player. Retro Bowl now loads its data before starting so it can use the proxy.'},
  {date:'2026-09-23',title:'Retro Bowl refreshed',text:'Replaced Retro Bowl with the newly supplied game version, available from its existing tile in Games.'},
  {date:'2026-09-23',title:'A clearer game screen',text:'Removed the floating account button. Your profile picture and sign-out controls are still available in Settings under Your Neon account.'},
  {date:'2026-09-23',title:'Proxy compatibility after sign-in',text:'Aligned the account and arcade frame policies so the proxy can display games, Search, NeonTube, Music, Movies, and Sports inside the signed-in site.'},
