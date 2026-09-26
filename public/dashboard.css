@@ -42,3 +42,5 @@ main{border-radius:25px;min-height:calc(100svh - 148px)}
 @media(prefers-reduced-motion:reduce){.spotlight-card img{transition:none}}
 
 @media(max-height:650px) and (min-width:651px){.side-rail{gap:2px}.side-rail button{min-height:32px;height:32px}.rail-icon svg{width:17px;height:17px}}
+
+.home .clock-block:before{filter:none;background:transparent;bottom:auto;left:auto}
