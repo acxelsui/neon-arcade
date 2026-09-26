@@ -1,5 +1,6 @@
 // Keep newest first. Dates describe when the change was added, not when a visitor opened Home.
 export const updates = [
+ {date:'2026-09-26',title:'Welcome to the new Neon dashboard',text:'A warm burgundy design, rounded game cards, a featured home screen, and refreshed navigation across the arcade. Your wallpapers, accounts, and favorite features stay with you.'},
  {date:'2026-09-24',title:'Game tabs restored',text:'The about:blank launcher now falls back to a regular game tab when the browser cannot run the proxy in a blank tab.'},
  {date:'2026-09-24',title:'Retro Bowl College refreshed',text:'Replaced Retro Bowl College with the supplied version and adapted its startup data loading for the proxy.'},
  {date:'2026-09-24',title:'Nine new animated backgrounds',text:'Choose new space, BMW, Luffy, Spider-Man, polygon, moon, and synth-wave wallpapers in Settings. Background choices save automatically.'},
