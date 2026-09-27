@@ -1,5 +1,7 @@
 // Keep newest first. Dates describe when the change was added, not when a visitor opened Home.
 export const updates = [
+ {date:'2026-09-26',title:'Who’s online, front and center',text:'The online-player panel now has its own card at the top of the home sidebar. Signed-in visitors can see player names, games, and time played.'},
+ {date:'2026-09-26',title:'A new neon dashboard',text:'A transparent blue-and-pink dashboard with featured games, category shortcuts, a labeled sidebar, and quick access to your existing Neon apps.'},
  {date:'2026-09-24',title:'Game tabs restored',text:'The about:blank launcher now falls back to a regular game tab when the browser cannot run the proxy in a blank tab.'},
  {date:'2026-09-24',title:'Retro Bowl College refreshed',text:'Replaced Retro Bowl College with the supplied version and adapted its startup data loading for the proxy.'},
  {date:'2026-09-24',title:'Nine new animated backgrounds',text:'Choose new space, BMW, Luffy, Spider-Man, polygon, moon, and synth-wave wallpapers in Settings. Background choices save automatically.'},
