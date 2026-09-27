@@ -17,6 +17,10 @@ function backgroundDb(mode, value) {
   });
 }
 export async function initAppearance({store, wallpaper, fallback}) {
+  const cursorSwitch=document.querySelector('#neon-cursor');
+  cursorSwitch.checked=store.get('neon-cursor',true)!==false;
+  const applyCursor=()=>{document.documentElement.classList.toggle('neon-cursor',cursorSwitch.checked);store.set('neon-cursor',cursorSwitch.checked)};
+  cursorSwitch.onchange=applyCursor;applyCursor();
   const defaults={brightness:100,blur:0,glass:70};
   const fields=[['brightness','#background-brightness',30,120],['blur','#background-blur',0,20],['glass','#glass-transparency',10,90]];
   const saved=store.get('appearance',{});
