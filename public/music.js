@@ -1,16 +1,18 @@
 import {watchFrame} from './proxy-feedback.js';
 import {brandMusicDocument} from './music-branding.js';
-const MUSIC_URL='https://bcsdny.net/~a/';
+const MUSIC_URL='https://6ab87f0e6a91203ed89fa447--neoostesting.netlify.app/neo-os/music-v2/index.html?v=20260919-scholarnook-v1&theme=system-v1&widgets=live-v1&runtime=20260908-audio-performance-v1';
 export function initMusic(getController){
- const $=s=>document.querySelector(s);let frame,loading=false,version=0,cleanup=()=>{};
+ const $=s=>document.querySelector(s);let frame,loading=false,version=0,cleanup=()=>{},brandedDoc;
  const status=text=>$('#music-status').textContent=text;
  function audio(){try{return frame?.element.contentDocument?.querySelector('audio')}catch{return null}}
- function updateMini(){const media=audio(),ready=!!(media&&(media.currentSrc||media.getAttribute('src'))),playing=ready&&!media.paused&&!media.ended;
-  $('#shell-now').textContent=ready?(playing?'Neon Music':'Music paused'):(frame?'Choose a song':'Nothing playing');
+ function playerDocument(){try{return frame?.element.contentDocument}catch{return null}}
+ function updateMini(){const media=audio(),doc=playerDocument(),track=doc?.querySelector('#npTitle')?.textContent?.trim(),hasTrack=!!track&&track!=='Nothing playing',ready=!!(media&&(media.currentSrc||media.getAttribute('src')))||hasTrack,playing=media?!media.paused&&!media.ended:!!doc?.querySelector('#npPlayBtn .lucide-pause');
+  if(doc?.body&&doc!==brandedDoc)brand();
+  $('#shell-now').textContent=ready?(hasTrack?track:(playing?'Neon Arcade Music':'Music paused')):(frame?'Choose a song':'Nothing playing');
   $('#shell-music-toggle').disabled=!ready;$('#shell-music-toggle').textContent=playing?'Ⅱ':'▷';
   $('#shell-music-toggle').title=playing?'Pause music':'Play music';$('#shell-music-toggle').setAttribute('aria-label',playing?'Pause music':'Play music');$('#shell-music-stop').disabled=!frame;
  }
- $('#shell-music-toggle').onclick=async()=>{const media=audio();if(!media)return;try{if(media.paused)await media.play();else media.pause()}catch{status('Playback could not start. Open Music and choose the song again.')}updateMini()};
+ $('#shell-music-toggle').onclick=async()=>{const media=audio();try{const control=playerDocument()?.querySelector('#npPlayBtn');if(control)control.click();else if(media){if(media.paused)await media.play();else media.pause()}}catch{status('Playback could not start. Open Music and choose the song again.')}updateMini()};
  $('#shell-music-stop').onclick=()=>$('#music-stop').click();
  setInterval(updateMini,500);updateMini();
 
@@ -18,18 +20,19 @@ export function initMusic(getController){
   cleanup();
   try{
    const doc=frame?.element.contentDocument;if(!doc?.body)return;
-   cleanup=brandMusicDocument(doc);
+   cleanup=brandMusicDocument(doc,'NEO Music','Neon Arcade Music');
+   brandedDoc=doc;
    if(doc.title==='Student Learning Portal')status('The source returned a learning portal instead of music. Try Reload; the music page may require a session on that site.');
   }catch{status('Music opened, but its inner branding could not be changed in this browser.')}
  }
  async function open(reset=false){
   if(loading)return;
   $('#music-dock').hidden=false;
-  if(frame){if(reset){status('Connecting to Neon Music…');frame.go(MUSIC_URL)}return}
-  const current=++version;loading=true;status('Connecting to Neon Music…');
+  if(frame){if(reset){status('Connecting to Neon Arcade Music…');frame.go(MUSIC_URL)}return}
+  const current=++version;loading=true;status('Connecting to Neon Arcade Music…');
   try{
    const controller=await getController();if(current!==version)return;
-   frame=controller.createFrame();frame.element.title='Neon Music';frame.element.allow='autoplay; fullscreen; encrypted-media; picture-in-picture';frame.element.allowFullscreen=true;
+   frame=controller.createFrame();frame.element.title='Neon Arcade Music';frame.element.allow='autoplay; fullscreen; encrypted-media; picture-in-picture';frame.element.allowFullscreen=true;
    watchFrame(frame,error=>status(error+' Use Reload to retry.'),()=>status(''));
    frame.element.addEventListener('load',brand);
    $('#music-frame').replaceChildren(frame.element);frame.go(MUSIC_URL);

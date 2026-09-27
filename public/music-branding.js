@@ -3,13 +3,14 @@ export function brandMusicDocument(doc,original='Voidify',replacement='Neon Musi
  let queued=false,stopped=false;
  function apply(){
   queued=false;if(stopped)return;
-  const headings=[...doc.querySelectorAll('h1,h2,[role="heading"]')];
+  const headings=[...doc.querySelectorAll('h1,h2,[role="heading"],strong,p,.brand,.logo')];
   const branded=headings.filter(el=>[original.toLowerCase(),replacement.toLowerCase()].includes(el.textContent.trim().toLowerCase()));
   if(doc.title.toLowerCase().includes(original.toLowerCase()))doc.title=doc.title.replace(new RegExp(original,'ig'),replacement);
+  for(const el of doc.querySelectorAll('[aria-label],[title]'))for(const attr of ['aria-label','title'])if(el.getAttribute(attr)?.trim().toLowerCase()===original.toLowerCase())el.setAttribute(attr,replacement);
   if(!branded.length)return;
   for(const heading of branded){
    const walker=doc.createTreeWalker(heading,4);let node;
-   while(node=walker.nextNode())if(node.nodeValue.trim()===original)node.nodeValue=node.nodeValue.replace(original,replacement);
+   while(node=walker.nextNode())if(node.nodeValue.trim().toLowerCase()===original.toLowerCase())node.nodeValue=node.nodeValue.replace(new RegExp(original,'ig'),replacement);
   }
   // Remove the outer site navigation only. Preserve music navigation and controls.
   const candidates=[...doc.querySelectorAll('header,nav,[role="banner"]')];
