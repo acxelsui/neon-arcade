@@ -1,3 +1,4 @@
+import {initChatBridge} from './chat-bridge.js';
 const {createClient}=window.supabase;
 import {username,loginIdentity,allowedMessage,activity,separateOrigin} from './rules.js';
 const PROJECT='https://xfwjzxjeessduxuuqeop.supabase.co';
@@ -6,6 +7,7 @@ const $=s=>document.querySelector(s),frame=$('#arcade');
 const contentOrigin=separateOrigin(location.hostname==='localhost'?'http://localhost:3001':'https://neongoatarcadd.vercel.app',location.origin);
 const client=createClient(PROJECT,KEY,{auth:{persistSession:true,autoRefreshToken:true,detectSessionInUrl:false,storageKey:'neon-member-session'}});
 const tabId=crypto.randomUUID();let profile=null,mode='signup',game=null,busy=false,epoch=0,booting=true,lastActivity=0,avatarCache=new Map(),accessPass=null;
+const handleChat=initChatBridge({rpc,send,getProfile:()=>profile});
 function send(type,extra={}){frame.contentWindow?.postMessage({channel:'neon-members-v1',type,...extra},contentOrigin)}
 function message(text){$('#auth-status').textContent=text}
 function selectMode(next){mode=next;const setup=next==='profile';$('#auth-tabs').hidden=setup;$('#password-label').hidden=setup;$('#password').required=!setup;$('#password').autocomplete=next==='login'?'current-password':'new-password';$('#signup-note').hidden=next==='login';$('#gate-title').textContent=setup?'Choose your player name.':next==='login'?'Welcome back.':'Welcome to Neon.';$('#gate-description').textContent=setup?'One last step before you enter the arcade.':next==='login'?'Your next adventure is waiting.':'Create your player profile and make yourself at home.';$('#submit-auth').textContent=setup?'Save username ↗':next==='login'?'Sign in ↗':'Create account ↗';$('#choose-signup').setAttribute('aria-pressed',String(next==='signup'));$('#choose-login').setAttribute('aria-pressed',String(next==='login'));$('#gate-signout').hidden=!setup;message('')}
@@ -75,6 +77,7 @@ $('#avatar-file').onchange=async event=>{
 };
 window.addEventListener('message',event=>{
  if(!allowedMessage(event,frame.contentWindow,contentOrigin)||!profile)return;
+ if(event.data.type==='chat-request'){handleChat(event.data);return}
  if(event.data.type==='access-ready'&&accessPass){send('access-pass',{pass:accessPass});return}
  if(event.data.type==='ready'){sync();return}
  if(event.data.type==='profile'){openProfile();return}
