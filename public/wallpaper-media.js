@@ -2,6 +2,7 @@ let video;
 function play(){if(video&&!document.hidden)video.play().catch(()=>{});}
 export function setWallpaperMedia(url,poster=''){
  const layer=document.querySelector('#wallpaper');
+ if(video?.getAttribute('src')===url){play();return;}
  if(video){video.pause();video.removeAttribute('src');video.load();video.remove();video=null;}
  layer.style.backgroundImage=`url(${JSON.stringify(poster||url)})`;
  if(!/\.mp4(?:[?#]|$)/i.test(url))return;
@@ -9,6 +10,7 @@ export function setWallpaperMedia(url,poster=''){
  media.className='wallpaper-video';media.muted=true;media.defaultMuted=true;media.loop=true;media.autoplay=true;media.playsInline=true;media.preload='auto';
  media.setAttribute('aria-hidden','true');media.setAttribute('disablepictureinpicture','');media.setAttribute('muted','');media.setAttribute('playsinline','');
  if(poster)media.poster=poster;
+ media.style.opacity='0';media.addEventListener('loadeddata',()=>{media.style.opacity='1'},{once:true});
  media.src=url;layer.append(media);play();
 }
 document.addEventListener('visibilitychange',()=>{if(document.hidden)video?.pause();else play()});
