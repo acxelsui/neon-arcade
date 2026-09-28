@@ -1,5 +1,6 @@
 // Keep newest first. Dates describe when the change was added, not when a visitor opened Home.
 export const updates = [
+ {date:'2026-09-28',title:'Announcements across the arcade',text:'New announcements appear at the top center across the site, including the game player. Dismiss the banner when you are ready.'},
  {date:'2026-09-28',title:'Neon Arcade Chat',text:'Chat with everyone in the Neon Arcade Server or message players privately. Includes Owner, Admin, VIP, and Member badges, announcements, and chat moderation.'},
  {date:'2026-09-27',title:'Smaller game controls',text:'The game player now has a slimmer, transparent bottom bar with smaller Retry, Fullscreen, new-tab, and Close buttons.'},
  {date:'2026-09-27',title:'Neon Black cursors',text:'Added the Neon Black arrow, hand, and text cursors. Switch them off in Settings to use your regular pointer.'},

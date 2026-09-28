@@ -1,3 +1,4 @@
+import {initAnnouncementBanner} from './announcements.js';
 import {initCommunityChat} from './community-chat.js';
 import {initNeonDashboard} from './neon-dashboard.js';
 import {initMembers} from './members.js';
@@ -153,3 +154,5 @@ initCloud(getController);
 initMembers();
 
 initCommunityChat();
+
+initAnnouncementBanner();

@@ -79,7 +79,7 @@ window.addEventListener('message',event=>{
  if(!allowedMessage(event,frame.contentWindow,contentOrigin)||!profile)return;
  if(event.data.type==='chat-request'){handleChat(event.data);return}
  if(event.data.type==='access-ready'&&accessPass){send('access-pass',{pass:accessPass});return}
- if(event.data.type==='ready'){sync();return}
+ if(event.data.type==='ready'){sync();pollAnnouncements();return}
  if(event.data.type==='profile'){openProfile();return}
  if(event.data.type==='activity'){
   const next=activity(event.data.game);if(next===undefined)return;game=next;
@@ -94,3 +94,13 @@ async function boot(){
  catch{gate();message('Could not restore your account. Sign in again or retry when your connection returns.')}
  finally{booting=false;$('#welcome').hidden=true}
 }boot();
+
+let announcementsBusy=false;
+async function pollAnnouncements(){
+ if(!profile||announcementsBusy||document.hidden)return;
+ announcementsBusy=true;const owner=profile.id;
+ try{const rows=await rpc('neon_chat_history',{peer:null});if(profile?.id===owner)send('site-announcement',{self:owner,rows:rows.filter(row=>row.announcement)})}catch{}finally{announcementsBusy=false}
+}
+setInterval(pollAnnouncements,5000);
+window.addEventListener('online',pollAnnouncements);
+document.addEventListener('visibilitychange',()=>{if(!document.hidden)pollAnnouncements()});
