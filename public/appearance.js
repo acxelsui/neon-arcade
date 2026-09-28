@@ -1,3 +1,4 @@
+import {setWallpaperMedia} from './wallpaper-media.js';
 const $ = selector => document.querySelector(selector);
 let activeUrl;
 function backgroundDb(mode, value) {
@@ -37,7 +38,7 @@ export async function initAppearance({store, wallpaper, fallback}) {
   $('#reset-appearance').onclick=()=>{for(const [key,selector] of fields)$(selector).value=defaults[key];apply()};apply();
   let custom;
   const message=$('#background-message');
-  function select(){if(!custom)return;$('#wallpaper').style.backgroundImage=`url(${JSON.stringify(activeUrl)})`;store.set('wallpaper','custom');document.querySelectorAll('.wallpaper-choice').forEach(b=>b.setAttribute('aria-pressed','false'));$('#use-custom-background').setAttribute('aria-pressed','true');message.textContent='Your background is selected. Saved in this browser.'}
+  function select(){if(!custom)return;setWallpaperMedia(activeUrl);store.set('wallpaper','custom');document.querySelectorAll('.wallpaper-choice').forEach(b=>b.setAttribute('aria-pressed','false'));$('#use-custom-background').setAttribute('aria-pressed','true');message.textContent='Your background is selected. Saved in this browser.'}
   function preview(value){custom=value;if(activeUrl)URL.revokeObjectURL(activeUrl);activeUrl=URL.createObjectURL(value.file);$('#custom-background-preview').src=activeUrl;$('#custom-background-name').textContent=value.name;$('#custom-background').hidden=false}
   $('#use-custom-background').onclick=select;
   window.addEventListener('wallpaper-change',()=>$('#use-custom-background').setAttribute('aria-pressed','false'));

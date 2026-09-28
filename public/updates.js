@@ -1,5 +1,6 @@
 // Keep newest first. Dates describe when the change was added, not when a visitor opened Home.
 export const updates = [
+ {date:'2026-09-28',title:'Higher-resolution live wallpapers',text:'Replaced matching backgrounds with the supplied videos, looping silently. Keep choosing backgrounds in Settings as before. Added Edge of the Universe, Peter Parker Rooftop Sunset, and Simpsons Audi Quattro.'},
  {date:'2026-09-28',title:'Quieter announcements',text:'Existing announcements no longer pop up when you join. New announcement banners disappear after 10 seconds; the Announcements room keeps the messages available to read.'},
  {date:'2026-09-28',title:'Announcements room',text:'Everyone can read the new Announcements room. Only owners and admins can post, and their announcements also appear in the site-wide banner.'},
  {date:'2026-09-28',title:'Announcement visibility',text:'Announcement banners recover when opening games or switching fullscreen. Newly posted announcements also tolerate small differences in device clocks.'},
