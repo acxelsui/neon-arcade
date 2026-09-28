@@ -1,5 +1,6 @@
 // Keep newest first. Dates describe when the change was added, not when a visitor opened Home.
 export const updates = [
+ {date:'2026-09-27',title:'Smaller game controls',text:'The game player now has a slimmer, transparent bottom bar with smaller Retry, Fullscreen, new-tab, and Close buttons.'},
  {date:'2026-09-27',title:'Neon Black cursors',text:'Added the Neon Black arrow, hand, and text cursors. Switch them off in Settings to use your regular pointer.'},
  {date:'2026-09-27',title:'Neon Arcade Music',text:'Music now opens the standalone Neo Music player through the existing proxy, with Neon Arcade Music branding and the compact playback controls.'},
  {date:'2026-09-26',title:'Who’s online, front and center',text:'The online-player panel now has its own card at the top of the home sidebar. Signed-in visitors can see player names, games, and time played.'},
