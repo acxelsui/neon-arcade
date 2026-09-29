@@ -1,5 +1,6 @@
 // Keep newest first. Dates describe when the change was added, not when a visitor opened Home.
 export const updates = [
+ {date:'2026-09-29',title:'Messages and side tabs while playing',text:'New private messages appear in transparent notifications for 15 seconds. Open Side tab in a game to use Movies, NeonTube, Search, chat, and more alongside it. Drag the divider or use the size slider to resize the side tab.'},
  {date:'2026-09-28',title:'Wallpapers start sooner',text:'Your saved video background begins loading before the arcade finishes starting. Video previews stay visible while playback loads, and slow-starting files now have their playback information at the beginning.'},
  {date:'2026-09-28',title:'Higher-resolution live wallpapers',text:'Replaced matching backgrounds with the supplied videos, looping silently. Keep choosing backgrounds in Settings as before. Added Edge of the Universe, Peter Parker Rooftop Sunset, and Simpsons Audi Quattro.'},
  {date:'2026-09-28',title:'Quieter announcements',text:'Existing announcements no longer pop up when you join. New announcement banners disappear after 10 seconds; the Announcements room keeps the messages available to read.'},

@@ -1,3 +1,4 @@
+import {initMessageNotifications} from './message-notifications.js';
 import {initChatBridge} from './chat-bridge.js';
 const {createClient}=window.supabase;
 import {username,loginIdentity,allowedMessage,activity,separateOrigin} from './rules.js';
@@ -7,6 +8,7 @@ const $=s=>document.querySelector(s),frame=$('#arcade');
 const contentOrigin=separateOrigin(location.hostname==='localhost'?'http://localhost:3001':'https://neongoatarcadd.vercel.app',location.origin);
 const client=createClient(PROJECT,KEY,{auth:{persistSession:true,autoRefreshToken:true,detectSessionInUrl:false,storageKey:'neon-member-session'}});
 const tabId=crypto.randomUUID();let profile=null,mode='signup',game=null,busy=false,epoch=0,booting=true,lastActivity=0,avatarCache=new Map(),accessPass=null;
+const pollMessages=initMessageNotifications({rpc,send,getProfile:()=>profile});
 const handleChat=initChatBridge({rpc,send,getProfile:()=>profile});
 function send(type,extra={}){frame.contentWindow?.postMessage({channel:'neon-members-v1',type,...extra},contentOrigin)}
 function message(text){$('#auth-status').textContent=text}
@@ -79,7 +81,7 @@ window.addEventListener('message',event=>{
  if(!allowedMessage(event,frame.contentWindow,contentOrigin)||!profile)return;
  if(event.data.type==='chat-request'){handleChat(event.data);return}
  if(event.data.type==='access-ready'&&accessPass){send('access-pass',{pass:accessPass});return}
- if(event.data.type==='ready'){sync();pollAnnouncements();return}
+ if(event.data.type==='ready'){sync();pollAnnouncements();pollMessages();return}
  if(event.data.type==='profile'){openProfile();return}
  if(event.data.type==='activity'){
   const next=activity(event.data.game);if(next===undefined)return;game=next;

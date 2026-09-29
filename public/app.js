@@ -1,3 +1,5 @@
+import {initMessageToasts} from './message-notifications.js';
+import {initGameSidePanel} from './game-side-panel.js';
 import {setWallpaperMedia} from './wallpaper-media.js';
 import {initAnnouncementBanner} from './announcements.js';
 import {initCommunityChat} from './community-chat.js';
@@ -51,7 +53,7 @@ $('#blank-button').onclick=()=>{
   tab.opener=null;closeGame();
  }catch{try{tab.location.replace(url);closeGame()}catch{toast('Could not open the new tab. Your game is still open here.')}}
 };
-document.addEventListener('keydown',e=>{if(e.key==='Escape'&&!document.fullscreenElement&&!$('#player').hidden)closeGame();if(e.key==='/'&&$('#games').hidden===false&&!['INPUT','TEXTAREA'].includes(document.activeElement.tagName)){e.preventDefault();$('#game-filter').focus()}if(e.key==='Tab'&&!$('#player').hidden){const first=$('#retry-game'),last=$('#music-dock').hidden?$('#close-game'):$('#music-stop');if(e.shiftKey&&document.activeElement===first){e.preventDefault();last.focus()}else if(!e.shiftKey&&document.activeElement===last){e.preventDefault();first.focus()}}});
+document.addEventListener('keydown',e=>{if(e.key==='Escape'&&!document.fullscreenElement&&!$('#player').hidden)closeGame();if(e.key==='/'&&$('#games').hidden===false&&!['INPUT','TEXTAREA'].includes(document.activeElement.tagName)){e.preventDefault();$('#game-filter').focus()}if(e.key==='Tab'&&!$('#player').hidden&&!$('#player').classList.contains('with-side-tab')){const first=$('#retry-game'),last=$('#music-dock').hidden?$('#close-game'):$('#music-stop');if(e.shiftKey&&document.activeElement===first){e.preventDefault();last.focus()}else if(!e.shiftKey&&document.activeElement===last){e.preventDefault();first.focus()}}});
 function normalizeUrl(text){text=text.trim();if(!text)return null;if(/^[a-z][a-z\d+.-]*:/i.test(text)&&!/^https?:/i.test(text))throw new Error('Please enter an http or https address.');if(/^https?:\/\//i.test(text))return new URL(text).href;if(!text.includes(' ')&&/^[\w-]+(?:\.[\w-]+)+(?:[/:?#]|$)/.test(text))return new URL('https://'+text).href;return 'https://www.google.com/search?q='+encodeURIComponent(text)}
 async function getController(){if(!controllerPromise)controllerPromise=(async()=>{if(!window.isSecureContext||!navigator.serviceWorker)throw new Error('Open Neon Arcade using localhost or HTTPS to use search.');if(typeof initBootstrap!=='function')throw new Error('The search server is unavailable. Restart Neon Arcade.');const controller=await initBootstrap();await controller.wait();return controller})().catch(e=>{controllerPromise=null;throw e});return controllerPromise}
 let navigationId=0;
@@ -156,4 +158,4 @@ initMembers();
 
 initCommunityChat();
 
-initAnnouncementBanner();
+initAnnouncementBanner();initMessageToasts();initGameSidePanel({showPage});
