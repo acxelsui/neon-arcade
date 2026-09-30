@@ -25,3 +25,13 @@ test('image validation rejects remote URLs, forged image bytes, excessive images
     assert.equal(calls,0);
   });
 });
+test('answer preferences reach the provider with context and invalid preferences are rejected',async()=>{
+ let calls=0;
+ await serve(createChatHandler({env,request:async(url,options)=>{
+  calls++;const body=JSON.parse(options.body);assert.ok(body.messages[0].content.includes('Teach step by step'));assert.equal(body.messages[1].role,'user');assert.ok(body.messages[1].content.includes('Use simple examples'));assert.equal(body.messages.at(-1).content,'Help me learn');return Response.json({choices:[{message:{content:'Here is an example'}}]});
+ }}),async url=>{
+  const send=extra=>fetch(url,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({messages:[{role:'user',content:'Help me learn'}],...extra})});
+  assert.equal((await send({style:'coach',instructions:'Use simple examples'})).status,200);
+  assert.equal((await send({style:'unknown'})).status,400);assert.equal((await send({instructions:'x'.repeat(1001)})).status,400);assert.equal(calls,1);
+ });
+});
