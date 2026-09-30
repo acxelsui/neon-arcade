@@ -1,3 +1,4 @@
+import {createScreenPopoutBridge} from './chat-popout-bridge.js';
 import {createFloatingScreenChat} from './chat-floating.js';
 import {createScreenShare} from './chat-screen.js';
 import {conversationContext} from './chat-context.js';
@@ -12,7 +13,8 @@ $('#chat-style').value=['balanced','quick','detailed','coach'].includes(preferen
 $('#chat-instructions').value=typeof preferences.instructions==='string'?preferences.instructions.slice(0,1000):'';
 function savePreferences(){preferences={style:$('#chat-style').value,instructions:$('#chat-instructions').value};try{localStorage.setItem('neon-ai-preferences',JSON.stringify(preferences))}catch{}}
 $('#chat-style').onchange=savePreferences;$('#chat-instructions').oninput=savePreferences;
-const floatingChat=createFloatingScreenChat({ask:question=>send(false,question),stop:()=>{screenShare.stop();status('Screen sharing stopped.')},cancel:()=>{cancel();status('Reply stopped.');$('#chat-retry').hidden=false}});
+const screenPopout=createScreenPopoutBridge({error:status,action:(action,question)=>{if(!screenShare.active())return;if(action==='ask'&&typeof question==='string'&&question.trim()&&question.length<=7600)send(false,question.trim());else if(action==='stop'){screenShare.stop();status('Screen sharing stopped.')}else if(action==='cancel'){cancel();status('Reply stopped.')}}});
+const floatingChat=createFloatingScreenChat({popOut:()=>screenPopout.open(),changed:state=>screenPopout.update(state),ask:question=>send(false,question),stop:()=>{screenShare.stop();status('Screen sharing stopped.')},cancel:()=>{cancel();status('Reply stopped.');$('#chat-retry').hidden=false}});
 const screenShare=createScreenShare({video:$('#chat-screen-video'),changed:sharing=>{floatingChat.show(sharing);floatingChat.messages(current()?.messages||[]);
  $('#chat-screen-panel').hidden=!sharing;$('#chat-screen-start').setAttribute('aria-pressed',String(sharing));$('#chat-screen-start').textContent=sharing?'▣ Change screen':'▣ Share screen';$('#chat-input').placeholder=sharing?'Ask Neon about your screen…':'Ask anything…';
 }});

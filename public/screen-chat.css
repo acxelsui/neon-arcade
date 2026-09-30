@@ -1,0 +1,2 @@
+@import url('./chat.css');
+#chat-floating{inset:8px!important;width:calc(100vw - 18px);max-height:calc(100dvh - 18px);box-shadow:none}.floating-drag{cursor:default}.floating-body{max-height:calc(100dvh - 72px)}.floating-log{max-height:calc(100dvh - 240px)}
