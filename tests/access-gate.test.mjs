@@ -1,5 +1,6 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
+import vm from 'node:vm';
 import {createAccessGate,ACCOUNT_ORIGIN} from '../lib/access-gate.mjs';
 const origin='https://neongoatarcadd.vercel.app',pass='a'.repeat(64);
 const request=(path='/',options={})=>new Request(origin+path,options);
@@ -40,4 +41,17 @@ test('standalone game tabs preserve only valid game IDs through account sign-in'
  assert.equal((await navigate('/game-runner.html?id=how-to-fish')).headers.get('location'),ACCOUNT_ORIGIN+'/?game=how-to-fish');
  for(const id of ['https://example.com','../games/34.html','34%26next=evil',''])assert.equal((await navigate('/game-runner.html?id='+id)).headers.get('location'),ACCOUNT_ORIGIN+'/');
  assert.equal((await gate(request('/game-runner.html?id=34',{headers:{'sec-fetch-dest':'iframe'}}))).status,401);
+});
+
+
+test('blank-tab bridge accepts its popup parent, rejects the original opener, and reaches the proxy runner',async()=>{
+ const gate=createAccessGate();const response=await gate(request('/neon-access.js'));const script=await response.text();
+ let listener,redirect,calls=0;const notices=[],popup={postMessage(data,target){notices.push({data,target})}};
+ const sandbox={parent:popup,window:{addEventListener(type,fn){listener=fn}},document:{getElementById(){return {textContent:''}}},URLSearchParams,JSON,Error,location:{hash:'#game=how-to-fish',replace(url){redirect=url}},fetch:async()=>{calls++;return {ok:true}}};
+ vm.runInNewContext(script,sandbox);
+ const data={channel:'neon-members-v1',type:'access-pass',pass};
+ await listener({source:{},origin:ACCOUNT_ORIGIN,data});assert.equal(calls,0,'old account-opener handoff is rejected');
+ await listener({source:popup,origin:'https://other.example',data});assert.equal(calls,0);
+ await listener({source:popup,origin:ACCOUNT_ORIGIN,data});assert.equal(calls,2);assert.equal(redirect,'/game-runner.html?id=how-to-fish');
+ assert.equal(notices.at(-1).data.type,'access-granted');assert.equal(notices.at(-1).target,ACCOUNT_ORIGIN);
 });

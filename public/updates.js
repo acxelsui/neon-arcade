@@ -1,5 +1,6 @@
 // Keep newest first. Dates describe when the change was added, not when a visitor opened Home.
 export const updates = [
+ {date:'2026-09-30',title:'Blank-tab account handoff',text:'Blank game tabs now connect your account from inside the blank tab, then load the same game proxy as the arcade. Connection failures show a retry message instead of waiting forever.'},
  {date:'2026-09-30',title:'Drive Mad and blank game tabs',text:'Added Drive Mad with its official cover through the game proxy. Blank game tabs authenticate with your account and use the same proxy runner as the arcade.'},
  {date:'2026-09-30',title:'Blue and white game toolbar',text:'The hover toolbar now uses translucent blue panels, white icons, and white hover highlights with a matching Neon Arcade logo.'},
  {date:'2026-09-30',title:'Compact game menu',text:'Hover or click the Neon Arcade logo to reveal a compact icon toolbar for retry, about:blank, fullscreen, side tab, and exit. Games fill the full player frame.'},
