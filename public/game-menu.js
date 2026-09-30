@@ -2,7 +2,7 @@ export function initGameMenu(){
  const player=document.querySelector('#player'),bar=player.querySelector('.player-bar');
  const menu=document.createElement('div');menu.id='game-menu';
  const toggle=document.createElement('button');toggle.id='game-menu-toggle';toggle.type='button';toggle.setAttribute('aria-label','Neon Arcade game menu');toggle.setAttribute('aria-expanded','false');toggle.setAttribute('aria-controls','game-menu-panel');
- const logo=document.createElement('img');logo.src='/icon.svg';logo.alt='';toggle.append(logo);
+ const logo=document.createElement('img');logo.src='/game-toolbar-logo.svg';logo.alt='';toggle.append(logo);
  const panel=document.createElement('div');panel.id='game-menu-panel';panel.hidden=true;panel.setAttribute('aria-label','Game controls');
  const left=document.createElement('div');left.className='game-menu-left';for(const selector of ['#retry-game','#blank-button','#game-fullscreen','#game-side-toggle'])left.append(document.querySelector(selector));
  const exit=document.querySelector('#close-game');exit.textContent='×';exit.classList.add('game-menu-exit');

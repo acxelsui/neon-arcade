@@ -6,14 +6,14 @@
 /* Hover toolbar overlays the game without reserving frame space. */
 #player{padding-bottom:0!important}#player #game-side-panel{bottom:0}
 #game-menu{position:absolute;top:10px;left:50%;transform:translateX(-50%);z-index:5;display:grid;grid-template-columns:repeat(6,38px);align-items:center;gap:5px;padding:6px;border:1px solid transparent;border-radius:18px;background:transparent;pointer-events:none}
-#game-menu.open{background:#101614d9;border-color:#d6e3df35;backdrop-filter:blur(18px);box-shadow:0 5px 20px #0003;pointer-events:auto}
-#game-menu-toggle{grid-column:3;grid-row:1;pointer-events:auto;background:#101614d9;display:grid;place-items:center;width:36px;height:36px;padding:4px;border:0;border-radius:11px;flex:none}
+#game-menu.open{background:linear-gradient(135deg,#124d9de8,#102e63e8);border-color:#b6dfff75;backdrop-filter:blur(18px);box-shadow:0 5px 22px #052c6660,inset 0 1px 0 #ffffff18;pointer-events:auto}
+#game-menu-toggle{grid-column:3;grid-row:1;pointer-events:auto;background:#164b91e8;display:grid;place-items:center;width:36px;height:36px;padding:4px;border:0;border-radius:11px;flex:none}
 #game-menu-toggle img{display:block;width:26px;height:26px}
-#game-menu-toggle:hover{background:#ffffff0d}
+#game-menu-toggle:hover{background:#ffffff20}
 #game-menu-panel,.game-menu-left{display:contents}
-#game-menu-panel button{grid-row:1;pointer-events:auto;display:grid;place-items:center;width:38px;height:38px;min-height:38px;padding:8px;border:1px solid transparent;border-radius:11px;background:transparent;color:#cbd5d2;box-shadow:none}
+#game-menu-panel button{grid-row:1;pointer-events:auto;display:grid;place-items:center;width:38px;height:38px;min-height:38px;padding:8px;border:1px solid transparent;border-radius:11px;background:transparent;color:#ffffff;box-shadow:none}
 #retry-game{grid-column:1}#blank-button{grid-column:2}#game-fullscreen{grid-column:4}#game-side-toggle{grid-column:5}#close-game{grid-column:6}
 #game-menu-panel svg{width:21px;height:21px;fill:none;stroke:currentColor;stroke-width:1.7;stroke-linecap:round;stroke-linejoin:round}
-#game-menu-panel button:hover,#game-menu-panel button[aria-pressed=true]{color:#baff80;background:#86c54d18;border-color:#8ac74e80}
-#player #game-menu-panel #close-game{width:38px;padding:8px;font-size:inherit}#game-menu-panel #close-game:hover{color:#ffb4ba;background:#ff647116;border-color:#ff8a9460}
+#game-menu-panel button:hover,#game-menu-panel button[aria-pressed=true]{color:#1255a4;background:#ffffff;border-color:#ffffff}
+#player #game-menu-panel #close-game{width:38px;padding:8px;font-size:inherit}#game-menu-panel #close-game:hover{color:#1255a4;background:#ffffff;border-color:#ffffff}
 @media(max-width:400px){#game-menu{grid-template-columns:repeat(6,34px);gap:2px;padding:5px}#game-menu-panel,.game-menu-left{gap:2px}#game-menu-panel button,#player #game-menu-panel #close-game{width:34px;height:34px;min-height:34px;padding:7px}}
