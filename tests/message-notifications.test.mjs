@@ -23,3 +23,25 @@ test('toast expires after 15 seconds and cannot be replayed by polling or fullsc
  windowListeners.message(event);assert.equal(box.open,true);timeout();assert.equal(box.hidden,true);windowListeners.message(event);listeners.fullscreenchange();assert.equal(box.open,false);
  }finally{for(const key of Object.keys(mocks)){if(original[key])Object.defineProperty(globalThis,key,original[key]);else delete globalThis[key]}}
 });
+test('first DM from a new sender arrives despite an ahead-of-server device clock',async()=>{
+ const oldWindow=globalThis.window,oldInterval=globalThis.setInterval;globalThis.window={addEventListener(){}};globalThis.setInterval=()=>0;
+ let conversations=[];const sent=[];
+ const message={id:'8',sender_id:'friend',username:'Friend',body:'First message',created_at:'2020-01-01T10:00:00Z'};
+ try{
+ const poll=initMessageNotifications({getProfile:()=>({id:'me'}),send:(type,payload)=>sent.push(payload),rpc:async name=>name==='neon_chat_conversations'?conversations:[message]});
+ await new Promise(r=>setImmediate(r));conversations=[{id:'friend',updated_at:message.created_at}];await poll();assert.ok(sent.some(p=>p.rows.some(r=>r.id==='8')));
+ sent.length=0;await poll();assert.equal(sent[0].rows[0].id,'8');
+ }finally{globalThis.window=oldWindow;globalThis.setInterval=oldInterval}
+});
+test('one failed conversation does not lose a successfully fetched notification',async()=>{
+ const oldWindow=globalThis.window,oldInterval=globalThis.setInterval;globalThis.window={addEventListener(){}};globalThis.setInterval=()=>0;
+ let fresh=false;const sent=[];
+ try{
+ const poll=initMessageNotifications({getProfile:()=>({id:'me'}),send:(type,payload)=>sent.push(payload),rpc:async(name,args)=>{
+  if(name==='neon_chat_conversations')return ['friend','broken'].map(id=>({id,updated_at:fresh?'2026-09-29T10:01:00Z':'2026-09-29T10:00:00Z'}));
+  if(args.peer==='broken')throw Error('network');return [{id:'9',sender_id:'friend',username:'Friend',body:'Hi',created_at:'2026-09-29T10:01:00Z'}];
+ }});
+ await new Promise(r=>setImmediate(r));fresh=true;await poll();assert.ok(sent.some(p=>p.rows.some(r=>r.id==='9')));
+ sent.length=0;await poll();assert.ok(sent.some(p=>p.rows.some(r=>r.id==='9')),'queued delivery retries even if another conversation still fails');
+ }finally{globalThis.window=oldWindow;globalThis.setInterval=oldInterval}
+});
