@@ -9,3 +9,6 @@ test('screenshot context prioritizes recent images and leaves saved messages unt
  const history=[{role:'user',content:'First',images:['a','b']},{role:'assistant',content:'Reply'},{role:'user',content:'Latest',images:['c','d']}];
  const context=conversationContext(history);assert.deepEqual(context[0].images,['a']);assert.deepEqual(context[2].images,['c','d']);assert.deepEqual(history[0].images,['a','b']);
 });
+test('shared screen context identifies the current frame separately from earlier views',()=>{
+ const context=conversationContext([{role:'user',content:'What changed?',images:['screen-frame'],screenCapturedAt:'2026-09-29T10:00:00Z'}]);assert.match(context[0].content,/shared screen captured with this question/);assert.match(context[0].content,/Earlier screen images may be out of date/);assert.deepEqual(context[0].images,['screen-frame']);
+});

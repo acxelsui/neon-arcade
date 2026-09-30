@@ -1,6 +1,6 @@
 // Keep complete recent turns and the opening question within the provider budget.
 export function conversationContext(history){
- const recent=history.slice(-59).map(m=>({role:m.role,content:m.content,images:m.images}));
+ const recent=history.slice(-59).map(m=>({role:m.role,content:m.content+(m.screenCapturedAt?"\n[The final attached image is the shared screen captured with this question at "+m.screenCapturedAt+". Earlier screen images may be out of date.]":""),images:m.images}));
  while(recent[0]?.role==='assistant')recent.shift();
  while(recent.length>1&&recent.reduce((n,m)=>n+m.content.length,0)>32000){recent.shift();while(recent[0]?.role==='assistant')recent.shift()}
  const opening=history[0];

@@ -1,5 +1,7 @@
 // Keep newest first. Dates describe when the change was added, not when a visitor opened Home.
 export const updates = [
+ {date:'2026-09-29',title:'Movable live-screen chat',text:'While sharing your screen, drag the floating Neon chat box around the arcade. Ask questions, read replies, minimize the box, or stop sharing without returning to the main chat.'},
+ {date:'2026-09-29',title:'Chat about your live screen',text:'Share a tab, window, or screen in Neon AI and keep asking typed questions. A live preview shows what is shared; each question includes the current view. Stop sharing at any time.'},
  {date:'2026-09-29',title:'A more personal Neon AI',text:'Search, rename, and export saved chats. Choose an answer style, save your instructions, and try another answer. Longer conversations keep more context, including the opening question.'},
  {date:'2026-09-29',title:'Message notification delivery',text:'New private conversations can trigger notifications even when a device clock differs from the server. Recent notifications retry delivery without repeating their popup or extending the 15-second timer.'},
  {date:'2026-09-29',title:'Messages and side tabs while playing',text:'New private messages appear in transparent notifications for 15 seconds. Open Side tab in a game to use Movies, NeonTube, Search, chat, and more alongside it. Drag the divider or use the size slider to resize the side tab.'},
