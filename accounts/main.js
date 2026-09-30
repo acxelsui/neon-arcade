@@ -1,6 +1,7 @@
 import {createChatPopout} from './chat-popout.js';
 import {initMessageNotifications} from './message-notifications.js';
 import {initChatBridge} from './chat-bridge.js';
+import {openBlankGame} from './blank-game.js';
 const {createClient}=window.supabase;
 import {username,loginIdentity,allowedMessage,activity,separateOrigin} from './rules.js';
 const PROJECT='https://xfwjzxjeessduxuuqeop.supabase.co';
@@ -23,7 +24,7 @@ async function enter(){
  if(!profile){gate();selectMode('profile');$('#username').value=data.user.user_metadata?.username||'';return}
  if(!accessPass)accessPass=await rpc('neon_issue_access');
  $('#gate').hidden=true;$('#profile-name').textContent=profile.username;$('#avatar-preview').textContent=profile.username[0].toUpperCase();
- if(!frame.getAttribute('src'))frame.src=contentOrigin+'/neon-access';frame.hidden=false;
+ if(!frame.getAttribute('src'))frame.src=contentOrigin+'/neon-access'+(/^[a-zA-Z0-9_-]{1,80}$/.test(new URLSearchParams(location.search).get('game')||'')?'#game='+new URLSearchParams(location.search).get('game'):'');frame.hidden=false;
  await sync();
 }
 async function sync(){
@@ -85,6 +86,7 @@ window.addEventListener('message',event=>{
  if(event.data.type==='ai-popout-preview'){screenPopout.preview(event.data.url);return}
  if(event.data.type==='ai-popout-open'){screenPopout.open().catch(error=>send('ai-popout-error',{error:error.message}));return}
  if(event.data.type==='chat-request'){handleChat(event.data);return}
+ if(event.data.type==='blank-game'){if(!openBlankGame({game:event.data.game,contentOrigin,accountOrigin:location.origin,pass:accessPass}))send('blank-game-blocked');return}
  if(event.data.type==='access-ready'&&accessPass){send('access-pass',{pass:accessPass});return}
  if(event.data.type==='ready'){sync();pollAnnouncements();pollMessages();return}
  if(event.data.type==='profile'){openProfile();return}

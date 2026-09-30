@@ -21,11 +21,14 @@ for (const [source, destination] of sources) {
   });
 }
 const catalog = JSON.parse(await readFile(path.join(output, 'catalog.json'), 'utf8'));
+for (const game of catalog.games) {
+  if (!game.url.startsWith('/') && new URL(game.url).protocol !== 'https:') throw new Error(`Invalid game address: ${game.name}`);
+}
 const required = [
   'index.html', 'message-notifications.js', 'game-side-panel.js', 'game-extras.css', 'neon-dashboard.css', 'neon-dashboard.js', 'artwork/space-horizon.jpg', 'artwork/blue-orbit.jpg', 'artwork/night-drive.jpg', 'updates.js', 'cloud.js', 'music.js', 'music-branding.js', 'tube.js','tube-navigation.js','weather.js','weather.css', 'music-catalog.json', 'music-links.js', 'music.css', 'chat.js', 'chat-context.js', 'chat-screen.js', 'chat-floating.js', 'chat-popout.js', 'chat-popout-bridge.js', 'screen-chat.css', 'chat.css', 'appearance.js', 'wallpaper-media.js', 'wallpaper-start.js', 'wallpaper-options.js', 'library-tools.js', 'proxy-feedback.js', 'bootstrap-init.js', 'game-runner.html', 'game-runner.js', 'game-transport.js', 'sw.js', 'scram/scramjet.js',
   'scram/scramjet.wasm', 'scram/scramjet-utils.js', 'controller/controller.api.js',
   'controller/controller.inject.js', 'controller/controller.sw.js', 'clients/index.js',
-  ...catalog.games.flatMap(game => [game.url.slice(1), game.cover.slice(1)]),
+  ...catalog.games.flatMap(game => [game.url, game.cover].filter(url => url.startsWith('/')).map(url => url.slice(1))),
   ...catalog.wallpapers.flatMap(wallpaper => [wallpaper.url, wallpaper.preview].filter(Boolean).map(url => url.slice(1))),
 ];
 for (const file of new Set(required)) {

@@ -1478,6 +1478,13 @@
       "unavailable": false
     },
     {
+      "id": "865",
+      "name": "Drive Mad",
+      "url": "https://play.fancade.com/5F084A0BCE06B710/?max_w=999999&max_h=9999999&istart=1",
+      "cover": "/artwork/drive-mad.jpg",
+      "unavailable": false
+    },
+    {
       "id": "43",
       "name": "Driven Wild",
       "url": "/games/43-f.html",

@@ -32,3 +32,12 @@ test('service errors fail closed; bridge rejects foreign submissions and invalid
  assert.equal((await gate(request('/neon-access?check=1'))).status,401);
  const bridge=await gate(request('/neon-access'));assert.equal(bridge.status,200);assert.ok(bridge.headers.get('content-security-policy').includes('frame-ancestors '+ACCOUNT_ORIGIN));
 });
+
+test('standalone game tabs preserve only valid game IDs through account sign-in',async()=>{
+ const gate=createAccessGate({fetcher:()=>{throw new Error('Should not call backend')}});
+ const navigate=path=>gate(request(path,{headers:{'sec-fetch-dest':'document'}}));
+ assert.equal((await navigate('/game-runner.html?id=34')).headers.get('location'),ACCOUNT_ORIGIN+'/?game=34');
+ assert.equal((await navigate('/game-runner.html?id=how-to-fish')).headers.get('location'),ACCOUNT_ORIGIN+'/?game=how-to-fish');
+ for(const id of ['https://example.com','../games/34.html','34%26next=evil',''])assert.equal((await navigate('/game-runner.html?id='+id)).headers.get('location'),ACCOUNT_ORIGIN+'/');
+ assert.equal((await gate(request('/game-runner.html?id=34',{headers:{'sec-fetch-dest':'iframe'}}))).status,401);
+});

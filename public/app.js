@@ -40,19 +40,23 @@ document.addEventListener('fullscreenchange',()=>{const active=document.fullscre
 $('#retry-game').onclick=()=>{if(selectedGame)$('#game-frame-wrap').replaceChildren(makeGameFrame(selectedGame))};
 $('#blank-button').onclick=()=>{
  if(!selectedGame)return;
- const url=new URL('/game-runner.html?id='+encodeURIComponent(selectedGame.id),location.origin).href;
+ if(window.parent!==window){
+  const account=location.hostname==='localhost'?'http://localhost:3002':'https://neon-arcade-improvedv3.vercel.app';
+  window.parent.postMessage({channel:'neon-members-v1',type:'blank-game',game:{id:selectedGame.id,name:selectedGame.name}},account);
+  return;
+ }
  const tab=window.open('about:blank','_blank');
- if(!tab){toast('Allow pop-ups to open your game in a new tab.');return}
+ if(!tab){toast('Allow pop-ups to open your game in about:blank.');return}
  try{
-  // A popup opened from the account iframe may lose cross-origin isolation.
-  // A real page receives the proxy's COOP/COEP headers when blank mode cannot.
-  if(!tab.crossOriginIsolated){tab.opener=null;tab.location.replace(url);closeGame();return}
   const doc=tab.document;doc.title=selectedGame.name+' · Neon Arcade';
   doc.body.style.cssText='margin:0;background:#0b1018;height:100vh;overflow:hidden';
-  const frame=makeGameFrame(selectedGame,doc);frame.style.cssText='width:100%;height:100%;border:0';doc.body.append(frame);
-  tab.opener=null;closeGame();
- }catch{try{tab.location.replace(url);closeGame()}catch{toast('Could not open the new tab. Your game is still open here.')}}
+  const frame=makeGameFrame(selectedGame,doc);frame.style.cssText='width:100%;height:100%;border:0';doc.body.append(frame);tab.opener=null;
+ }catch{toast('Could not prepare the blank tab. Your game is still open here.')}
 };
+window.addEventListener('message',event=>{
+ const account=location.hostname==='localhost'?'http://localhost:3002':'https://neon-arcade-improvedv3.vercel.app';
+ if(event.source===window.parent&&event.origin===account&&event.data?.channel==='neon-members-v1'&&event.data.type==='blank-game-blocked')toast('Allow pop-ups on your Neon account page to open about:blank.');
+});
 document.addEventListener('keydown',e=>{if(e.key==='Escape'&&!document.fullscreenElement&&!$('#player').hidden)closeGame();if(e.key==='/'&&$('#games').hidden===false&&!['INPUT','TEXTAREA'].includes(document.activeElement.tagName)){e.preventDefault();$('#game-filter').focus()}if(e.key==='Tab'&&!$('#player').hidden&&!$('#player').classList.contains('with-side-tab')){const controls=[...$('#player').querySelectorAll('button'),...($('#music-dock').hidden?[]:$('#music-dock').querySelectorAll('button'))].filter(b=>b.getClientRects().length&&!b.disabled),first=controls[0],last=controls.at(-1);if(e.shiftKey&&document.activeElement===first){e.preventDefault();last.focus()}else if(!e.shiftKey&&document.activeElement===last){e.preventDefault();first.focus()}}});
 function normalizeUrl(text){text=text.trim();if(!text)return null;if(/^[a-z][a-z\d+.-]*:/i.test(text)&&!/^https?:/i.test(text))throw new Error('Please enter an http or https address.');if(/^https?:\/\//i.test(text))return new URL(text).href;if(!text.includes(' ')&&/^[\w-]+(?:\.[\w-]+)+(?:[/:?#]|$)/.test(text))return new URL('https://'+text).href;return 'https://www.google.com/search?q='+encodeURIComponent(text)}
 async function getController(){if(!controllerPromise)controllerPromise=(async()=>{if(!window.isSecureContext||!navigator.serviceWorker)throw new Error('Open Neon Arcade using localhost or HTTPS to use search.');if(typeof initBootstrap!=='function')throw new Error('The search server is unavailable. Restart Neon Arcade.');const controller=await initBootstrap();await controller.wait();return controller})().catch(e=>{controllerPromise=null;throw e});return controllerPromise}
