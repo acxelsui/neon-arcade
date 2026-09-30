@@ -1,3 +1,4 @@
+import {initGameMenu} from './game-menu.js';
 export function initGameSidePanel({showPage}){
  const $=s=>document.querySelector(s),player=$('#player');
  const toggle=document.createElement('button');toggle.id='game-side-toggle';toggle.textContent='◫ Side tab';toggle.setAttribute('aria-expanded','false');$('#game-fullscreen').after(toggle);
@@ -17,4 +18,5 @@ export function initGameSidePanel({showPage}){
  function open(){panel.hidden=false;player.classList.add('with-side-tab');toggle.setAttribute('aria-expanded','true');choose();select.focus()}
  toggle.onclick=()=>panel.hidden?open():hide();close.onclick=hide;select.onchange=choose;
  window.addEventListener('neon-game',e=>{if(!e.detail)hide()});
+ initGameMenu();
 }
