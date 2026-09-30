@@ -1,6 +1,6 @@
 import {createScreenPopoutBridge} from './chat-popout-bridge.js';
 import {createFloatingScreenChat} from './chat-floating.js';
-import {createScreenShare} from './chat-screen.js';
+import {createScreenShare,startScreenChat} from './chat-screen.js';
 import {conversationContext} from './chat-context.js';
 const $=s=>document.querySelector(s);
 const key='neon-ai-conversations';
@@ -13,19 +13,21 @@ $('#chat-style').value=['balanced','quick','detailed','coach'].includes(preferen
 $('#chat-instructions').value=typeof preferences.instructions==='string'?preferences.instructions.slice(0,1000):'';
 function savePreferences(){preferences={style:$('#chat-style').value,instructions:$('#chat-instructions').value};try{localStorage.setItem('neon-ai-preferences',JSON.stringify(preferences))}catch{}}
 $('#chat-style').onchange=savePreferences;$('#chat-instructions').oninput=savePreferences;
-const screenPopout=createScreenPopoutBridge({error:status,action:(action,question)=>{if(!screenShare.active())return;if(action==='ask'&&typeof question==='string'&&question.trim()&&question.length<=7600)send(false,question.trim());else if(action==='stop'){screenShare.stop();status('Screen sharing stopped.')}else if(action==='cancel'){cancel();status('Reply stopped.')}}});
-const floatingChat=createFloatingScreenChat({popOut:()=>screenPopout.open(),changed:state=>screenPopout.update(state),ask:question=>send(false,question),stop:()=>{screenShare.stop();status('Screen sharing stopped.')},cancel:()=>{cancel();status('Reply stopped.');$('#chat-retry').hidden=false}});
-const screenShare=createScreenShare({video:$('#chat-screen-video'),changed:sharing=>{floatingChat.show(sharing);floatingChat.messages(current()?.messages||[]);
+let previewTimer=null,popoutOpen=false;
+const screenPopout=createScreenPopoutBridge({opened:value=>{popoutOpen=value;floatingChat.external(value);if(value&&screenShare.active())refreshScreenPreview()},error:status,action:(action,question)=>{if(action==='stop'){screenShare.stop();status('Screen sharing stopped.');return}if(!screenShare.active())return;if(action==='full'){location.hash='ai';return}if(action==='ask'&&typeof question==='string'&&question.trim()&&question.length<=7600)send(false,question.trim());else if(action==='stop'){screenShare.stop();status('Screen sharing stopped.')}else if(action==='cancel'){cancel();status('Reply stopped.')}}});
+const floatingChat=createFloatingScreenChat({fullChat:()=>{location.hash='ai'},popOut:()=>screenPopout.open(),changed:state=>screenPopout.update(state),ask:question=>send(false,question),stop:()=>{screenShare.stop();status('Screen sharing stopped.')},cancel:()=>{cancel();status('Reply stopped.');$('#chat-retry').hidden=false}});
+const screenShare=createScreenShare({video:$('#chat-screen-video'),changed:sharing=>{clearInterval(previewTimer);previewTimer=null;if(sharing){refreshScreenPreview();previewTimer=setInterval(refreshScreenPreview,1000)}floatingChat.show(sharing);floatingChat.messages(current()?.messages||[]);
  $('#chat-screen-panel').hidden=!sharing;$('#chat-screen-start').setAttribute('aria-pressed',String(sharing));$('#chat-screen-start').textContent=sharing?'▣ Change screen':'▣ Share screen';$('#chat-input').placeholder=sharing?'Ask Neon about your screen…':'Ask anything…';
 }});
 $('#chat-screen-start').onclick=async()=>{
  if(pending||preparing)return;if(!current())makeChat();screenShare.stop();$('#chat-screen-start').disabled=true;
- try{await screenShare.start();if(screenShare.active())status('Screen shared. Type a question about what you see.')}
+ try{await startScreenChat(screenShare,screenPopout);if(screenShare.active())status('Screen shared. Type a question about what you see.')}
  catch(error){status(['NotAllowedError','AbortError'].includes(error.name)?'Screen sharing was canceled or blocked. You can try again or attach a screenshot.':error.message||'Could not share this screen.')}
  finally{$('#chat-screen-start').disabled=Boolean(pending||preparing)}
 };
 $('#chat-screen-stop').onclick=()=>{screenShare.stop();status('Screen sharing stopped.')};
 window.addEventListener('pagehide',screenShare.stop);
+function refreshScreenPreview(){if(!screenShare.active())return;try{const url=screenShare.preview();floatingChat.preview(url);if(popoutOpen)screenPopout.preview(url)}catch{}}
 function current(){return chats.find(c=>c.id===active)}
 function status(text){$('#chat-status').textContent=text;floatingChat.status(text)}
 function save(){try{localStorage.setItem(key,JSON.stringify(chats.map(c=>({...c,messages:c.messages.map(({images,...m})=>m)}))))}catch{status('Browser storage is full. This chat will only last until you leave.')}}

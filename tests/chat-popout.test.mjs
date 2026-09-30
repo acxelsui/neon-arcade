@@ -9,3 +9,6 @@ test('unsupported browsers explain the limitation without creating a normal popu
 test('stopping sharing or signing out while a popout opens closes the resulting window',async()=>{
  let resolve,closed=0;const popout=createChatPopout({host:{documentPictureInPicture:{requestWindow:()=>new Promise(r=>resolve=r)}},action(){}});popout.update(state);const opening=popout.open();popout.close();resolve({close(){closed++}});await opening;assert.equal(closed,1);
 });
+test('a pending screen picker can automatically open a window and cancel safely',async()=>{
+ let resolve,closed=0;const popout=createChatPopout({host:{documentPictureInPicture:{requestWindow:()=>new Promise(r=>resolve=r)}},action(){}});popout.update({...state,sharing:false,starting:true});const opening=popout.open();popout.update({...state,sharing:false});resolve({close(){closed++}});await opening;assert.equal(closed,1);
+});

@@ -23,3 +23,9 @@ test('unsupported browsers and denied permission leave no capture active',async(
   const video={};const share=createScreenShare({video,mediaDevices});await assert.rejects(share.start());assert.equal(share.active(),false);
  }
 });
+import {startScreenChat} from '../public/chat-screen.js';
+test('Share screen requests the floating window before waiting for the screen picker',async()=>{
+ let selected;const order=[];
+ const capture=startScreenChat({start(){order.push('capture requested');return new Promise(resolve=>selected=resolve)}},{prepare(){order.push('prepared')},open(){order.push('window requested')}});
+ assert.deepEqual(order,['capture requested','prepared','window requested']);selected();await capture;
+});

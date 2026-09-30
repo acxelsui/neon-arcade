@@ -9,7 +9,7 @@ const $=s=>document.querySelector(s),frame=$('#arcade');
 const contentOrigin=separateOrigin(location.hostname==='localhost'?'http://localhost:3001':'https://neongoatarcadd.vercel.app',location.origin);
 const client=createClient(PROJECT,KEY,{auth:{persistSession:true,autoRefreshToken:true,detectSessionInUrl:false,storageKey:'neon-member-session'}});
 const tabId=crypto.randomUUID();let profile=null,mode='signup',game=null,busy=false,epoch=0,booting=true,lastActivity=0,avatarCache=new Map(),accessPass=null;
-const screenPopout=createChatPopout({action:(action,question)=>send('ai-popout-action',{action,question})});
+const screenPopout=createChatPopout({opened:opened=>send('ai-popout-opened',{opened}),action:(action,question)=>send('ai-popout-action',{action,question})});
 const pollMessages=initMessageNotifications({rpc,send,getProfile:()=>profile});
 const handleChat=initChatBridge({rpc,send,getProfile:()=>profile});
 function send(type,extra={}){frame.contentWindow?.postMessage({channel:'neon-members-v1',type,...extra},contentOrigin)}
@@ -82,6 +82,7 @@ $('#avatar-file').onchange=async event=>{
 window.addEventListener('message',event=>{
  if(!allowedMessage(event,frame.contentWindow,contentOrigin)||!profile)return;
  if(event.data.type==='ai-popout-state'){screenPopout.update(event.data.state);return}
+ if(event.data.type==='ai-popout-preview'){screenPopout.preview(event.data.url);return}
  if(event.data.type==='ai-popout-open'){screenPopout.open().catch(error=>send('ai-popout-error',{error:error.message}));return}
  if(event.data.type==='chat-request'){handleChat(event.data);return}
  if(event.data.type==='access-ready'&&accessPass){send('access-pass',{pass:accessPass});return}

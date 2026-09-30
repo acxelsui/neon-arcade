@@ -1,5 +1,6 @@
 // Keep newest first. Dates describe when the change was added, not when a visitor opened Home.
 export const updates = [
+ {date:'2026-09-30',title:'One-click floating screen chat',text:'Share screen automatically opens the compact floating chat in supported browsers. Includes a screen preview, typed questions, screen status, and controls to minimize, open full chat, or stop sharing.'},
  {date:'2026-09-29',title:'Screen chat over other websites',text:'Use Float over websites in the shared-screen chat to open a separate picture-in-picture chat window. Supported desktop browsers keep it above other tabs while you ask questions. Keep the arcade tab open.'},
  {date:'2026-09-29',title:'Movable live-screen chat',text:'While sharing your screen, drag the floating Neon chat box around the arcade. Ask questions, read replies, minimize the box, or stop sharing without returning to the main chat.'},
  {date:'2026-09-29',title:'Chat about your live screen',text:'Share a tab, window, or screen in Neon AI and keep asking typed questions. A live preview shows what is shared; each question includes the current view. Stop sharing at any time.'},
