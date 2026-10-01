@@ -1,5 +1,8 @@
 // Keep newest first. Dates describe when the change was added, not when a visitor opened Home.
 export const updates = [
+ {date:'2026-09-30',title:'Playlist artwork recovery',text:'Playlist covers load through the music proxy and recover missing artwork for songs already saved. New songs keep their thumbnail metadata.'},
+ {date:'2026-09-30',title:'Playlist shuffle and song covers',text:'Use Shuffle play to hear a playlist in a different order. Song covers appear beside titles, including the currently selected song.'},
+ {date:'2026-09-30',title:'Add playing songs to playlists',text:'Personal playlists accept the music service’s full song IDs, so Add current song can save provider tracks and play them again later.'},
  {date:'2026-09-30',title:'Avatar decorations and NeonTube playback',text:'Choose a glowing frame, cat ears, ribbons, headphones, or other decorations for your avatar. NeonTube now uses a dedicated proxy video player with quality controls and retry messages.'},
  {date:'2026-09-30',title:'Profiles, friends, and personal playlists',text:'Customize your player bio and favorite games, send and accept friend requests, and save songs into personal playlists. Open profiles from chat or the online-player list.'},
  {date:'2026-09-30',title:'Music and replies while playing',text:'Use the game toolbar to like songs, go back, pause or play, and skip to the next song. Reply to private messages directly from transparent notifications, which stay open while you type.'},

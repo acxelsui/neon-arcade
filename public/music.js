@@ -19,7 +19,7 @@ export function initMusic(getController){
  async function action(name){try{if(!queue.action(name)&&!await performMusicAction(playerDocument(),name))status('Choose a song in Music first.')}catch{status('Playback could not start. Open Music and choose the song again.')}updateMini()}
  window.addEventListener('neon-play-playlist',async event=>{
   const launch=++playlistLaunch,playlist=event.detail;
-  try{await open();for(let i=0;i<48&&launch===playlistLaunch;i++){const doc=playerDocument();if(typeof doc?.defaultView?.playTrack==='function'&&doc.defaultView.__NEO_METING_PLAYER__){queue.start(doc,playlist.tracks,playlist.name,playlist.index||0);updateMini();return;}await new Promise(resolve=>setTimeout(resolve,250));}if(launch===playlistLaunch)throw Error('Music is still connecting. Open Music, then try playing your playlist again.');}
+  try{await open();for(let i=0;i<48&&launch===playlistLaunch;i++){const doc=playerDocument();if(typeof doc?.defaultView?.playTrack==='function'&&doc.defaultView.__NEO_METING_PLAYER__){queue.start(doc,playlist.tracks,playlist.name,playlist.index||0,playlist.shuffle===true);updateMini();return;}await new Promise(resolve=>setTimeout(resolve,250));}if(launch===playlistLaunch)throw Error('Music is still connecting. Open Music, then try playing your playlist again.');}
   catch(error){if(launch===playlistLaunch)window.dispatchEvent(new CustomEvent('neon-playlist-error',{detail:error.message}));}
  });
  window.addEventListener('neon-playlist-stop',()=>{playlistLaunch++;queue.clear();updateMini();});

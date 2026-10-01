@@ -130,7 +130,7 @@ begin
  if playlist_name is null or char_length(btrim(playlist_name)) not between 1 and 50 or songs is null or jsonb_typeof(songs)<>'array' then raise exception 'Choose a playlist name and valid songs'; end if;
  count_songs=jsonb_array_length(songs);if count_songs>100 then raise exception 'A playlist holds up to 100 songs'; end if;
  for item in select value from jsonb_array_elements(songs) loop
-  if jsonb_typeof(item)<>'object' or coalesce(item->>'id','')!~'^[a-zA-Z0-9_-]{1,120}$' or char_length(coalesce(item->>'title','')) not between 1 and 200 or char_length(coalesce(item->>'artist',''))>200
+  if jsonb_typeof(item)<>'object' or coalesce(item->>'id','')!~'^[a-zA-Z0-9:_-]{1,160}$' or char_length(coalesce(item->>'title','')) not between 1 and 200 or char_length(coalesce(item->>'artist',''))>200
    or char_length(coalesce(item->>'thumb',''))>2000 or (coalesce(item->>'thumb','')<>'' and (item->>'thumb')!~'^https://[^/@[:space:]]+(/|$)')
    or coalesce(item->>'duration','0')!~'^[0-9]{1,6}$' then raise exception 'Invalid song details'; end if;
   if exists(select 1 from jsonb_array_elements(clean)c where c->>'id'=item->>'id') then raise exception 'That song is already in the playlist'; end if;

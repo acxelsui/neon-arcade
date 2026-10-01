@@ -161,7 +161,7 @@ initUpdates();
 initCloud(getController);
 
 const social=initSocial({navigate:showPage,getCatalog:()=>catalog});
-initPlaylists({api:social.api,navigate:showPage});
+initPlaylists({api:social.api,navigate:showPage,getController});
 window.addEventListener('neon-play-game',event=>{const game=catalog?.games.find(g=>g.id===event.detail);if(game)openGame(game,document.activeElement);});
 initMembers();
 

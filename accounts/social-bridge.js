@@ -2,7 +2,7 @@ const uuid=/^[a-f0-9]{8}-[a-f0-9]{4}-[a-f0-9]{4}-[a-f0-9]{4}-[a-f0-9]{12}$/i;
 function id(value,optional=false){if(optional&&value==null)return null;if(typeof value!=='string'||!uuid.test(value))throw Error('Choose a valid player or playlist.');return value}
 function text(value,max,min=0){if(typeof value!=='string'||value.trim().length<min||value.length>max)throw Error('Please check the text length.');return value.trim()}
 export function cleanSong(song){
- if(!song||typeof song.id!=='string'||!/^[a-zA-Z0-9_-]{1,120}$/.test(song.id))throw Error('Choose a song from Neon Arcade Music.');
+ if(!song||typeof song.id!=='string'||!/^[a-zA-Z0-9:_-]{1,160}$/.test(song.id))throw Error('Choose a song from Neon Arcade Music.');
  const thumb=text(song.thumb??'',2000);if(thumb){const url=new URL(thumb);if(url.protocol!=='https:'||url.username||url.password)throw Error('Invalid song cover.');}
  const duration=Number(song.duration??0);if(!Number.isInteger(duration)||duration<0||duration>999999)throw Error('Invalid song duration.');
  return {id:song.id,title:text(song.title,200,1),artist:text(song.artist??'',200),thumb,duration};

@@ -12,3 +12,20 @@ test('changing songs in the source app releases the personal queue',()=>{
 test('saved metadata cannot introduce script or media URLs into playback',()=>{
  assert.equal(playlistSong({id:'one',title:'One',thumb:'javascript:alert(1)',url:'https://other.test/media'}).thumb,'');assert.equal(playlistSong({id:'one',title:'One',url:'https://other.test/media'}).url,undefined);assert.throws(()=>playlistSong({id:'<script>',title:'One'}));assert.throws(()=>createPlaylistQueue().start({},[{id:'one',title:'One'}]));
 });
+
+test('shuffle plays each song once, supports back and next, and preserves the saved order',()=>{
+ const songs=['one','two','three','four'].map(id=>({id,title:id})),before=JSON.stringify(songs),played=[],events={};let track=null;
+ const audio={addEventListener:(name,fn)=>events[name]=fn,removeEventListener:name=>delete events[name]};
+ const doc={addEventListener(){},removeEventListener(){},querySelector:()=>audio,defaultView:{playTrack:song=>{track=song;played.push(song.id);},__NEO_METING_PLAYER__:{track:()=>track,media:()=>audio}}};
+ const queue=createPlaylistQueue({random:()=>0});queue.start(doc,songs,'Mix',0,true);
+ assert.equal(queue.current().shuffled,true);events.ended();events.ended();events.ended();events.ended();
+ assert.equal(played.length,4);assert.equal(new Set(played).size,4);assert.notDeepEqual(played,songs.map(song=>song.id));assert.equal(JSON.stringify(songs),before);
+ const order=[...played];queue.action('previous');assert.equal(played.at(-1),order[2]);queue.action('next');assert.equal(played.at(-1),order[3]);queue.sync();assert.equal(queue.current().total,4);
+ queue.start(doc,songs,'Mix');assert.equal(queue.current().shuffled,false);assert.equal(played.at(-1),'one');
+});
+
+test('shuffle changes even a random draw of the saved order and handles a single song',()=>{
+ let track;const doc={addEventListener(){},removeEventListener(){},querySelector:()=>null,defaultView:{playTrack:song=>track=song,__NEO_METING_PLAYER__:{track:()=>track}}};
+ const queue=createPlaylistQueue({random:()=>.999});queue.start(doc,[{id:'one',title:'One'},{id:'two',title:'Two'}],'Mix',0,true);assert.equal(track.id,'two');
+ queue.start(doc,[{id:'one',title:'One'}],'Solo',0,true);assert.equal(track.id,'one');assert.equal(queue.current().shuffled,false);
+});
