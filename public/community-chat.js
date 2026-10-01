@@ -77,6 +77,7 @@ export function initCommunityChat(){
  }
  $('#community-admin-search').onsubmit=event=>{event.preventDefault();manageSearch()};
  function page(name){active=name==='community';if(active){refresh();conversations()}}
+ window.addEventListener('neon-private-reply',()=>{if(active){last='';refresh();conversations()}});
  window.addEventListener('neon-page',event=>page(event.detail));setInterval(()=>{if(active&&!document.hidden)refresh()},5000);
  if(standalone){$('#community-send').disabled=true;$('#community-input').disabled=true;status('Open through your Neon account to send and receive messages.');}
  page(location.hash.slice(1));

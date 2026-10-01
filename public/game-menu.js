@@ -19,6 +19,17 @@ export function initGameMenu(){
   const icon=document.createElementNS('http://www.w3.org/2000/svg','svg');icon.setAttribute('viewBox','0 0 24 24');icon.setAttribute('aria-hidden','true');
   for(const d of paths){const path=document.createElementNS(icon.namespaceURI,'path');path.setAttribute('d',d);icon.append(path)}button.replaceChildren(icon);
  }
+ const music=document.createElement('div');music.className='game-menu-music';music.hidden=true;music.setAttribute('role','group');music.setAttribute('aria-label','Music controls');
+ const track=document.createElement('span');track.className='game-menu-track';music.append(track);
+ const musicIcons={like:['M20.8 4.6a5.5 5.5 0 0 0-7.8 0L12 5.7l-1.1-1.1a5.5 5.5 0 0 0-7.8 7.8L12 21l8.8-8.6a5.5 5.5 0 0 0 0-7.8'],previous:['M5 4v16','M19 4 7 12l12 8z'],toggle:['M8 4v16','M16 4v16'],next:['M19 4v16','M5 4l12 8-12 8z']},musicButtons={};
+ function musicIcon(button,paths){const icon=document.createElementNS('http://www.w3.org/2000/svg','svg');icon.setAttribute('viewBox','0 0 24 24');icon.setAttribute('aria-hidden','true');for(const d of paths){const path=document.createElementNS(icon.namespaceURI,'path');path.setAttribute('d',d);icon.append(path)}button.replaceChildren(icon)}
+ for(const [action,paths] of Object.entries(musicIcons)){const button=document.createElement('button');button.type='button';button.id='game-music-'+action;button.disabled=true;musicIcon(button,paths);button.onclick=()=>window.dispatchEvent(new CustomEvent('neon-music-action',{detail:action}));musicButtons[action]=button;music.append(button)}
+ panel.append(music);
+ window.addEventListener('neon-music-state',event=>{
+  const state=event.detail;music.hidden=!state.active;track.textContent=state.title;track.title=state.title;
+  for(const [action,button] of Object.entries(musicButtons)){const label=action==='toggle'?(state.playing?'Pause music':'Play music'):action==='like'?(state.liked?'Unlike song':'Like song'):action==='previous'?'Previous song':'Next song';button.title=label;button.setAttribute('aria-label',label);button.disabled=!state['can'+action[0].toUpperCase()+action.slice(1)]}
+  musicButtons.like.setAttribute('aria-pressed',String(state.liked));musicIcon(musicButtons.toggle,state.playing?musicIcons.toggle:['M8 4l12 8-12 8z']);
+ });
  let pinned=false;
  function show(value){panel.hidden=!value;toggle.setAttribute('aria-expanded',String(value));menu.classList.toggle('open',value)}
  function dismiss(){pinned=false;show(false)}
@@ -29,6 +40,6 @@ export function initGameMenu(){
  menu.addEventListener('focusin',e=>{if(e.target!==toggle)show(true)});
  menu.addEventListener('focusout',e=>{if(!menu.contains(e.relatedTarget)&&!pinned)show(false)});
  menu.addEventListener('keydown',e=>{if(e.key==='Escape'&&!panel.hidden){e.preventDefault();e.stopPropagation();dismiss();toggle.focus()}});
- panel.addEventListener('click',e=>{if(e.target.closest('button')){const restore=panel.contains(document.activeElement);dismiss();if(restore&&!player.hidden)toggle.focus()}});
+ panel.addEventListener('click',e=>{if(e.target.closest('button')&&!e.target.closest('.game-menu-music')){const restore=panel.contains(document.activeElement);dismiss();if(restore&&!player.hidden)toggle.focus()}});
  document.addEventListener('pointerdown',e=>{if(!menu.contains(e.target))dismiss()});window.addEventListener('neon-game',dismiss);
 }
