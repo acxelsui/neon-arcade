@@ -1,6 +1,7 @@
 import {createChatPopout} from './chat-popout.js';
 import {initMessageNotifications} from './message-notifications.js';
 import {initChatBridge} from './chat-bridge.js';
+import {initSocialBridge} from './social-bridge.js';
 import {openBlankGame} from './blank-game.js';
 const {createClient}=window.supabase;
 import {username,loginIdentity,allowedMessage,activity,separateOrigin} from './rules.js';
@@ -12,12 +13,24 @@ const client=createClient(PROJECT,KEY,{auth:{persistSession:true,autoRefreshToke
 const tabId=crypto.randomUUID();let profile=null,mode='signup',game=null,busy=false,epoch=0,booting=true,lastActivity=0,avatarCache=new Map(),accessPass=null;
 const screenPopout=createChatPopout({opened:opened=>send('ai-popout-opened',{opened}),action:(action,question)=>send('ai-popout-action',{action,question})});
 const pollMessages=initMessageNotifications({rpc,send,getProfile:()=>profile});
-const handleChat=initChatBridge({rpc,send,getProfile:()=>profile});
+const handleChat=initChatBridge({rpc,send,getProfile:()=>profile,decorateRows:async rows=>{
+ const ids=[...new Set(rows.map(row=>row.sender_id))];const decoration=await decorations(ids);
+ const missing=ids.filter(id=>!avatarCache.has(id)||avatarCache.get(id).expires<Date.now());
+ if(missing.length){const {data}=await client.storage.from('neon-avatars').createSignedUrls(missing.map(id=>id+'/avatar'),600);missing.forEach((id,i)=>avatarCache.set(id,{url:data?.[i]?.signedUrl||null,expires:Date.now()+240000}));}
+ return rows.map(row=>({...row,avatar:avatarCache.get(row.sender_id)?.url||null,decoration:decoration.get(row.sender_id)||'none'}));
+}});
+const handleSocial=initSocialBridge({rpc,send,getProfile:()=>profile,avatars:async ids=>{
+ const unique=[...new Set(ids)],owner=profile?.id;
+ const {data}=await client.storage.from('neon-avatars').createSignedUrls(unique.map(id=>id+'/avatar'),600);
+ if(profile?.id!==owner)return new Map();
+ return new Map(unique.map((id,i)=>[id,data?.[i]?.signedUrl||null]));
+}});
 function send(type,extra={}){frame.contentWindow?.postMessage({channel:'neon-members-v1',type,...extra},contentOrigin)}
 function message(text){$('#auth-status').textContent=text}
 function selectMode(next){mode=next;const setup=next==='profile';$('#auth-tabs').hidden=setup;$('#password-label').hidden=setup;$('#password').required=!setup;$('#password').autocomplete=next==='login'?'current-password':'new-password';$('#signup-note').hidden=next==='login';$('#gate-title').textContent=setup?'Choose your player name.':next==='login'?'Welcome back.':'Welcome to Neon.';$('#gate-description').textContent=setup?'One last step before you enter the arcade.':next==='login'?'Your next adventure is waiting.':'Create your player profile and make yourself at home.';$('#submit-auth').textContent=setup?'Save username ↗':next==='login'?'Sign in ↗':'Create account ↗';$('#choose-signup').setAttribute('aria-pressed',String(next==='signup'));$('#choose-login').setAttribute('aria-pressed',String(next==='login'));$('#gate-signout').hidden=!setup;message('')}
 function gate(){screenPopout.close();epoch++;profile=null;game=null;accessPass=null;frame.hidden=true;frame.removeAttribute('src');$('#gate').hidden=false;$('#profile-dialog').close()}
 async function rpc(name,args){const {data,error}=await client.rpc(name,args);if(error)throw error;return data}
+async function decorations(ids){try{const rows=await rpc('neon_decorations',{player_ids:ids});return new Map(rows.map(row=>[row.id,row.decoration]));}catch{return new Map();}}
 async function enter(){
  const {data,error}=await client.auth.getUser();if(error||!data.user){gate();return}
  const rows=await rpc('neon_my_profile');profile=rows?.[0]||null;
@@ -38,7 +51,8 @@ async function sync(){
    if(current!==epoch)return;
    missing.forEach((row,i)=>avatarCache.set(row.id,{url:data?.[i]?.signedUrl||null,expires:Date.now()+240000}));
   }
-  send('members',{self:{id:profile.id,username:profile.username},members:rows.map(row=>({...row,avatar:avatarCache.get(row.id)?.url||null})),observedAt:Date.now()});
+  const styles=await decorations(rows.map(row=>row.id));if(current!==epoch)return;
+  send('members',{self:{id:profile.id,username:profile.username},members:rows.map(row=>({...row,avatar:avatarCache.get(row.id)?.url||null,decoration:styles.get(row.id)||'none'})),observedAt:Date.now()});
  }catch{if(current===epoch)send('unavailable',{message:'Online players couldn’t refresh. Reconnecting…'})}finally{busy=false}
 }
 $('#choose-signup').onclick=()=>selectMode('signup');$('#choose-login').onclick=()=>selectMode('login');
@@ -86,6 +100,8 @@ window.addEventListener('message',event=>{
  if(event.data.type==='ai-popout-preview'){screenPopout.preview(event.data.url);return}
  if(event.data.type==='ai-popout-open'){screenPopout.open().catch(error=>send('ai-popout-error',{error:error.message}));return}
  if(event.data.type==='chat-request'){handleChat(event.data);return}
+ if(event.data.type==='social-request'){handleSocial(event.data);return}
+ if(event.data.type==='profile-updated'){sync();return}
  if(event.data.type==='blank-game'){if(!openBlankGame({game:event.data.game,contentOrigin,accountOrigin:location.origin,pass:accessPass}))send('blank-game-blocked');return}
  if(event.data.type==='access-ready'&&accessPass){send('access-pass',{pass:accessPass});return}
  if(event.data.type==='ready'){sync();pollAnnouncements();pollMessages();return}

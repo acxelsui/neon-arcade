@@ -18,13 +18,13 @@ export function chatRequest(data){
  default:throw new Error('Unknown chat action.');
  }
 }
-export function initChatBridge({rpc,send,getProfile}){
+export function initChatBridge({rpc,send,getProfile,decorateRows}){
  let pending=0;
  return async data=>{
   if(!getProfile()||typeof data.requestId!=='string'||data.requestId.length>80)return;
   if(pending>=5){send('chat-result',{requestId:data.requestId,error:'Please wait for chat to catch up.'});return}
   pending++;const owner=getProfile().id;
-  try{const [name,args]=chatRequest(data);const result=await rpc(name,args);if(getProfile()?.id===owner)send('chat-result',{requestId:data.requestId,result,self:owner})}
+  try{const [name,args]=chatRequest(data);let result=await rpc(name,args);if(data.action==='history'&&decorateRows)result=await decorateRows(result);if(getProfile()?.id===owner)send('chat-result',{requestId:data.requestId,result,self:owner})}
   catch(error){if(getProfile()?.id===owner)send('chat-result',{requestId:data.requestId,error:['PGRST202','42883'].includes(error.code)?'Chat needs its database setup. Ask the site owner to run chat.sql.':error.message||'Chat could not connect. Try again.'})}
   finally{pending--}
  };

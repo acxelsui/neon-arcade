@@ -1,6 +1,7 @@
 import {watchFrame} from './proxy-feedback.js';
 import {brandMusicDocument} from './music-branding.js';
 import {bindTubeSearch} from './tube-navigation.js';
+import {tubeTransport} from './tube-transport.js';
 const URL='https://bcsdny.net/~v/';
 export function initTube(getController){
  const $=s=>document.querySelector(s);let frame,loading=false,version=0,cleanup=()=>{};
@@ -10,10 +11,11 @@ export function initTube(getController){
   if(frame){if(reset)frame.go(URL);return}
   loading=true;const current=++version;status('Connecting to NeonTube…');
   try{
-   const controller=await getController();if(current!==version)return;
+   const controller=await getController();const scriptResponse=await fetch('/tube-watch-player.js');if(!scriptResponse.ok)throw Error('The NeonTube player could not load. Refresh and try again.');const script=await scriptResponse.text();if(current!==version)return;
    frame=controller.createFrame();frame.element.title='NeonTube';frame.element.allow='autoplay; fullscreen; encrypted-media; picture-in-picture';frame.element.allowFullscreen=true;
+   frame.fetchHandler.client.transport=tubeTransport(controller.transport,script);
    watchFrame(frame,error=>status(error+' Use Reload to retry.'),()=>status(''));
-   frame.element.addEventListener('load',()=>{cleanup();try{const doc=frame.element.contentDocument;if(doc?.body){const unbrand=brandMusicDocument(doc,'VoidTube','NeonTube');const unbind=bindTubeSearch(doc,url=>{status('Searching videos…');frame.go(url)});cleanup=()=>{unbrand();unbind()}}}catch{status('The video page opened, but its search controls could not be connected. Use Home to retry.')}});
+   frame.element.addEventListener('load',()=>{cleanup();try{const doc=frame.element.contentDocument;if(doc?.body){const unbrand=brandMusicDocument(doc,'VoidTube','NeonTube');const unbind=bindTubeSearch(doc,url=>{status(url.includes('/watch?')?'Opening video…':'Searching videos…');frame.go(url)});cleanup=()=>{unbrand();unbind()}}}catch{status('The video page opened, but its search controls could not be connected. Use Home to retry.')}});
    $('#tube-frame').replaceChildren(frame.element);frame.go(URL);
   }catch(error){if(current===version)status('NeonTube could not connect. '+error.message)}finally{if(current===version)loading=false}
  }

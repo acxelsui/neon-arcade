@@ -1,3 +1,4 @@
+import {decorateAvatar} from './avatar-decorations.js';
 export function initCommunityChat(){
  const $=s=>document.querySelector(s),account=location.hostname==='localhost'?'http://localhost:3002':'https://neon-arcade-improvedv3.vercel.app';
  const standalone=parent===window,pending=new Map(),drafts=new Map();let announcements=false,me=null,peer=null,self=null,active=false,loading=false,generation=0,last='',sending=false;
@@ -21,9 +22,9 @@ export function initCommunityChat(){
     if(!rows?.length)empty(announcements?'No announcements yet. Post one for everyone to see.':peer?'Start your private conversation.':'No messages yet. Say hello to the server!');
     else{box.replaceChildren();for(const row of [...rows].reverse()){
      const item=document.createElement('article');item.className='community-message';const heading=document.createElement('div');heading.className='community-message-heading';
-     const name=document.createElement('strong');name.textContent=row.username;const time=document.createElement('time');time.dateTime=row.created_at;time.textContent=new Date(row.created_at).toLocaleString([],{month:'short',day:'numeric',hour:'2-digit',minute:'2-digit'});const badge=document.createElement('span');badge.className='community-role role-'+(row.role||'member');badge.textContent=row.role||'member';heading.append(name,badge,time);if(row.announcement){item.classList.add('community-announcement');const flag=document.createElement('span');flag.textContent='ANNOUNCEMENT';flag.className='community-announcement-label';item.append(flag)}
+     const name=document.createElement('button');name.textContent=row.username;name.className='community-player-profile';name.setAttribute('aria-label','View profile of '+row.username);name.onclick=()=>window.dispatchEvent(new CustomEvent('neon-profile',{detail:row.sender_id}));const time=document.createElement('time');time.dateTime=row.created_at;time.textContent=new Date(row.created_at).toLocaleString([],{month:'short',day:'numeric',hour:'2-digit',minute:'2-digit'});const badge=document.createElement('span');badge.className='community-role role-'+(row.role||'member');badge.textContent=row.role||'member';heading.append(name,badge,time);if(row.announcement){item.classList.add('community-announcement');const flag=document.createElement('span');flag.textContent='ANNOUNCEMENT';flag.className='community-announcement-label';item.append(flag)}
      if(row.sender_id===self||(!peer&&isMod()&&row.role!=='owner'&&(me.role==='owner'||row.role!=='admin'))){const remove=document.createElement('button');remove.textContent='Delete';remove.setAttribute('aria-label','Delete your message');remove.onclick=async()=>{if(!confirm('Delete this message?'))return;remove.disabled=true;try{await request('delete',{messageId:row.id});last='';await refresh()}catch(error){status(error.message);remove.disabled=false}};heading.append(remove)}
-     const body=document.createElement('p');body.textContent=row.body;item.append(heading,body);box.append(item);
+     const avatar=document.createElement('span');avatar.className='community-chat-avatar';avatar.textContent=row.username[0]?.toUpperCase()||'?';try{const url=new URL(row.avatar);if(url.origin==='https://xfwjzxjeessduxuuqeop.supabase.co'){const img=new Image();img.src=url.href;img.alt='';img.onerror=()=>img.remove();avatar.replaceChildren(img);}}catch{}decorateAvatar(avatar,row.decoration);heading.prepend(avatar);const body=document.createElement('p');body.textContent=row.body;item.append(heading,body);box.append(item);
     }}if(bottom)box.scrollTop=box.scrollHeight;
    }if(!restricted())status('');
   }catch(error){if(version===generation)status(error.message)}finally{loading=false;if(version!==generation&&active)refresh()}
@@ -39,6 +40,7 @@ export function initCommunityChat(){
   $('#community-server').classList.toggle('active',!player&&!announcements);$('#community-announcements').classList.toggle('active',announcements);
   updateComposer();empty('Loading messages…');refresh();conversations();
  }
+ window.addEventListener('neon-open-dm',event=>{const player=event.detail;if(player&&typeof player.id==='string'&&typeof player.username==='string')select(player);});
  $('#community-server').onclick=()=>select(null);
  $('#community-announcements').onclick=()=>select(null,true);
  $('#community-refresh').onclick=()=>{refresh();conversations()};

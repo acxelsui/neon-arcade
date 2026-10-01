@@ -1,3 +1,4 @@
+import {decorateAvatar} from './avatar-decorations.js';
 // No auth SDK, passwords or tokens live on this proxy/content origin.
 export function initMembers(){
  const standalone=window.parent===window;
@@ -13,9 +14,9 @@ export function initMembers(){
   list.replaceChildren();if(!connected)return;
   if(Date.now()-observed>75000){status.textContent='Online status is unavailable. Reconnecting…';return}
   status.textContent=`${members.length} online · refreshes every 30 seconds`;
-  for(const member of members){const row=document.createElement('div');row.className='member-row';const icon=document.createElement('span');icon.className='member-avatar';icon.textContent=member.username?.[0]?.toUpperCase()||'?';
+  for(const member of members){const row=document.createElement('div');row.className='member-row';row.setAttribute('role','button');row.tabIndex=0;row.setAttribute('aria-label','View profile of '+member.username);const open=()=>window.dispatchEvent(new CustomEvent('neon-profile',{detail:member.id}));row.onclick=open;row.onkeydown=e=>{if(e.key==='Enter'||e.key===' '){e.preventDefault();open();}};const icon=document.createElement('span');icon.className='member-avatar';icon.textContent=member.username?.[0]?.toUpperCase()||'?';
    if(member.avatar){try{const url=new URL(member.avatar);if(url.origin==='https://xfwjzxjeessduxuuqeop.supabase.co'){const image=new Image();image.src=url.href;image.alt='';image.onerror=()=>image.remove();icon.append(image)}}catch{}}
-   const text=document.createElement('div'),name=document.createElement('strong'),detail=document.createElement('small');name.textContent=member.username;
+   decorateAvatar(icon,member.decoration);const text=document.createElement('div'),name=document.createElement('strong'),detail=document.createElement('small');name.textContent=member.username;
    const start=Date.parse(member.game_started_at);const minutes=Number.isFinite(start)?Math.max(0,Math.floor((Date.now()-start)/60000)):0;
    detail.textContent=member.game_name?`${member.game_name} · ${minutes<1?'just started':minutes+' min'}`:'Exploring Neon Arcade';text.append(name,detail);row.append(icon,text);list.append(row);
   }

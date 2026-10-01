@@ -36,6 +36,14 @@ image URLs do. Do not put login under a path on the existing proxy origin.
 
 ## Behavior and limits
 
+Run `../supabase/social.sql` once in the project's SQL Editor to enable player bios,
+favorite games, friend requests, and private personal playlists. It is safe to rerun and
+preserves current profiles, roles, avatars, messages, and access sessions. Friends require
+recipient consent; playlist reads and changes are restricted to the signed-in owner.
+Playlists hold up to 100 songs and each player can create up to 30. Concurrent edits use
+revision checks, so a stale tab cannot overwrite a newer saved playlist. Song playback
+uses the existing music proxy and provider; availability still depends on that service.
+
 - Username/password signup and remembered Supabase sessions on the same browser.
 - Home's Playing now panel refreshes every 30 seconds; one entry per member, up to 100.
 - Game launch/close updates presence with server timestamps. This indicates an open game,
