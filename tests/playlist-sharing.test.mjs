@@ -19,6 +19,13 @@ test('chat makes only validated Neon playlist links clickable and keeps message 
  Object.defineProperty(globalThis,'document',{configurable:true,value:{createTextNode:text=>({text}),createElement:type=>({type})}});
  try{
   const children=[],element={append:item=>children.push(item)};appendPlaylistLinks(element,'<script> Listen: '+playlistShareUrl(token,origin)+'. https://evil.test/',origin);
-  const link=children.find(item=>item.type==='a');assert.equal(link.href,playlistShareUrl(token,origin));assert.equal(link.rel,'noopener noreferrer');assert.equal(link.target,'_blank');assert.ok(children[0].text.includes('<script>'));assert.ok(children.at(-1).text.includes('https://evil.test/'));
+  const link=children.find(item=>item.type==='a');assert.equal(link.href,playlistShareUrl(token,origin));assert.equal(link.target,undefined);assert.equal(typeof link.onclick,'function');assert.ok(children[0].text.includes('<script>'));assert.ok(children.at(-1).text.includes('https://evil.test/'));
  }finally{if(original)Object.defineProperty(globalThis,'document',original);else delete globalThis.document;}
+});
+test('clicking a chat playlist link opens it in the current arcade without navigating its iframe',()=>{
+ const original={},events=[];let prevented=false;
+ const mocks={document:{createTextNode:text=>({text}),createElement:type=>({type})},window:{dispatchEvent:event=>events.push(event)},CustomEvent:class{constructor(type,options){this.type=type;this.detail=options.detail;}}};
+ try{for(const [key,value]of Object.entries(mocks)){original[key]=Object.getOwnPropertyDescriptor(globalThis,key);Object.defineProperty(globalThis,key,{value,configurable:true});}
+  const nodes=[];appendPlaylistLinks({append:item=>nodes.push(item)},playlistShareUrl(token,origin),origin);const link=nodes.find(node=>node.type==='a');link.onclick({preventDefault:()=>prevented=true});assert.equal(prevented,true);assert.equal(events[0].type,'neon-open-playlist');assert.equal(events[0].detail,token);
+ }finally{for(const key of Object.keys(mocks)){if(original[key])Object.defineProperty(globalThis,key,original[key]);else delete globalThis[key];}}
 });

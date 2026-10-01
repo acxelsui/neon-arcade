@@ -5,7 +5,7 @@ export function appendPlaylistLinks(element,text,origin){
  const value=String(text||'');let cursor=0;
  for(const match of value.matchAll(/https?:\/\/[^\s<>]+/g)){
   const raw=match[0].replace(/[,.!?)]+$/,'');const token=playlistTokenFromLink(raw,origin);if(!token)continue;
-  element.append(document.createTextNode(value.slice(cursor,match.index)));const link=document.createElement('a');link.href=playlistShareUrl(token,origin);link.target='_blank';link.rel='noopener noreferrer';link.className='playlist-chat-link';link.textContent='♫ Open shared playlist ↗';element.append(link);cursor=match.index+raw.length;
+  element.append(document.createTextNode(value.slice(cursor,match.index)));const link=document.createElement('a');link.href=playlistShareUrl(token,origin);link.className='playlist-chat-link';link.textContent='♫ Open shared playlist ↗';link.onclick=event=>{if(event.ctrlKey||event.metaKey||event.shiftKey||event.altKey||event.button>0)return;event.preventDefault();window.dispatchEvent(new CustomEvent('neon-open-playlist',{detail:token}));};element.append(link);cursor=match.index+raw.length;
  }
  element.append(document.createTextNode(value.slice(cursor)));
 }

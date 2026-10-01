@@ -4,7 +4,7 @@ import {readMusicState,performMusicAction} from './music-controls.js';
 import {playlistSong,createPlaylistQueue} from './playlist-player.js';
 const MUSIC_URL='https://6ab87f0e6a91203ed89fa447--neoostesting.netlify.app/neo-os/music-v2/index.html?v=20260919-scholarnook-v1&theme=system-v1&widgets=live-v1&runtime=20260908-audio-performance-v1';
 export function initMusic(getController){
- const $=s=>document.querySelector(s);let frame,loading=false,version=0,cleanup=()=>{},brandedDoc,lastMusicState='';
+ const $=s=>document.querySelector(s);let frame,loading=null,version=0,cleanup=()=>{},brandedDoc,lastMusicState='';
  const status=text=>$('#music-status').textContent=text;
  const queue=createPlaylistQueue({changed:state=>window.dispatchEvent(new CustomEvent('neon-playlist-state',{detail:state})),failed:error=>window.dispatchEvent(new CustomEvent('neon-playlist-error',{detail:error.message}))});
  let playlistLaunch=0;
@@ -19,7 +19,7 @@ export function initMusic(getController){
  async function action(name){try{if(!queue.action(name)&&!await performMusicAction(playerDocument(),name))status('Choose a song in Music first.')}catch{status('Playback could not start. Open Music and choose the song again.')}updateMini()}
  window.addEventListener('neon-play-playlist',async event=>{
   const launch=++playlistLaunch,playlist=event.detail;
-  try{await open();for(let i=0;i<48&&launch===playlistLaunch;i++){const doc=playerDocument();if(typeof doc?.defaultView?.playTrack==='function'&&doc.defaultView.__NEO_METING_PLAYER__){queue.start(doc,playlist.tracks,playlist.name,playlist.index||0,playlist.shuffle===true);updateMini();return;}await new Promise(resolve=>setTimeout(resolve,250));}if(launch===playlistLaunch)throw Error('Music is still connecting. Open Music, then try playing your playlist again.');}
+  try{const connected=await open();if(launch!==playlistLaunch)return;if(!connected)throw Error('Music could not connect. Open Music and select Reload to retry.');for(let i=0;i<180&&launch===playlistLaunch;i++){const doc=playerDocument();if(typeof doc?.defaultView?.playTrack==='function'&&doc.defaultView.__NEO_METING_PLAYER__){queue.start(doc,playlist.tracks,playlist.name,playlist.index||0,playlist.shuffle===true);updateMini();return;}await new Promise(resolve=>setTimeout(resolve,250));}if(launch===playlistLaunch)throw Error('Music is still connecting. Open Music, then try playing your playlist again.');}
   catch(error){if(launch===playlistLaunch)window.dispatchEvent(new CustomEvent('neon-playlist-error',{detail:error.message}));}
  });
  window.addEventListener('neon-playlist-stop',()=>{playlistLaunch++;queue.clear();updateMini();});
@@ -37,25 +37,26 @@ export function initMusic(getController){
    if(doc.title==='Student Learning Portal')status('The source returned a learning portal instead of music. Try Reload; the music page may require a session on that site.');
   }catch{status('Music opened, but its inner branding could not be changed in this browser.')}
  }
- async function open(reset=false){
-  if(loading)return;
+ function open(reset=false){
+  if(loading)return loading;
   $('#music-dock').hidden=false;
-  if(frame){if(reset){status('Connecting to Neon Arcade Music…');frame.go(MUSIC_URL)}return}
-  const current=++version;loading=true;status('Connecting to Neon Arcade Music…');
+  if(frame){if(reset){status('Connecting to Neon Arcade Music…');frame.go(MUSIC_URL)}return Promise.resolve(frame)}
+  const current=++version;status('Connecting to Neon Arcade Music…');
+  const pending=(async()=>{
   try{
    const controller=await getController();if(current!==version)return;
    frame=controller.createFrame();frame.element.title='Neon Arcade Music';frame.element.allow='autoplay; fullscreen; encrypted-media; picture-in-picture';frame.element.allowFullscreen=true;
    watchFrame(frame,error=>status(error+' Use Reload to retry.'),()=>status(''));
    frame.element.addEventListener('load',brand);
-   $('#music-frame').replaceChildren(frame.element);frame.go(MUSIC_URL);
-  }catch(error){if(current===version)status('Music could not connect. '+error.message)}
-  finally{if(current===version)loading=false}
+   $('#music-frame').replaceChildren(frame.element);frame.go(MUSIC_URL);return frame;
+  }catch(error){if(current===version)status('Music could not connect. '+error.message);return null}
+  })();loading=pending;pending.finally(()=>{if(loading===pending)loading=null;});return pending;
  }
  function page(name){const active=name==='music';document.body.classList.toggle('music-view',active);if(active){$('#music-dock').classList.remove('compact');$('#music-minimize').setAttribute('aria-expanded','true');open()}else{$('#music-dock').classList.add('compact');$('#music-minimize').setAttribute('aria-expanded','false')}}
  window.addEventListener('neon-page',e=>page(e.detail));
  $('#music-open').onclick=()=>open();$('#music-home').onclick=()=>open(true);
  $('#music-reload').onclick=()=>{if(frame){status('Reconnecting to music…');frame.reload()}else open()};
  $('#music-minimize').onclick=()=>{const compact=$('#music-dock').classList.toggle('compact');$('#music-minimize').setAttribute('aria-expanded',String(!compact));$('#music-minimize').textContent=compact?'＋':'−'};
- $('#music-stop').onclick=()=>{playlistLaunch++;queue.clear();version++;loading=false;cleanup();cleanup=()=>{};$('#music-frame').replaceChildren();frame=null;$('#music-dock').hidden=true;status('');updateMini();if(!$('#player').hidden)$('#close-game').focus();else if(location.hash==='#music')$('#music-open').focus();else document.querySelector('nav [data-page=music]').focus()};
+ $('#music-stop').onclick=()=>{playlistLaunch++;queue.clear();version++;loading=null;cleanup();cleanup=()=>{};$('#music-frame').replaceChildren();frame=null;$('#music-dock').hidden=true;status('');updateMini();if(!$('#player').hidden)$('#close-game').focus();else if(location.hash==='#music')$('#music-open').focus();else document.querySelector('nav [data-page=music]').focus()};
  page(location.hash.slice(1));
 }

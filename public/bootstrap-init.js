@@ -27,6 +27,9 @@ async function initBootstrap(configureTransport = transport => transport) {
   const wisp = new URL('/api/wisp/', location.href);
   wisp.protocol = location.protocol === 'https:' ? 'wss:' : 'ws:';
   const transport = configureTransport(new window.LibcurlTransport.LibcurlClient({ wisp: wisp.href }));
+  // Finish the shared client's initialization before frames and cover requests
+  // can race to initialize the WASM runtime or replace its onload callback.
+  if (!transport.ready) await transport.init();
   const controller = new Controller({ serviceworker, transport });
   await controller.wait();
   return controller;

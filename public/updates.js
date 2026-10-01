@@ -1,5 +1,7 @@
 // Keep newest first. Dates describe when the change was added, not when a visitor opened Home.
 export const updates = [
+ {date:'2026-09-30',title:'NeonTube removed',text:'Removed NeonTube from the navigation, Home shortcuts, and game side tabs.'},
+ {date:'2026-09-30',title:'Shared playlist playback',text:'Shared playlists open in the current arcade tab. Music and covers wait for the proxy to finish connecting, and playlists wait for a fresh music player to start.'},
  {date:'2026-09-30',title:'Share your playlists',text:'Share a playlist link in chat or with a friend. Signed-in players can listen, shuffle, or save their own copy. Turn sharing off to disable the link.'},
  {date:'2026-09-30',title:'Playlist artwork recovery',text:'Playlist covers load through the music proxy and recover missing artwork for songs already saved. New songs keep their thumbnail metadata.'},
  {date:'2026-09-30',title:'Playlist shuffle and song covers',text:'Use Shuffle play to hear a playlist in a different order. Song covers appear beside titles, including the currently selected song.'},

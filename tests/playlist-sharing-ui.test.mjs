@@ -32,7 +32,7 @@ test('shared playlists are read-only, can be copied, and creation waits for an i
   button('Share ↗').onclick();await tick();assert.ok(button('Copy link'));assert.ok(button('Stop sharing'));
   const message={source:parent,origin:'http://localhost:3002',data:{channel:'neon-members-v1',type:'playlist-link',token}};
   receive('message',{...message,source:{}});await tick();assert.equal(requests.filter(([name])=>name==='playlist-shared').length,0);
-  receive('message',message);await tick();assert.ok(button('＋ Save to my playlists'));for(const label of ['Rename','Delete playlist','＋ Add current song','Stop sharing'])assert.equal(button(label),undefined);
+  receive('neon-open-playlist',{detail:token});await tick();assert.ok(button('＋ Save to my playlists'));for(const label of ['Rename','Delete playlist','＋ Add current song','Stop sharing'])assert.equal(button(label),undefined);
   button('▶ Play playlist').onclick();assert.equal(events.at(-1).type,'neon-play-playlist');assert.deepEqual(events.at(-1).detail.tracks,[track]);
   button('＋ Save to my playlists').onclick();await tick();assert.equal(nodes.get('#playlist-detail').children[0].textContent,'From a friend');assert.ok(button('Rename'));assert.equal(list.at(-1).share_token,null);
   receive('message',message);await tick();nodes.get('#playlist-new-name').value='Another playlist';nodes.get('#playlist-create').onsubmit({preventDefault(){}});await tick();assert.equal(nodes.get('#playlist-detail').children[0].textContent,'Another playlist');assert.ok(button('＋ Add current song'));
