@@ -27,7 +27,7 @@ for (const game of catalog.games) {
 const required = [
   'avatar-decorations.js', 'avatar-decorations.css',
   'tube-transport.js', 'tube-watch-player.js',
-  'account-request.js', 'social.js', 'social.css', 'playlists.js', 'playlists.css', 'playlist-player.js', 'playlist-covers.js',
+  'account-request.js', 'social.js', 'social.css', 'playlists.js', 'playlists.css', 'playlist-player.js', 'playlist-covers.js', 'playlist-sharing.js',
   'index.html', 'music-controls.js', 'notification-replies.js', 'message-notifications.js', 'game-side-panel.js', 'game-extras.css', 'neon-dashboard.css', 'neon-dashboard.js', 'artwork/space-horizon.jpg', 'artwork/blue-orbit.jpg', 'artwork/night-drive.jpg', 'updates.js', 'cloud.js', 'music.js', 'music-branding.js', 'tube.js','tube-navigation.js','weather.js','weather.css', 'music-catalog.json', 'music-links.js', 'music.css', 'chat.js', 'chat-context.js', 'chat-screen.js', 'chat-floating.js', 'chat-popout.js', 'chat-popout-bridge.js', 'screen-chat.css', 'chat.css', 'appearance.js', 'wallpaper-media.js', 'wallpaper-start.js', 'wallpaper-options.js', 'library-tools.js', 'proxy-feedback.js', 'bootstrap-init.js', 'game-runner.html', 'game-runner.js', 'game-transport.js', 'sw.js', 'scram/scramjet.js',
   'scram/scramjet.wasm', 'scram/scramjet-utils.js', 'controller/controller.api.js',
   'controller/controller.inject.js', 'controller/controller.sw.js', 'clients/index.js',

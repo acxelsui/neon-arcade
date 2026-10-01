@@ -19,6 +19,8 @@ export function socialRequest(data){
  case 'player-search':return ['neon_player_search',{query:text(data.query,24,2)}];
  case 'friend-action':if(!['request','accept','remove'].includes(data.operation))throw Error('Invalid friend action.');return ['neon_friend_action',{peer:id(data.peer),operation:data.operation}];
  case 'playlists':return ['neon_playlists_list',{}];
+ case 'playlist-shared':return ['neon_playlist_shared',{link_token:id(data.token)}];
+ case 'playlist-share':if(typeof data.enabled!=='boolean')throw Error('Choose whether to share this playlist.');return ['neon_playlist_share',{playlist_id:id(data.playlistId),enabled:data.enabled}];
  case 'playlist-delete':return ['neon_playlist_delete',{playlist_id:id(data.playlistId)}];
  case 'playlist-save':{
   if(!Array.isArray(data.tracks)||data.tracks.length>100)throw Error('A playlist holds up to 100 songs.');

@@ -3,6 +3,7 @@ import {initMessageNotifications} from './message-notifications.js';
 import {initChatBridge} from './chat-bridge.js';
 import {initSocialBridge} from './social-bridge.js';
 import {openBlankGame} from './blank-game.js';
+import {readPlaylistToken} from './playlist-sharing.js';
 const {createClient}=window.supabase;
 import {username,loginIdentity,allowedMessage,activity,separateOrigin} from './rules.js';
 const PROJECT='https://xfwjzxjeessduxuuqeop.supabase.co';
@@ -10,6 +11,7 @@ const KEY='sb_publishable_5xjkSLY22XORDMqM1Qp4HQ_J8Ez86mX';
 const $=s=>document.querySelector(s),frame=$('#arcade');
 const contentOrigin=separateOrigin(location.hostname==='localhost'?'http://localhost:3001':'https://neongoatarcadd.vercel.app',location.origin);
 const client=createClient(PROJECT,KEY,{auth:{persistSession:true,autoRefreshToken:true,detectSessionInUrl:false,storageKey:'neon-member-session'}});
+const requestedPlaylist=readPlaylistToken(new URLSearchParams(location.search).get('playlist'));
 const tabId=crypto.randomUUID();let profile=null,mode='signup',game=null,busy=false,epoch=0,booting=true,lastActivity=0,avatarCache=new Map(),accessPass=null;
 const screenPopout=createChatPopout({opened:opened=>send('ai-popout-opened',{opened}),action:(action,question)=>send('ai-popout-action',{action,question})});
 const pollMessages=initMessageNotifications({rpc,send,getProfile:()=>profile});
@@ -104,7 +106,7 @@ window.addEventListener('message',event=>{
  if(event.data.type==='profile-updated'){sync();return}
  if(event.data.type==='blank-game'){if(!openBlankGame({game:event.data.game,contentOrigin,accountOrigin:location.origin,pass:accessPass}))send('blank-game-blocked');return}
  if(event.data.type==='access-ready'&&accessPass){send('access-pass',{pass:accessPass});return}
- if(event.data.type==='ready'){sync();pollAnnouncements();pollMessages();return}
+ if(event.data.type==='ready'){sync();pollAnnouncements();pollMessages();if(requestedPlaylist)send('playlist-link',{token:requestedPlaylist});return}
  if(event.data.type==='profile'){openProfile();return}
  if(event.data.type==='activity'){
   const next=activity(event.data.game);if(next===undefined)return;game=next;
