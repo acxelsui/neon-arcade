@@ -6,7 +6,9 @@ export const cloudGames={
  clash:{name:'Clash Royale',embedId:'as5575',url:'https://astra-education.top/embed/truffled/as5575'},
  fortnite:{name:'Fortnite',embedId:'as1560',url:'https://astra-education.top/embed/truffled/as1560'},
  subnautica:{name:'Subnautica: Below Zero',embedId:'as2377',url:'https://astra-education.top/embed/truffled/as2377'},
- schedule:{name:'Schedule I',embedId:'as2638',url:'https://astra-education.top/embed/truffled/as2638'}
+ schedule:{name:'Schedule I',embedId:'as2638',url:'https://astra-education.top/embed/truffled/as2638'},
+ nba:{name:'NBA 2K23',embedId:'as7788',url:'https://astra-education.top/embed/truffled/as7788'},
+ madden:{name:'Madden NFL 24 Mobile',embedId:'as0161',url:'https://astra-education.top/embed/truffled/as0161'}
 };
 export function initCloud(getController){
  const $=s=>document.querySelector(s),tiles=[...document.querySelectorAll('[data-cloud-game]')];let frame,controller,version=0,loading=false,activeGame='roblox',activeUrl=cloudGames.roblox.url,server='1';
