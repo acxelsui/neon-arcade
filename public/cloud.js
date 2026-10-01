@@ -8,7 +8,14 @@ export const cloudGames={
  subnautica:{name:'Subnautica: Below Zero',embedId:'as2377',url:'https://astra-education.top/embed/truffled/as2377'},
  schedule:{name:'Schedule I',embedId:'as2638',url:'https://astra-education.top/embed/truffled/as2638'},
  nba:{name:'NBA 2K23',embedId:'as7788',url:'https://astra-education.top/embed/truffled/as7788'},
- madden:{name:'Madden NFL 24 Mobile',embedId:'as0161',url:'https://astra-education.top/embed/truffled/as0161'}
+ madden:{name:'Madden NFL 24 Mobile',embedId:'as0161',url:'https://astra-education.top/embed/truffled/as0161'},
+ tcg:{name:'TCG Card Shop',embedId:'as7398',url:'https://astra-education.top/embed/truffled/as7398'},
+ raft:{name:'Raft',embedId:'as4277',url:'https://astra-education.top/embed/truffled/as4277'},
+ onlyup:{name:'Only Up',embedId:'as5726',url:'https://astra-education.top/embed/truffled/as5726'},
+ ranch:{name:'Ranch Simulator22',embedId:'as3714',url:'https://astra-education.top/embed/truffled/as3714'},
+ cuphead:{name:'Cuphead',embedId:'as3729',url:'https://astra-education.top/embed/truffled/as3729'},
+ builder:{name:'Builder Simulator',embedId:'as9587',url:'https://astra-education.top/embed/truffled/as9587'},
+ eurotruck:{name:'Euro Truck Simulator 2',embedId:'as0656',url:'https://astra-education.top/embed/truffled/as0656'}
 };
 export function initCloud(getController){
  const $=s=>document.querySelector(s),tiles=[...document.querySelectorAll('[data-cloud-game]')];let frame,controller,version=0,loading=false,activeGame='roblox',activeUrl=cloudGames.roblox.url,server='1';
