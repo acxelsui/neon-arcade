@@ -6,7 +6,9 @@ export const cloudGames={
  roblox:{name:'Roblox',url:ROBLOX_URL},
  stumble:{name:'Stumble Guys',embedId:'as3455',url:'https://astra-education.top/embed/truffled/as3455'},
  clash:{name:'Clash Royale',embedId:'as5575',url:'https://astra-education.top/embed/truffled/as5575'},
- fortnite:{name:'Fortnite',embedId:'as1560',url:'https://astra-education.top/embed/truffled/as1560'}
+ fortnite:{name:'Fortnite',embedId:'as1560',url:'https://astra-education.top/embed/truffled/as1560'},
+ subnautica:{name:'Subnautica: Below Zero',embedId:'as2377',url:'https://astra-education.top/embed/truffled/as2377'},
+ schedule:{name:'Schedule I',embedId:'as2638',url:'https://astra-education.top/embed/truffled/as2638'}
 };
 export function initCloud(getController){
  const $=s=>document.querySelector(s),tiles=[...document.querySelectorAll('[data-cloud-game]')];let frame,controller,version=0,loading=false,observer,activeGame='roblox',activeUrl=ROBLOX_URL;

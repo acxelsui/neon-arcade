@@ -8,7 +8,7 @@ function fixture(getController,response={status:200}){
   constructor(){this.dataset={};this.events={};this.hidden=true;this.children=[];this.attributes={};}
   setAttribute(key,value){this.attributes[key]=value;}addEventListener(type,fn){this.events[type]=fn;}replaceChildren(...children){this.children=children;}scrollIntoView(){}remove(){this.removed=true;}focus(){this.focused=true;}
  }
- const tiles=['roblox','stumble','clash','fortnite'].map(id=>{const tile=new Element();tile.dataset.cloudGame=id;return tile;});
+ const tiles=Object.keys(cloudGames).map(id=>{const tile=new Element();tile.dataset.cloudGame=id;return tile;});
  const document={querySelector:key=>{if(!nodes.has(key))nodes.set(key,new Element());return nodes.get(key);},querySelectorAll:()=>tiles};
  const transport={request:async()=>response};const controller={transport,frames,createFrame(){const frame={element:new Element(),fetchHandler:{client:{transport},handleFetch:async()=>response},go:url=>routes.push(url),reload(){this.reloaded=true;}};frames.push(frame);return frame;}};
  Object.defineProperty(globalThis,'document',{value:document,configurable:true});initCloud(getController||(()=>Promise.resolve(controller)));
@@ -33,7 +33,22 @@ test('switching cloud games updates the selected launcher and pinned game withou
   f.nodes.get('#cloud-reload').onclick();assert.equal(frame.reloaded,true);f.nodes.get('#cloud-stop').onclick();assert.equal(f.controller.frames.length,0);assert.equal(f.tiles[3].focused,true);
  }finally{f.restore();}
 });
-test('closing while the shared proxy connects prevents a late game from opening and restores both tiles',async()=>{
+test('Below Zero and Schedule I keep their own pinned launcher IDs when switching in the same proxy frame',async()=>{
+ const f=fixture();try{
+  f.controller.transport.request=async()=>({status:200,headers:[['Content-Type','application/javascript']],body:new Response('const {proxy:p,embedId:g}=params();').body});
+  let frame;
+  for(const [id,embedId,name] of [['subnautica','as2377','Subnautica: Below Zero'],['schedule','as2638','Schedule I']]){
+   const tile=f.tiles.find(tile=>tile.dataset.cloudGame===id);await tile.onclick();
+   frame ||= f.controller.frames[0];assert.equal(f.controller.frames.length,1);assert.equal(f.controller.frames[0],frame);
+   assert.equal(f.routes.at(-1),'https://astra-education.top/embed/truffled/'+embedId);assert.equal(f.nodes.get('#cloud-selected').textContent,name);
+   assert.equal(tile.attributes['aria-pressed'],'true');assert.equal(f.tiles.filter(tile=>tile.attributes['aria-pressed']==='true').length,1);
+   const script=await frame.fetchHandler.client.transport.request(new URL('https://astra-education.top/assets/reading-list-launcher.js'),'GET',null,[]);
+   assert.ok((await new Response(script.body).text()).includes('embedId:"'+embedId+'"'));
+  }
+  f.nodes.get('#cloud-stop').onclick();assert.equal(f.controller.frames.length,0);assert.equal(f.tiles.find(tile=>tile.dataset.cloudGame==='schedule').focused,true);
+ }finally{f.restore();}
+});
+test('closing while the shared proxy connects prevents a late game from opening and restores all tiles',async()=>{
  let release;const f=fixture(()=>new Promise(resolve=>release=resolve));try{
   const opening=f.tiles[1].onclick();assert.ok(f.tiles.every(tile=>tile.disabled));f.nodes.get('#cloud-stop').onclick();release(f.controller);await opening;assert.equal(f.controller.frames.length,0);assert.equal(f.routes.length,0);assert.ok(f.tiles.every(tile=>!tile.disabled));
  }finally{f.restore();}
