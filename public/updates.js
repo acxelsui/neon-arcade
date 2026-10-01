@@ -1,5 +1,6 @@
 // Keep newest first. Dates describe when the change was added, not when a visitor opened Home.
 export const updates = [
+ {date:'2026-10-01',title:'Clash Royale and Fortnite in Neon Cloud Gaming',text:'Added cover tiles for Clash Royale and Fortnite. Both use game-specific cloud launchers through the arcade proxy, with the selected game ID preserved when switching games.'},
  {date:'2026-10-01',title:'Stumble Guys in Neon Cloud Gaming',text:'Launch Stumble Guys from its cover tile through the arcade proxy. The game-specific launcher preserves the selected game ID, and Roblox remains available.'},
  {date:'2026-09-30',title:'NeonTube removed',text:'Removed NeonTube from the navigation, Home shortcuts, and game side tabs.'},
  {date:'2026-09-30',title:'Shared playlist playback',text:'Shared playlists open in the current arcade tab. Music and covers wait for the proxy to finish connecting, and playlists wait for a fresh music player to start.'},

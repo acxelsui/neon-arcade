@@ -4,7 +4,9 @@ const ROBLOX_URL='https://now.gg/apps/roblox-corporation/5349/roblox.html';
 const FALLBACK_URL='https://nowgg.lol/apps/a/19900/b.html';
 export const cloudGames={
  roblox:{name:'Roblox',url:ROBLOX_URL},
- stumble:{name:'Stumble Guys',url:'https://astra-education.top/embed/truffled/as3455'}
+ stumble:{name:'Stumble Guys',embedId:'as3455',url:'https://astra-education.top/embed/truffled/as3455'},
+ clash:{name:'Clash Royale',embedId:'as5575',url:'https://astra-education.top/embed/truffled/as5575'},
+ fortnite:{name:'Fortnite',embedId:'as1560',url:'https://astra-education.top/embed/truffled/as1560'}
 };
 export function initCloud(getController){
  const $=s=>document.querySelector(s),tiles=[...document.querySelectorAll('[data-cloud-game]')];let frame,controller,version=0,loading=false,observer,activeGame='roblox',activeUrl=ROBLOX_URL;
@@ -18,7 +20,7 @@ export function initCloud(getController){
   const current=++version;loading=true;busy(true);
   try{const connected=await getController();if(current!==version)return;controller=connected;
    frame=controller.createFrame();frame.element.allow='autoplay; fullscreen; encrypted-media; gamepad';frame.element.allowFullscreen=true;selection();
-   frame.fetchHandler.client.transport=cloudTransport(controller.transport,()=>activeGame==='stumble'?new URL(activeUrl).pathname.split('/').at(-1):null);
+   frame.fetchHandler.client.transport=cloudTransport(controller.transport,()=>cloudGames[activeGame].embedId||null);
    const ownedFrame=frame;
    watchFrame(frame,error=>{if(frame===ownedFrame)status(error+' Use Reload to retry.');},()=>{if(frame===ownedFrame)status(cloudGames[activeGame].name+' launcher connected.');});
    frame.element.addEventListener('load',()=>{

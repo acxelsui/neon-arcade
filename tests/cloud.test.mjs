@@ -8,7 +8,7 @@ function fixture(getController,response={status:200}){
   constructor(){this.dataset={};this.events={};this.hidden=true;this.children=[];this.attributes={};}
   setAttribute(key,value){this.attributes[key]=value;}addEventListener(type,fn){this.events[type]=fn;}replaceChildren(...children){this.children=children;}scrollIntoView(){}remove(){this.removed=true;}focus(){this.focused=true;}
  }
- const tiles=['roblox','stumble'].map(id=>{const tile=new Element();tile.dataset.cloudGame=id;return tile;});
+ const tiles=['roblox','stumble','clash','fortnite'].map(id=>{const tile=new Element();tile.dataset.cloudGame=id;return tile;});
  const document={querySelector:key=>{if(!nodes.has(key))nodes.set(key,new Element());return nodes.get(key);},querySelectorAll:()=>tiles};
  const transport={request:async()=>response};const controller={transport,frames,createFrame(){const frame={element:new Element(),fetchHandler:{client:{transport},handleFetch:async()=>response},go:url=>routes.push(url),reload(){this.reloaded=true;}};frames.push(frame);return frame;}};
  Object.defineProperty(globalThis,'document',{value:document,configurable:true});initCloud(getController||(()=>Promise.resolve(controller)));
@@ -20,6 +20,17 @@ test('Stumble Guys uses the game-only launcher in a registered arcade proxy fram
   f.nodes.get('#cloud-reload').onclick();assert.equal(f.controller.frames[0].reloaded,true);
   await f.tiles[0].onclick();assert.equal(f.controller.frames.length,1);assert.equal(f.routes[1],cloudGames.roblox.url);assert.equal(f.nodes.get('#cloud-session-title').textContent,'Neon Cloud Gaming · Roblox');
   const frame=f.controller.frames[0];f.nodes.get('#cloud-stop').onclick();assert.equal(f.controller.frames.length,0);assert.equal(frame.element.removed,true);assert.equal(f.nodes.get('#cloud-session').hidden,true);assert.equal(f.tiles[0].focused,true);
+ }finally{f.restore();}
+});
+test('switching cloud games updates the selected launcher and pinned game without replacing the proxy session',async()=>{
+ const f=fixture();try{
+  f.controller.transport.request=async()=>({status:200,headers:[['Content-Type','application/javascript']],body:new Response('const {proxy:p,embedId:g}=params();').body});
+  await f.tiles[1].onclick();const frame=f.controller.frames[0];await f.tiles[2].onclick();assert.equal(f.controller.frames[0],frame);assert.equal(f.routes.at(-1),cloudGames.clash.url);assert.match(f.routes.at(-1),/\/embed\/truffled\/as5575$/);
+  assert.equal(f.nodes.get('#cloud-selected').textContent,'Clash Royale');assert.equal(f.nodes.get('#cloud-session-title').textContent,'Neon Cloud Gaming · Clash Royale');assert.equal(f.tiles[1].attributes['aria-pressed'],'false');assert.equal(f.tiles[2].attributes['aria-pressed'],'true');
+  const script=await frame.fetchHandler.client.transport.request(new URL('https://astra-education.top/assets/reading-list-launcher.js'),'GET',null,[]);assert.match(await new Response(script.body).text(),/embedId:"as5575"/);
+  await f.tiles[3].onclick();assert.equal(f.controller.frames[0],frame);assert.equal(f.routes.at(-1),cloudGames.fortnite.url);assert.match(f.routes.at(-1),/\/embed\/truffled\/as1560$/);assert.equal(f.nodes.get('#cloud-selected').textContent,'Fortnite');assert.equal(f.tiles[2].attributes['aria-pressed'],'false');assert.equal(f.tiles[3].attributes['aria-pressed'],'true');
+  const fortniteScript=await frame.fetchHandler.client.transport.request(new URL('https://astra-education.top/assets/reading-list-launcher.js'),'GET',null,[]);assert.match(await new Response(fortniteScript.body).text(),/embedId:"as1560"/);
+  f.nodes.get('#cloud-reload').onclick();assert.equal(frame.reloaded,true);f.nodes.get('#cloud-stop').onclick();assert.equal(f.controller.frames.length,0);assert.equal(f.tiles[3].focused,true);
  }finally{f.restore();}
 });
 test('closing while the shared proxy connects prevents a late game from opening and restores both tiles',async()=>{
