@@ -37,7 +37,7 @@ test('the added cloud games keep their own pinned launcher IDs when switching in
  const f=fixture();try{
   f.controller.transport.request=async()=>({status:200,headers:[['Content-Type','application/javascript']],body:new Response('const {proxy:p,embedId:g}=params();').body});
   let frame;
-  for(const [id,embedId,name] of [['subnautica','as2377','Subnautica: Below Zero'],['schedule','as2638','Schedule I'],['nba','as7788','NBA 2K23'],['madden','as0161','Madden NFL 24 Mobile'],['tcg','as7398','TCG Card Shop'],['raft','as4277','Raft'],['onlyup','as5726','Only Up'],['ranch','as3714','Ranch Simulator22'],['cuphead','as3729','Cuphead'],['builder','as9587','Builder Simulator'],['eurotruck','as0656','Euro Truck Simulator 2']]){
+  for(const [id,embedId,name] of [['subnautica','as2377','Subnautica: Below Zero'],['schedule','as2638','Schedule I'],['nba','as7788','NBA 2K23'],['madden','as0161','Madden NFL 24 Mobile'],['tcg','as7398','TCG Card Shop'],['raft','as4277','Raft'],['onlyup','as5726','Only Up'],['ranch','as3714','Ranch Simulator22'],['cuphead','as3729','Cuphead'],['builder','as9587','Builder Simulator'],['eurotruck','as0656','Euro Truck Simulator 2'],['gtav','as9053','Grand Theft Auto V']]){
    const tile=f.tiles.find(tile=>tile.dataset.cloudGame===id);await tile.onclick();
    frame ||= f.controller.frames[0];assert.equal(f.controller.frames.length,1);assert.equal(f.controller.frames[0],frame);
    assert.equal(f.routes.at(-1),'https://astra-education.top/embed/truffled/'+embedId);assert.equal(f.nodes.get('#cloud-selected').textContent,name);
@@ -45,7 +45,7 @@ test('the added cloud games keep their own pinned launcher IDs when switching in
    const script=await frame.fetchHandler.client.transport.request(new URL('https://astra-education.top/assets/reading-list-launcher.js'),'GET',null,[]);
    assert.ok((await new Response(script.body).text()).includes('embedId:"'+embedId+'"'));
   }
-  f.nodes.get('#cloud-stop').onclick();assert.equal(f.controller.frames.length,0);assert.equal(f.tiles.find(tile=>tile.dataset.cloudGame==='eurotruck').focused,true);
+  f.nodes.get('#cloud-stop').onclick();assert.equal(f.controller.frames.length,0);assert.equal(f.tiles.find(tile=>tile.dataset.cloudGame==='gtav').focused,true);
  }finally{f.restore();}
 });
 test('Roblox lets players choose either server, relaunches in its existing proxy frame, and remembers the choice across game switches',async()=>{

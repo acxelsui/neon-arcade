@@ -1,5 +1,6 @@
 // Keep newest first. Dates describe when the change was added, not when a visitor opened Home.
 export const updates = [
+ {date:'2026-10-01',title:'Grand Theft Auto V in cloud gaming',text:'Added Grand Theft Auto V to Neon Cloud Gaming with its cover and game-specific launcher through the arcade proxy.'},
  {date:'2026-10-01',title:'Seven more cloud games',text:'Added TCG Card Shop, Raft, Only Up, Ranch Simulator22, Cuphead, Builder Simulator, and Euro Truck Simulator 2 with covers and separate launchers through the arcade proxy.'},
  {date:'2026-10-01',title:'NBA 2K23 and Madden Mobile',text:'Added NBA 2K23 and Madden NFL 24 Mobile to Neon Cloud Gaming with cover tiles and separate launchers through the arcade proxy.'},
  {date:'2026-10-01',title:'Choose your Roblox server',text:'Roblox now uses the same game-specific cloud launcher as the other cloud games, with its cover and a choice of Server 1 or Server 2.'},

@@ -15,7 +15,8 @@ export const cloudGames={
  ranch:{name:'Ranch Simulator22',embedId:'as3714',url:'https://astra-education.top/embed/truffled/as3714'},
  cuphead:{name:'Cuphead',embedId:'as3729',url:'https://astra-education.top/embed/truffled/as3729'},
  builder:{name:'Builder Simulator',embedId:'as9587',url:'https://astra-education.top/embed/truffled/as9587'},
- eurotruck:{name:'Euro Truck Simulator 2',embedId:'as0656',url:'https://astra-education.top/embed/truffled/as0656'}
+ eurotruck:{name:'Euro Truck Simulator 2',embedId:'as0656',url:'https://astra-education.top/embed/truffled/as0656'},
+ gtav:{name:'Grand Theft Auto V',embedId:'as9053',url:'https://astra-education.top/embed/truffled/as9053'}
 };
 export function initCloud(getController){
  const $=s=>document.querySelector(s),tiles=[...document.querySelectorAll('[data-cloud-game]')];let frame,controller,version=0,loading=false,activeGame='roblox',activeUrl=cloudGames.roblox.url,server='1';
