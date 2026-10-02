@@ -1,7 +1,6 @@
-import {mkdir,copyFile,rm} from 'node:fs/promises';
+import {mkdir,copyFile} from 'node:fs/promises';
 await mkdir('dist',{recursive:true});
 await copyFile('node_modules/@supabase/supabase-js/dist/umd/supabase.js','dist/supabase.js');
-for(const name of ['owner-remote.js','remote-window.css'])await rm(`dist/${name}`,{force:true});
-for(const name of ['index.html','style.css','owner-portal.css','main.js','rules.js','owner-rules.js','owner-portal.js','site-access.js','browser-identity.js','friend-notifications.js','blank-game.js','blank-game-host.js','chat-bridge.js','chat-rules.js','social-bridge.js','message-notifications.js'])await copyFile(name,`dist/${name}`);
+for(const name of ['index.html','style.css','remote-window.css','main.js','rules.js','owner-rules.js','owner-remote.js','site-access.js','browser-identity.js','friend-notifications.js','blank-game.js','blank-game-host.js','chat-bridge.js','chat-rules.js','social-bridge.js','message-notifications.js'])await copyFile(name,`dist/${name}`);
 
 for(const name of ['chat-popout.js','chat-floating.js','screen-chat.css','chat.css','playlist-sharing.js'])await copyFile('../public/'+name,'dist/'+name);
