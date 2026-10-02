@@ -130,7 +130,7 @@ test('failed connections stay visible with a plain-text error instead of closing
  const popup={document:doc,closed:false,opener:{},close:()=>closed=true};
  const handle=createOwnerRemote({rpc:async()=>({players:1}),getProfile:()=>({id:'owner'}),getSession:async()=>({data:{session:{access_token:token}}}),send:(type,data)=>replies.push({type,...data}),openWindow:()=>popup,requestTicket:async()=>sampleTicket,submit:()=>{throw new TypeError('Navigation denied');}});
  await handle({requestId:'3',action:'open'});
- assert.equal(closed,false);assert.match(status.textContent,/Cannot reach your PC/);assert.match(sheet.href,/remote-window\.css$/);assert.equal(popup.opener,null);
+ assert.equal(closed,false);assert.match(status.textContent,/browser prevented opening the PC connection/);assert.match(sheet.href,/remote-window\.css$/);assert.equal(popup.opener,null);
  assert.equal(replies.at(-1).allowed,false);assert.equal(JSON.stringify(replies).includes(token),false);
 });
 test('popup errors report recovery without requesting desktop credentials',async()=>{
@@ -207,4 +207,26 @@ test('changing accounts while a ticket is being created cancels the launch',asyn
  const handle=createOwnerRemote({rpc:async()=>({players:1}),getProfile:()=>({id:player}),getSession:async()=>({data:{session:{access_token:token}}}),send:()=>{},requestTicket:()=>pending,openWindow:()=>({closed:false,opener:{},close:()=>closed++}),submit:()=>submissions++});
  const opening=handle({requestId:'changed-ticket',action:'open'});await new Promise(resolve=>setImmediate(resolve));player='member';release(sampleTicket);await opening;
  assert.equal(submissions,0);assert.equal(closed,1);
+});
+
+test('a browser without AbortSignal.timeout can still obtain its remote ticket',async t=>{
+ const previous=AbortSignal.timeout;AbortSignal.timeout=undefined;t.after(()=>AbortSignal.timeout=previous);
+ let signal;
+ assert.equal(await requestRemoteTicket(token,{fetcher:async(url,options)=>{signal=options.signal;return {ok:true,json:async()=>({ticket:sampleTicket})};}}),sampleTicket);
+ assert.ok(signal instanceof AbortSignal);assert.equal(signal.aborted,false);
+});
+
+test('blocked automatic navigation leaves a clickable one-use connection instead of blaming the PC',()=>{
+ let link,status={textContent:''};
+ const popup={document:{createElement:()=>({}),body:{append:value=>link=value},getElementById:()=>status},location:{replace:()=>{throw new TypeError('Navigation blocked');}}};
+ assert.equal(submitRemoteConnection({popup,ticket:sampleTicket}),false);
+ assert.equal(link.href,remoteOrigin+'/connect#'+sampleTicket);assert.equal(link.target,'_self');assert.equal(link.href.includes(token),false);assert.match(status.textContent,/Click Open your PC/);
+});
+
+test('ticket network failures identify the connection service and keep the error visible',async()=>{
+ const status={textContent:''};let reply;
+ const popup={closed:false,document:{head:{append:()=>{}},body:{replaceChildren:()=>{}},createElement:()=>({}),getElementById:()=>status},close:()=>{throw Error('Error window must remain visible');}};
+ const handle=createOwnerRemote({rpc:async()=>({players:1}),getProfile:()=>({id:'owner'}),getSession:async()=>({data:{session:{access_token:token}}}),send:(type,data)=>reply=data,openWindow:()=>popup,requestTicket:async()=>{throw new TypeError('Failed to fetch');}});
+ await handle({requestId:'service-error',action:'open'});
+ assert.equal(reply.allowed,false);assert.match(status.textContent,/browser could not contact the Neon connection service/);assert.doesNotMatch(status.textContent,/Keep the host PC awake/);
 });
