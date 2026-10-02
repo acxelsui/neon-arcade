@@ -3,7 +3,7 @@ export function initOwnerRemote(){
  const account=location.hostname==='localhost'?'http://localhost:3002':'https://neon-arcade-improvedv3.vercel.app';
  const section=document.createElement('section');section.className='owner-remote';
  const heading=document.createElement('h3');heading.textContent='Your remote PC';
- const note=document.createElement('p');note.textContent='Control your desktop or stream your games. Keep your PC awake and Tailscale connected on both devices.';
+ const note=document.createElement('p');note.textContent='Control your desktop or stream your games in this browser. Nothing to install on the connecting laptop. Keep your host PC awake and its remote services running.';
  const button=document.createElement('button');button.type='button';button.textContent='Connect in browser';button.disabled=true;
  const help=document.createElement('p');help.textContent='For the installed Moonlight app, add 1sg997aseb9mj.tail8b44df.ts.net and approve its pairing in Sunshine. Browser access checks your active Neon owner role. The app uses your private network and Sunshine pairing.';
  const status=document.createElement('p');status.setAttribute('role','status');
@@ -12,7 +12,7 @@ export function initOwnerRemote(){
  function request(action){
   if(parent===window){status.textContent='Open through your signed-in Neon account.';return;}
   const requestId=crypto.randomUUID();
-  const timer=setTimeout(()=>{pending.delete(requestId);button.disabled=false;status.textContent='Could not connect. Check Tailscale and try again.';},15000);
+  const timer=setTimeout(()=>{pending.delete(requestId);button.disabled=false;status.textContent='Could not connect. Check the host PC is awake and online, then try again.';},15000);
   pending.set(requestId,{timer,action});
   parent.postMessage({channel:'neon-members-v1',type:'owner-remote-request',requestId,action},account);
  }

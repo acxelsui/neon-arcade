@@ -1,4 +1,4 @@
-// Run on the owner's PC. Never deploy this desktop gateway to the public arcade proxy.
+// Run on the owner's PC. The HTTPS tunnel must point only to this owner-checking gateway.
 import http from 'node:http';
 import {randomBytes,createHash} from 'node:crypto';
 import {readFile} from 'node:fs/promises';
@@ -23,6 +23,13 @@ export function createGateway({publicOrigin,upstream='http://127.0.0.1:8080',own
  if(origin.origin!==publicOrigin||origin.username||origin.password||!(origin.protocol==='https:'&&origin.hostname.endsWith('.ts.net')||origin.protocol==='http:'&&['localhost','127.0.0.1'].includes(origin.hostname)))throw Error('Use a private HTTPS Tailscale origin, or localhost for setup.');
  const target=new URL(upstream);if(target.protocol!=='http:'||target.hostname!=='127.0.0.1')throw Error('The browser streamer must stay on loopback.');
  const tickets=new Map(),sessions=new Map(),sockets=new Set();
+ let attemptStart=now(),attempts=0,pendingAuth=0;
+ function allowAttempt(){
+  if(now()-attemptStart>=60000){attemptStart=now();attempts=0;}
+  if(attempts>=60||pendingAuth>=8)return false;
+  attempts++;return true;
+ }
+ async function openingOwner(token){if(pendingAuth>=8)return false;pendingAuth++;try{return await ownerVerifier(token);}finally{pendingAuth--;}}
  const random=()=>randomBytes(32).toString('base64url');
  function expire(){for(const [key,item] of tickets)if(item.expires<=now())tickets.delete(key);for(const [key,item] of sessions)if(item.expires<=now())sessions.delete(key);}
  const cleanup=setInterval(expire,30000);cleanup.unref();
@@ -52,9 +59,10 @@ export function createGateway({publicOrigin,upstream='http://127.0.0.1:8080',own
    res.setHeader('Referrer-Policy','no-referrer');const path=new URL(req.url,publicOrigin).pathname;
    if(path==='/api/open'){
     if(req.method!=='POST'||!allowedAccounts.has(req.headers.origin)||!(req.headers['content-type']||'').startsWith('application/x-www-form-urlencoded')){await connectionPage(res,403,'Open the connection from your signed-in Neon Arcade owner toolkit.');return;}
+    if(!allowAttempt()){await connectionPage(res,429,'Too many connection attempts. Wait a minute and try again.');return;}
     expire();if(tickets.size+sessions.size>=64){await connectionPage(res,429,'Too many connections. Close an unused session and try again.');return;}
     const token=new URLSearchParams(await rawBody(req)).get('access_token');
-    if(!await ownerVerifier(token)){await connectionPage(res,403,'Owner access could not be verified. Reopen the connection from your owner account.');return;}
+    if(!await openingOwner(token)){await connectionPage(res,403,'Owner access could not be verified. Reopen the connection from your owner account.');return;}
     if(tickets.size+sessions.size>=64){await connectionPage(res,429,'Too many connections. Close an unused session and try again.');return;}
     session(res,token);await connectionPage(res,200,'Owner verified. Opening your PC…',true);return;
    }
@@ -63,9 +71,10 @@ export function createGateway({publicOrigin,upstream='http://127.0.0.1:8080',own
     res.setHeader('Access-Control-Allow-Origin',account);res.setHeader('Vary','Origin');
     if(req.method==='OPTIONS'){res.writeHead(204,{'Access-Control-Allow-Methods':'POST','Access-Control-Allow-Headers':'authorization,content-type','Access-Control-Allow-Private-Network':'true'});res.end();return;}
     if(req.method!=='POST'){json(res,405,{error:'Use POST.'});return;}
+    if(!allowAttempt()){json(res,429,{error:'Too many connection attempts. Wait a minute and try again.'});return;}
     expire();if(tickets.size+sessions.size>=64){json(res,429,{error:'Too many remote sessions.'});return;}
     const match=/^Bearer (\S+)$/.exec(req.headers.authorization||'');const token=match?.[1];
-    if(!await ownerVerifier(token)){json(res,403,{error:'An active owner role is required.'});return;}
+    if(!await openingOwner(token)){json(res,403,{error:'An active owner role is required.'});return;}
     if(tickets.size+sessions.size>=64){json(res,429,{error:'Too many remote sessions.'});return;}
     const ticket=random();tickets.set(hash(ticket),{token,expires:now()+30000});json(res,200,{ticket});return;
    }
@@ -78,9 +87,10 @@ export function createGateway({publicOrigin,upstream='http://127.0.0.1:8080',own
    }
    if(path==='/api/redeem'){
     if(req.method!=='POST'||req.headers.origin!==publicOrigin){json(res,403,{error:'Invalid connection request.'});return;}
+    if(!allowAttempt()){json(res,429,{error:'Too many connection attempts. Wait a minute and try again.'});return;}
     const {ticket}=await body(req);if(typeof ticket!=='string'||!/^[\w-]{43}$/.test(ticket)){json(res,401,{error:'Open Remote Access again from Neon Arcade.'});return;}
     const key=hash(ticket),item=tickets.get(key);tickets.delete(key);
-    if(!item||item.expires<=now()||!await ownerVerifier(item.token)){json(res,403,{error:'Owner access expired. Reopen from Neon Arcade.'});return;}
+    if(!item||item.expires<=now()||!await openingOwner(item.token)){json(res,403,{error:'Owner access expired. Reopen from Neon Arcade.'});return;}
     session(res,item.token);json(res,200,{ok:true});return;
    }
    if(!await validSession(req)){json(res,403,{error:'Open Owner Remote Access through Neon Arcade.'});return;}

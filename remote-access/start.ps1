@@ -20,4 +20,4 @@ if (-not (PortIsListening 8090)) {
 }
 $taskSunshine = Get-Service -Name 'SunshineService' -ErrorAction SilentlyContinue
 if ($taskSunshine.Status -ne 'Running') { Write-Output 'Start Sunshine before connecting. Its local settings are https://localhost:47990/.' }
-Write-Output 'Private browser services started. Keep this PC awake and Tailscale connected. After a restart, run this launcher again before connecting.'
+Write-Output 'Owner-protected browser services started. Keep this host PC awake and Tailscale connected. After a restart, run this launcher again before connecting.'

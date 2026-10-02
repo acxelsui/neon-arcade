@@ -50,6 +50,31 @@ test('connection tickets expire, cannot be reused, and recheck owner permission'
  value=(await (await s.ticket()).json()).ticket;s.advance(30001);assert.equal((await s.redeem(value)).status,403);
  value=(await (await s.ticket()).json()).ticket;s.deny();assert.equal((await s.redeem(value)).status,403);
 });
+
+test('public connection attempts are bounded and the limit recovers without granting access',async t=>{
+ const s=await setup(t);
+ const attempt=()=>fetch(s.origin+'/api/open',{method:'POST',headers:{Origin:account,'Content-Type':'application/x-www-form-urlencoded'},body:new URLSearchParams({access_token:'member'})});
+ for(let i=0;i<60;i++)assert.equal((await attempt()).status,403);
+ assert.equal((await attempt()).status,429);
+ assert.equal((await s.ticket()).status,429);
+ assert.equal((await fetch(s.origin+'/')).status,403);
+ s.advance(60000);assert.equal((await attempt()).status,403);
+ const cookie=await s.session();assert.equal((await fetch(s.origin+'/',{headers:{Cookie:cookie}})).status,200);
+});
+
+test('simultaneous public authentication checks cannot exceed eight',async t=>{
+ let checks=0,release,notify;
+ const held=new Promise(resolve=>release=resolve),full=new Promise(resolve=>notify=resolve);
+ const allocation=http.createServer();const origin=await listen(allocation);await new Promise(resolve=>allocation.close(resolve));
+ const gateway=createGateway({publicOrigin:origin,ownerVerifier:async()=>{checks++;if(checks===8)notify();await held;return false;}});
+ gateway.server.listen(Number(new URL(origin).port),'127.0.0.1');await once(gateway.server,'listening');
+ t.after(()=>{release();gateway.close();});
+ const attempt=()=>fetch(origin+'/api/owner-session',{method:'POST',headers:{Origin:account,Authorization:'Bearer '+token}});
+ const pending=Array.from({length:8},attempt);
+ await full;assert.equal((await attempt()).status,429);assert.equal(checks,8);
+ release();for(const response of await Promise.all(pending))assert.equal(response.status,403);
+ assert.equal((await attempt()).status,403);assert.equal(checks,9);
+});
 test('desktop proxy strips account tokens and spoofed identity and rejects cross-site writes',async t=>{
  const s=await setup(t),cookie=await s.session();
  const response=await fetch(s.origin+'/',{headers:{Cookie:cookie,Authorization:'Bearer secret','X-Neon-Remote-User':'attacker'}});

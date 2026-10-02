@@ -4,7 +4,7 @@ function waitingWindow(popup){
  const doc=popup?.document;if(!doc)return;
  doc.title='Neon Arcade · Remote PC';
  const style=doc.createElement('link');style.rel='stylesheet';style.href=new URL('./remote-window.css',import.meta.url).href;doc.head.append(style);
- const main=doc.createElement('main');main.innerHTML='<span>NEON ARCADE</span><h1>Your remote PC</h1><p id="remote-connect-status" role="status">Connecting securely to your PC…</p><p class="note">Keep Tailscale connected. You can close this window to cancel.</p>';
+ const main=doc.createElement('main');main.innerHTML='<span>NEON ARCADE</span><h1>Your remote PC</h1><p id="remote-connect-status" role="status">Connecting securely to your PC…</p><p class="note">Keep your host PC awake and connected to the internet. You can close this window to cancel.</p>';
  doc.body.replaceChildren(main);
 }
 function connectionError(popup,message){
@@ -46,7 +46,7 @@ export function createOwnerRemote({rpc,getProfile,getSession,send,submit=submitR
    submit({popup,token:sessionData.session.access_token});
    reply({allowed:true,opened:true});
   }catch(error){
-   const message=error.name==='TypeError'||error.name==='TimeoutError'?'Cannot reach your PC. Keep it awake, connect Tailscale on both PCs, and allow local network access if your browser asks.':error.message||'Remote access could not open.';
+   const message=error.name==='TypeError'||error.name==='TimeoutError'?'Cannot reach your PC. Keep the host PC awake with its remote services running and its internet connection active.':error.message||'Remote access could not open.';
    if(!current()||!connectionError(popup,message))popup?.close();
    reply({allowed:false,error:message});
   }finally{busy=false;}
