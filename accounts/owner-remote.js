@@ -11,15 +11,21 @@ function connectionError(popup,message){
  try{const node=popup?.document?.getElementById('remote-connect-status');if(node){node.textContent=message;return true;}}catch{}
  return false;
 }
+function accountStep(task,milliseconds){
+ let timer;
+ const timeout=new Promise((_,reject)=>{timer=setTimeout(()=>reject(new Error('Account check timed out. Check your connection to Neon Arcade and try again.')),milliseconds);});
+ return Promise.race([task,timeout]).finally(()=>clearTimeout(timer));
+}
 export function submitRemoteConnection({popup,token}){
- // Submit only from the trusted account document. A navigation does not need
- // the arcade page to fetch a private-network response across origins.
- const target='neon-owner-remote-'+crypto.randomUUID();popup.name=target;
- const form=document.createElement('form');form.method='POST';form.action=remoteOrigin+'/api/open';form.target=target;form.hidden=true;
- const input=document.createElement('input');input.type='hidden';input.name='access_token';input.value=token;form.append(input);document.body.append(form);
+ // The reserved about:blank window inherits the account origin and policy.
+ // Submit inside it: disowning the opener can prevent named-target lookup
+ // from finding this window and leave it stranded behind a blocked popup.
+ const doc=popup.document;
+ const form=doc.createElement('form');form.method='POST';form.action=remoteOrigin+'/api/open';form.target='_self';form.hidden=true;
+ const input=doc.createElement('input');input.type='hidden';input.name='access_token';input.value=token;form.append(input);doc.body.append(form);
  try{form.submit();}finally{input.value='';form.remove();}
 }
-export function createOwnerRemote({rpc,getProfile,getSession,send,submit=submitRemoteConnection,openWindow=()=>window.open('about:blank','_blank'),getEpoch=()=>0}){
+export function createOwnerRemote({rpc,getProfile,getSession,send,submit=submitRemoteConnection,openWindow=()=>window.open('about:blank','_blank'),getEpoch=()=>0,accountTimeout=6000}){
  let busy=false;
  return async data=>{
   const requestId=data?.requestId;
@@ -36,10 +42,10 @@ export function createOwnerRemote({rpc,getProfile,getSession,send,submit=submitR
   busy=true;
   try{
    if(popup){popup.opener=null;waitingWindow(popup);}
-   await rpc('neon_owner_overview');
+   await accountStep(rpc('neon_owner_overview'),accountTimeout);
    if(!current())throw Error('Your account changed. Open Remote Access again.');
    if(data.action==='status'){reply({allowed:true});return;}
-   const {data:sessionData,error}=await getSession();
+   const {data:sessionData,error}=await accountStep(getSession(),accountTimeout);
    if(error||!sessionData?.session?.access_token)throw Error('Sign in again before connecting.');
    if(!current())throw Error('Your account changed. Open Remote Access again.');
    if(popup.closed)throw Error('The connection window was closed.');

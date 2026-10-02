@@ -147,10 +147,21 @@ test('direct navigation grants a private session only for a signed-in active own
  assert.equal((await fetch(s.origin+'/',{headers:{Cookie:cookie.split(';')[0]}})).status,200);
  s.deny();assert.equal((await open(token)).status,403);
 });
-test('the launch token is sent in a POST body, never a URL, and is removed from the trusted document',t=>{
+test('the reserved window submits itself without relying on named popup targeting or exposing the token',t=>{
  const previous=globalThis.document;let submitted,removed=false;
  const form={append:input=>form.input=input,submit:()=>submitted={method:form.method,action:form.action,target:form.target,token:form.input.value},remove:()=>removed=true};
- globalThis.document={createElement:tag=>tag==='form'?form:{},body:{append:()=>{}}};t.after(()=>globalThis.document=previous);
- const popup={};submitRemoteConnection({popup,token});
- assert.equal(submitted.method,'POST');assert.equal(submitted.action,remoteOrigin+'/api/open');assert.equal(submitted.action.includes(token),false);assert.equal(submitted.token,token);assert.equal(submitted.target,popup.name);assert.equal(form.input.value,'');assert.equal(removed,true);
+ globalThis.document={createElement:()=>{throw Error('The account document must not target a detached named window');}};t.after(()=>globalThis.document=previous);
+ let attached=false;
+ const popup={opener:null,document:{createElement:tag=>tag==='form'?form:{},body:{append:()=>attached=true}}};submitRemoteConnection({popup,token});
+ assert.equal(submitted.method,'POST');assert.equal(submitted.action,remoteOrigin+'/api/open');assert.equal(submitted.action.includes(token),false);assert.equal(submitted.token,token);assert.equal(submitted.target,'_self');assert.equal(attached,true);assert.equal(form.input.value,'');assert.equal(removed,true);assert.equal(popup.opener,null);
+});
+
+test('a stalled owner check reports recovery and cannot submit after its timeout',async()=>{
+ let release,reads=0,submissions=0,reply,status={textContent:''};
+ const stalled=new Promise(resolve=>release=resolve);
+ const popup={closed:false,opener:{},document:{head:{append:()=>{}},body:{replaceChildren:()=>{}},createElement:()=>({}),getElementById:()=>status},close:()=>{throw Error('Keep the error visible');}};
+ const handle=createOwnerRemote({rpc:()=>stalled,getProfile:()=>({id:'owner'}),getSession:async()=>{reads++;return {data:{session:{access_token:token}}};},send:(type,data)=>reply=data,openWindow:()=>popup,submit:()=>submissions++,accountTimeout:10});
+ await handle({requestId:'timeout',action:'open'});
+ assert.equal(reply.allowed,false);assert.match(status.textContent,/Account check timed out/);assert.equal(reads,0);assert.equal(submissions,0);
+ release({players:1});await new Promise(resolve=>setImmediate(resolve));assert.equal(reads,0);assert.equal(submissions,0);
 });
