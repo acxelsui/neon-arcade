@@ -17,7 +17,9 @@ After restarting the PC, start Sunshine and run `start.ps1 -BrowserDirectory <in
 
 ## Access checks
 
-The existing `neon_owner_overview` Supabase RPC authorizes every new connection. It denies nonowners and banned or muted owners. No new SQL or database credentials are required. The gateway verifies owner access again when redeeming a single-use 30-second ticket. It stores tokens only in memory and uses an HttpOnly session cookie. Active sessions are checked every 15 seconds; role loss, a ban, an expired token, or an unavailable account service closes access. Sessions expire after 20 minutes and can be reopened from the owner toolkit.
+The existing `neon_owner_overview` Supabase RPC authorizes every new connection. It denies nonowners and banned or muted owners. No new SQL or database credentials are required. The trusted account page verifies the owner, then submits the access token in a POST body to the fixed private HTTPS `/api/open` endpoint. The PC verifies the owner again and sets an HttpOnly session cookie. It never reflects the token into HTML, a URL, or the public arcade frame. A private-origin confirmation page commits before navigating to the desktop, keeping the Strict cookie available on the first request. This launch does not require a cross-origin browser fetch to the private network. The old single-use 30-second ticket endpoint remains available for compatibility.
+
+The gateway stores tokens only in memory. Active sessions are checked every 15 seconds; role loss, a ban, an expired token, or an unavailable account service closes access. Sessions expire after 20 minutes and can be reopened from the owner toolkit. The account site's form policy permits only the exact private `/api/open` destination; origin checks and owner verification remain mandatory on the PC.
 
 Browser access requires both active Neon owner access and private network access. Native Moonlight uses Tailscale and its own Sunshine PIN pairing; the native app does not check Neon roles. Remove a paired native client in Sunshine when revoking native access. Do not grant private network membership to ordinary players.
 

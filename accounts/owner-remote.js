@@ -11,7 +11,15 @@ function connectionError(popup,message){
  try{const node=popup?.document?.getElementById('remote-connect-status');if(node){node.textContent=message;return true;}}catch{}
  return false;
 }
-export function createOwnerRemote({rpc,getProfile,getSession,send,fetcher=fetch,openWindow=()=>window.open('about:blank','_blank'),getEpoch=()=>0}){
+export function submitRemoteConnection({popup,token}){
+ // Submit only from the trusted account document. A navigation does not need
+ // the arcade page to fetch a private-network response across origins.
+ const target='neon-owner-remote-'+crypto.randomUUID();popup.name=target;
+ const form=document.createElement('form');form.method='POST';form.action=remoteOrigin+'/api/open';form.target=target;form.hidden=true;
+ const input=document.createElement('input');input.type='hidden';input.name='access_token';input.value=token;form.append(input);document.body.append(form);
+ try{form.submit();}finally{input.value='';form.remove();}
+}
+export function createOwnerRemote({rpc,getProfile,getSession,send,submit=submitRemoteConnection,openWindow=()=>window.open('about:blank','_blank'),getEpoch=()=>0}){
  let busy=false;
  return async data=>{
   const requestId=data?.requestId;
@@ -34,13 +42,8 @@ export function createOwnerRemote({rpc,getProfile,getSession,send,fetcher=fetch,
    const {data:sessionData,error}=await getSession();
    if(error||!sessionData?.session?.access_token)throw Error('Sign in again before connecting.');
    if(!current())throw Error('Your account changed. Open Remote Access again.');
-   const response=await fetcher(remoteOrigin+'/api/owner-session',{method:'POST',credentials:'omit',headers:{Authorization:'Bearer '+sessionData.session.access_token},signal:AbortSignal.timeout(10000)});
-   if(!response.ok)throw Error(response.status===403?'An active owner role is required.':'The PC could not start a remote session.');
-   const result=await response.json();
-   if(!current())throw Error('Your account changed. Open Remote Access again.');
-   if(!/^[\w-]{43}$/.test(result?.ticket))throw Error('The PC returned an invalid connection.');
    if(popup.closed)throw Error('The connection window was closed.');
-   popup.location.replace(remoteOrigin+'/connect#'+result.ticket);
+   submit({popup,token:sessionData.session.access_token});
    reply({allowed:true,opened:true});
   }catch(error){
    const message=error.name==='TypeError'||error.name==='TimeoutError'?'Cannot reach your PC. Keep it awake, connect Tailscale on both PCs, and allow local network access if your browser asks.':error.message||'Remote access could not open.';

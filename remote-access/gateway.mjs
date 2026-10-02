@@ -15,7 +15,8 @@ export async function verifyOwner(token,{fetcher=fetch}={}){
   const result=await response.json();return typeof result?.players==='number';
  }catch{return false;}
 }
-async function body(req){let size=0,parts=[];for await(const part of req){size+=part.length;if(size>16384)throw Error('Request too large');parts.push(part)}return JSON.parse(Buffer.concat(parts).toString('utf8')||'{}')}
+async function rawBody(req){let size=0,parts=[];for await(const part of req){size+=part.length;if(size>16384)throw Error('Request too large');parts.push(part)}return Buffer.concat(parts).toString('utf8')}
+async function body(req){return JSON.parse(await rawBody(req)||'{}')}
 export function createGateway({publicOrigin,upstream='http://127.0.0.1:8080',ownerUsername='neon-owner',ownerVerifier=verifyOwner,now=Date.now,checkInterval=15000}={}){
  if(typeof ownerUsername!=='string'||!/^[a-zA-Z0-9_-]{1,64}$/.test(ownerUsername))throw Error('Choose the local browser client account username.');
  const origin=new URL(publicOrigin);
@@ -41,9 +42,22 @@ export function createGateway({publicOrigin,upstream='http://127.0.0.1:8080',own
   result.cookie=(req.headers.cookie||'').split(';').filter(part=>!part.trim().startsWith(cookieName+'=')).join(';');return result;
  }
  function json(res,code,data){res.writeHead(code,{'Content-Type':'application/json','Cache-Control':'no-store','X-Content-Type-Options':'nosniff'});res.end(JSON.stringify(data));}
+ function session(res,token){const value=random();sessions.set(hash(value),{token,expires:now()+20*60000,checked:now()});res.setHeader('Set-Cookie',cookieName+'='+value+'; HttpOnly; Path=/; Max-Age=1200; SameSite=Strict'+(origin.protocol==='https:'?'; Secure':''));}
+ async function connectionPage(res,code,message,ready=false){
+  res.writeHead(code,{'Content-Type':'text/html; charset=utf-8','Cache-Control':'no-store','X-Content-Type-Options':'nosniff','Content-Security-Policy':"default-src 'none'; script-src 'self'; style-src 'self'; frame-ancestors 'none'; base-uri 'none'"});
+  const template=await readFile(new URL('./session-open.html',import.meta.url),'utf8');res.end(template.replace('<!--STATUS-->',message).replace('<!--READY-->',String(ready)));
+ }
  const server=http.createServer(async(req,res)=>{
   try{
    res.setHeader('Referrer-Policy','no-referrer');const path=new URL(req.url,publicOrigin).pathname;
+   if(path==='/api/open'){
+    if(req.method!=='POST'||!allowedAccounts.has(req.headers.origin)||!(req.headers['content-type']||'').startsWith('application/x-www-form-urlencoded')){await connectionPage(res,403,'Open the connection from your signed-in Neon Arcade owner toolkit.');return;}
+    expire();if(tickets.size+sessions.size>=64){await connectionPage(res,429,'Too many connections. Close an unused session and try again.');return;}
+    const token=new URLSearchParams(await rawBody(req)).get('access_token');
+    if(!await ownerVerifier(token)){await connectionPage(res,403,'Owner access could not be verified. Reopen the connection from your owner account.');return;}
+    if(tickets.size+sessions.size>=64){await connectionPage(res,429,'Too many connections. Close an unused session and try again.');return;}
+    session(res,token);await connectionPage(res,200,'Owner verified. Opening your PC…',true);return;
+   }
    if(path==='/api/owner-session'){
     const account=req.headers.origin;if(!allowedAccounts.has(account)){json(res,403,{error:'Open through your signed-in Neon Arcade account.'});return;}
     res.setHeader('Access-Control-Allow-Origin',account);res.setHeader('Vary','Origin');
@@ -55,7 +69,7 @@ export function createGateway({publicOrigin,upstream='http://127.0.0.1:8080',own
     if(tickets.size+sessions.size>=64){json(res,429,{error:'Too many remote sessions.'});return;}
     const ticket=random();tickets.set(hash(ticket),{token,expires:now()+30000});json(res,200,{ticket});return;
    }
-   if(path==='/connect'||path==='/connect.js'||path==='/connect.css'){
+   if(path==='/connect'||path==='/connect.js'||path==='/connect.css'||path==='/session-ready.js'){
     if(req.method!=='GET'){json(res,405,{error:'Use GET.'});return;}
     const file=path==='/connect'?'connect.html':path.slice(1);
     res.setHeader('Content-Type',path==='/connect'?'text/html; charset=utf-8':path.endsWith('.css')?'text/css':'text/javascript');res.setHeader('Cache-Control','no-store');
@@ -67,8 +81,7 @@ export function createGateway({publicOrigin,upstream='http://127.0.0.1:8080',own
     const {ticket}=await body(req);if(typeof ticket!=='string'||!/^[\w-]{43}$/.test(ticket)){json(res,401,{error:'Open Remote Access again from Neon Arcade.'});return;}
     const key=hash(ticket),item=tickets.get(key);tickets.delete(key);
     if(!item||item.expires<=now()||!await ownerVerifier(item.token)){json(res,403,{error:'Owner access expired. Reopen from Neon Arcade.'});return;}
-    const session=random();sessions.set(hash(session),{token:item.token,expires:now()+20*60000,checked:now()});
-    res.setHeader('Set-Cookie',cookieName+'='+session+'; HttpOnly; Path=/; Max-Age=1200; SameSite=Strict'+(origin.protocol==='https:'?'; Secure':''));json(res,200,{ok:true});return;
+    session(res,item.token);json(res,200,{ok:true});return;
    }
    if(!await validSession(req)){json(res,403,{error:'Open Owner Remote Access through Neon Arcade.'});return;}
    if(!['GET','HEAD'].includes(req.method)&&req.headers.origin!==publicOrigin){json(res,403,{error:'Invalid request origin.'});return;}

@@ -5,7 +5,7 @@ import net from 'node:net';
 import {once} from 'node:events';
 import {readFile} from 'node:fs/promises';
 import {createGateway,verifyOwner} from '../remote-access/gateway.mjs';
-import {createOwnerRemote,remoteOrigin} from '../accounts/owner-remote.js';
+import {createOwnerRemote,remoteOrigin,submitRemoteConnection} from '../accounts/owner-remote.js';
 const token='owner-token-'.repeat(6),account='https://neon-arcade-improvedv3.vercel.app';
 async function listen(server){server.listen(0,'127.0.0.1');await once(server,'listening');return 'http://127.0.0.1:'+server.address().port;}
 async function setup(t,ownerUsername='neon-owner'){
@@ -77,30 +77,31 @@ test('revoking an owner disconnects an active desktop WebSocket',async t=>{
  assert.match((await received)[0].toString(),/101 Switching/);assert.equal(s.seen()['x-neon-remote-user'],'neon-owner');
  const closed=once(socket,'close');s.deny();s.advance(21);await Promise.race([closed,new Promise((_,reject)=>{const timer=setTimeout(()=>reject(Error('Desktop connection stayed open after revocation')),1500);timer.unref();})]);
 });
-test('the trusted account bridge keeps credentials and connection tickets out of the proxy frame',async()=>{
- let location,replies=[],closed=false,request;
- const popup={closed:false,opener:{},location:{replace:value=>location=value},close:()=>closed=true};
- const handle=createOwnerRemote({rpc:async()=>({players:1}),getProfile:()=>({id:'owner'}),getSession:async()=>({data:{session:{access_token:token}}}),send:(type,data)=>replies.push({type,...data}),openWindow:()=>popup,fetcher:async(url,options)=>{request={url,...options};return {ok:true,json:async()=>({ticket:'a'.repeat(43)})};}});
+test('the trusted account bridge submits only to its own PC without exposing credentials to the proxy frame',async()=>{
+ let replies=[],closed=false,request;
+ const popup={closed:false,opener:{},close:()=>closed=true};
+ const handle=createOwnerRemote({rpc:async()=>({players:1}),getProfile:()=>({id:'owner'}),getSession:async()=>({data:{session:{access_token:token}}}),send:(type,data)=>replies.push({type,...data}),openWindow:()=>popup,submit:value=>request=value});
  await handle({requestId:'1',action:'open',endpoint:'https://attacker.example'});
- assert.equal(popup.opener,null);assert.equal(request.url,remoteOrigin+'/api/owner-session');assert.equal(request.headers.Authorization,'Bearer '+token);assert.equal(request.credentials,'omit');assert.equal(location,remoteOrigin+'/connect#'+'a'.repeat(43));
- assert.equal(JSON.stringify(replies).includes(token),false);assert.equal(JSON.stringify(replies).includes('a'.repeat(43)),false);assert.equal(closed,false);
+ assert.equal(popup.opener,null);assert.equal(request.popup,popup);assert.equal(request.token,token);
+ assert.equal(JSON.stringify(replies).includes(token),false);assert.equal(closed,false);
 });
 test('account changes and role failures close the pending connection without forwarding a token',async()=>{
- let player='owner',fetches=0,closed=0;
- const handle=createOwnerRemote({rpc:async()=>{player='member';},getProfile:()=>({id:player}),getSession:async()=>{throw Error('Should not read token');},send:()=>{},openWindow:()=>({close:()=>closed++,opener:{}}),fetcher:async()=>fetches++});
- await handle({requestId:'2',action:'open'});assert.equal(closed,1);assert.equal(fetches,0);
+ let player='owner',submissions=0,closed=0;
+ const handle=createOwnerRemote({rpc:async()=>{player='member';},getProfile:()=>({id:player}),getSession:async()=>{throw Error('Should not read token');},send:()=>{},openWindow:()=>({close:()=>closed++,opener:{}}),submit:()=>submissions++});
+ await handle({requestId:'2',action:'open'});assert.equal(closed,1);assert.equal(submissions,0);
 });
 test('the account browser policy permits only the configured private remote destination',async()=>{
  const config=JSON.parse(await readFile(new URL('../accounts/vercel.json',import.meta.url),'utf8'));
  const policy=config.headers[0].headers.find(header=>header.key==='Content-Security-Policy').value;
- const sources=policy.match(/(?:^|;)\s*connect-src\s+([^;]+)/)[1].split(/\s+/);
- assert.ok(sources.includes(remoteOrigin));assert.equal(sources.includes('*'),false);
+ const sources=policy.match(/(?:^|;)\s*form-action\s+([^;]+)/)[1].split(/\s+/);
+ assert.deepEqual(sources,[remoteOrigin+'/api/open']);
+ assert.match(policy,/Cross-Origin-Opener|frame-ancestors 'none'/);
 });
 test('failed connections stay visible with a plain-text error instead of closing a white popup',async()=>{
  let closed=false,replies=[],status={textContent:''},sheet;
  const doc={head:{append:value=>sheet=value},body:{replaceChildren:()=>{}},createElement:()=>({}),getElementById:()=>status};
  const popup={document:doc,closed:false,opener:{},close:()=>closed=true};
- const handle=createOwnerRemote({rpc:async()=>({players:1}),getProfile:()=>({id:'owner'}),getSession:async()=>({data:{session:{access_token:token}}}),send:(type,data)=>replies.push({type,...data}),openWindow:()=>popup,fetcher:async()=>{throw new TypeError('Network denied');}});
+ const handle=createOwnerRemote({rpc:async()=>({players:1}),getProfile:()=>({id:'owner'}),getSession:async()=>({data:{session:{access_token:token}}}),send:(type,data)=>replies.push({type,...data}),openWindow:()=>popup,submit:()=>{throw new TypeError('Navigation denied');}});
  await handle({requestId:'3',action:'open'});
  assert.equal(closed,false);assert.match(status.textContent,/Cannot reach your PC/);assert.match(sheet.href,/remote-window\.css$/);assert.equal(popup.opener,null);
  assert.equal(replies.at(-1).allowed,false);assert.equal(JSON.stringify(replies).includes(token),false);
@@ -109,4 +110,22 @@ test('popup errors report recovery without requesting desktop credentials',async
  let calls=0,reply;
  const handle=createOwnerRemote({rpc:async()=>calls++,getProfile:()=>({id:'owner'}),getSession:async()=>calls++,send:(type,data)=>reply=data,openWindow:()=>{throw Error('Blocked');}});
  await handle({requestId:'4',action:'open'});assert.equal(calls,0);assert.match(reply.error,/Allow the remote connection window/);
+});
+test('direct navigation grants a private session only for a signed-in active owner from the account site',async t=>{
+ const s=await setup(t);
+ const open=(value,originHeader=account)=>fetch(s.origin+'/api/open',{method:'POST',headers:{Origin:originHeader,'Content-Type':'application/x-www-form-urlencoded'},body:new URLSearchParams({access_token:value})});
+ assert.equal((await open(token,'https://neongoatarcadd.vercel.app')).status,403);
+ assert.equal((await open('member')).status,403);
+ const response=await open(token);assert.equal(response.status,200);
+ const html=await response.text();assert.ok(html.includes('data-ready="true"'));assert.equal(html.includes(token),false);assert.equal(response.headers.has('location'),false);
+ const cookie=response.headers.get('set-cookie');assert.match(cookie,/HttpOnly.*SameSite=Strict/);
+ assert.equal((await fetch(s.origin+'/',{headers:{Cookie:cookie.split(';')[0]}})).status,200);
+ s.deny();assert.equal((await open(token)).status,403);
+});
+test('the launch token is sent in a POST body, never a URL, and is removed from the trusted document',t=>{
+ const previous=globalThis.document;let submitted,removed=false;
+ const form={append:input=>form.input=input,submit:()=>submitted={method:form.method,action:form.action,target:form.target,token:form.input.value},remove:()=>removed=true};
+ globalThis.document={createElement:tag=>tag==='form'?form:{},body:{append:()=>{}}};t.after(()=>globalThis.document=previous);
+ const popup={};submitRemoteConnection({popup,token});
+ assert.equal(submitted.method,'POST');assert.equal(submitted.action,remoteOrigin+'/api/open');assert.equal(submitted.action.includes(token),false);assert.equal(submitted.token,token);assert.equal(submitted.target,popup.name);assert.equal(form.input.value,'');assert.equal(removed,true);
 });

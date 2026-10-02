@@ -1,5 +1,6 @@
 // Keep newest first. Dates describe when the change was added, not when a visitor opened Home.
 export const updates = [
+ {date:'2026-10-01',title:'Direct private PC launch',text:'The owner toolkit opens the private PC connection directly, with owner access checked before the desktop is available. Account credentials stay out of the address bar and game proxy.'},
  {date:'2026-10-01',title:'Clearer remote PC connections',text:'Remote PC access shows a dark connecting window and keeps connection errors visible so you can retry from the owner toolkit.'},
  {date:'2026-10-01',title:'Private owner remote access',text:'Owners can open their private PC connection from the owner toolkit. Browser connections check the active owner role and require the PC and connecting device to be on the private Tailscale network.'},
  {date:'2026-10-01',title:'Friend alerts, page status, and browser bans',text:'New friend requests appear in transparent notifications with Accept and Decline. Online status shows the page you are using. Website bans stay active on linked browsers until an owner unbans the account.'},
