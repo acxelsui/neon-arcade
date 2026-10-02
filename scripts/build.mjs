@@ -25,7 +25,7 @@ for (const game of catalog.games) {
   if (!game.url.startsWith('/') && new URL(game.url).protocol !== 'https:') throw new Error(`Invalid game address: ${game.name}`);
 }
 const required = [
-  'media-frames.css', 'owner-toolkit.js', 'owner-toolkit.css', 'site-access.js',
+  'activity-presence.js', 'media-frames.css', 'owner-toolkit.js', 'owner-toolkit.css', 'site-access.js',
   'avatar-decorations.js', 'avatar-decorations.css', 'cloud-transport.js', 'artwork/grand-theft-auto-v.jpg', 'artwork/roblox.jpg', 'artwork/tcg-card-shop.png', 'artwork/raft.png', 'artwork/only-up.png', 'artwork/ranch-simulator22.webp', 'artwork/cuphead.png', 'artwork/builder-simulator.jpg', 'artwork/euro-truck-simulator-2.webp', 'artwork/nba-2k23.jpg', 'artwork/madden-nfl-24-mobile.jpg', 'artwork/stumble-guys.jpg', 'artwork/clash-royale.jpg', 'artwork/fortnite.png', 'artwork/subnautica-zero.png', 'artwork/schedule-1.jpg',
   'tube-transport.js', 'tube-watch-player.js',
   'account-request.js', 'social.js', 'social.css', 'playlists.js', 'playlists.css', 'playlist-player.js', 'playlist-covers.js', 'playlist-sharing.js',

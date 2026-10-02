@@ -1,5 +1,6 @@
 // Keep newest first. Dates describe when the change was added, not when a visitor opened Home.
 export const updates = [
+ {date:'2026-10-01',title:'Friend alerts, page status, and browser bans',text:'New friend requests appear in transparent notifications with Accept and Decline. Online status shows the page you are using. Website bans stay active on linked browsers until an owner unbans the account.'},
  {date:'2026-10-01',title:'Smooth avatar glows',text:'Choose soft cyan, violet, aurora, rose, blue, amber, ice, or prismatic light around your avatar. Gentle flowing highlights and pulses keep the photo clear, and reduced-motion settings stop the animations. Saved decoration choices stay compatible.'},
  {date:'2026-10-01',title:'Superhero cartoon avatars',text:'Choose eight new comic-style avatar decorations with masked heroes, caped robots, lightning, bubbles, starlight, and ice powers. Each has matching animated effects and a larger preview in the profile editor. Existing saved decoration choices are preserved.'},
  {date:'2026-10-01',title:'Illustrated avatar decorations',text:'Avatar decorations now use detailed crystal, cosmic, ribbon, flame, and arcade artwork with glowing auras, sparkles, drifting stars, and embers. Preview each effect in your profile editor; saved decoration choices stay the same.'},

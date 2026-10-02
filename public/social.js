@@ -1,5 +1,6 @@
 import {createAccountRequests,accountOrigin} from './account-request.js';
 import {avatarDecorations,decorateAvatar} from './avatar-decorations.js';
+import {formatPresence} from './activity-presence.js';
 export function initSocial({navigate,getCatalog}){
  const api=createAccountRequests(),$=s=>document.querySelector(s);let active='',profile=null,profileTarget=null,profileVersion=0,friends=[],searchRows=[],friendBusy=false,editing=false,owner=null;
  const main=$('main');
@@ -12,7 +13,7 @@ export function initSocial({navigate,getCatalog}){
  function button(label,fn){const b=document.createElement('button');b.type='button';b.textContent=label;b.onclick=fn;return b;}
  function avatar(player){const el=document.createElement('span');el.className='social-avatar';el.textContent=player.username[0].toUpperCase();try{const url=new URL(player.avatar);if(url.origin==='https://xfwjzxjeessduxuuqeop.supabase.co'){const img=new Image();img.src=url.href;img.alt='';img.onerror=()=>img.remove();el.append(img);}}catch{}decorateAvatar(el,player.decoration);return el;}
  function badge(player){const el=document.createElement('span');el.className='community-role role-'+player.role;el.textContent=player.role;return el;}
- function presence(player){return player.online?(player.game_name?'Playing '+player.game_name:'Online · exploring Neon Arcade'):'Offline';}
+ function presence(player){return formatPresence(player);}
  function open(playerId=null){editing=false;profile=null;profileTarget=playerId;profileVersion++;navigate('profile');}
  function dm(player){window.dispatchEvent(new CustomEvent('neon-open-dm',{detail:{id:player.id,username:player.username}}));navigate('community');}
  async function friendAction(player,operation,source){
@@ -45,6 +46,8 @@ export function initSocial({navigate,getCatalog}){
  $('#social-my-profile').onclick=()=>open();$('#friends-refresh').onclick=loadFriends;
  $('#friends-search').onsubmit=async event=>{event.preventDefault();const b=event.target.querySelector('button');b.disabled=true;message('#friends-message','Finding players…');try{const rows=await api.request('player-search',{query:$('#friends-query').value.trim()});searchRows=rows;$('#friend-search-results').replaceChildren(...rows.map(card));message('#friends-message',rows.length?'':'No matching players.');}catch(error){message('#friends-message',error.message);}finally{b.disabled=false;}};
  window.addEventListener('neon-profile',event=>open(event.detail||null));
+ window.addEventListener('neon-open-friends',()=>{if(!$('#player')?.hidden)$('#close-game')?.click();navigate('friends');loadFriends();});
+ window.addEventListener('neon-friends-updated',()=>{if(active==='friends')loadFriends();if(active==='profile'&&profileTarget)loadProfile(profileTarget);});
  window.addEventListener('neon-profile-saved',()=>parent.postMessage({channel:'neon-members-v1',type:'profile-updated'},accountOrigin));
  window.addEventListener('neon-page',event=>{active=event.detail;if(active==='friends')loadFriends();if(active==='profile'&&!profile)loadProfile(profileTarget);});
  window.addEventListener('message',event=>{if(event.source!==parent||event.origin!==accountOrigin||event.data?.channel!=='neon-members-v1'||event.data.type!=='members')return;const id=event.data.self?.id;if(owner&&owner!==id){profileVersion++;profile=null;profileTarget=null;editing=false;friends=[];searchRows=[];$('#friend-search-results').replaceChildren();$('#social-profile').replaceChildren();renderFriends();}owner=id;});

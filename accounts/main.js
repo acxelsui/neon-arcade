@@ -1,5 +1,7 @@
 import {createChatPopout} from './chat-popout.js';
 import {initMessageNotifications} from './message-notifications.js';
+import {initFriendNotifications} from './friend-notifications.js';
+import {browserIdentity} from './browser-identity.js';
 import {initChatBridge} from './chat-bridge.js';
 import {createSiteAccessMonitor} from './site-access.js';
 import {initSocialBridge} from './social-bridge.js';
@@ -13,10 +15,13 @@ const $=s=>document.querySelector(s),frame=$('#arcade');
 const contentOrigin=separateOrigin(location.hostname==='localhost'?'http://localhost:3001':'https://neongoatarcadd.vercel.app',location.origin);
 const client=createClient(PROJECT,KEY,{auth:{persistSession:true,autoRefreshToken:true,detectSessionInUrl:false,storageKey:'neon-member-session'}});
 const requestedPlaylist=readPlaylistToken(new URLSearchParams(location.search).get('playlist'));
-const tabId=crypto.randomUUID();let profile=null,mode='signup',game=null,busy=false,epoch=0,booting=true,lastActivity=0,avatarCache=new Map(),accessPass=null;
+const tabId=crypto.randomUUID();let profile=null,mode='signup',game=null,busy=false,epoch=0,booting=true,avatarCache=new Map(),accessPass=null,deviceKey=null,activityTimer=null,syncQueued=false;
+function getBrowserKey(){return deviceKey||=browserIdentity();}
+function bannedGate(status={}){gate();selectMode('login');message('Access is banned until an owner unbans the account.'+(status.reason?' Reason: '+status.reason:''));}
 const screenPopout=createChatPopout({opened:opened=>send('ai-popout-opened',{opened}),action:(action,question)=>send('ai-popout-action',{action,question})});
 const pollMessages=initMessageNotifications({rpc,send,getProfile:()=>profile});
-const checkSiteAccess=createSiteAccessMonitor({rpc,getProfile:()=>profile,onBanned:status=>{gate();selectMode('login');message('This account is banned from Neon Arcade.'+(status.reason?' Reason: '+status.reason:''));}});
+const pollFriendRequests=initFriendNotifications({rpc,send,getProfile:()=>profile});
+const checkSiteAccess=createSiteAccessMonitor({rpc,getProfile:()=>profile,getDeviceKey:getBrowserKey,onBanned:bannedGate});
 const handleChat=initChatBridge({rpc,send,getProfile:()=>profile,decorateRows:async rows=>{
  const ids=[...new Set(rows.map(row=>row.sender_id))];const decoration=await decorations(ids);
  const missing=ids.filter(id=>!avatarCache.has(id)||avatarCache.get(id).expires<Date.now());
@@ -38,15 +43,16 @@ async function decorations(ids){try{const rows=await rpc('neon_decorations',{pla
 async function enter(){
  const {data,error}=await client.auth.getUser();if(error||!data.user){gate();return}
  const rows=await rpc('neon_my_profile');profile=rows?.[0]||null;
+ if(await rpc('neon_bind_device',{device_key:getBrowserKey()})){bannedGate();return;}
  if(!profile){gate();selectMode('profile');$('#username').value=data.user.user_metadata?.username||'';return}
  const siteStatus=await checkSiteAccess();if(siteStatus?.banned)return;
- if(!accessPass)accessPass=await rpc('neon_issue_access');
+ if(!accessPass)accessPass=await rpc('neon_issue_device_access',{device_key:getBrowserKey()});
  $('#gate').hidden=true;$('#profile-name').textContent=profile.username;$('#avatar-preview').textContent=profile.username[0].toUpperCase();
  if(!frame.getAttribute('src'))frame.src=contentOrigin+'/neon-access'+(/^[a-zA-Z0-9_-]{1,80}$/.test(new URLSearchParams(location.search).get('game')||'')?'#game='+new URLSearchParams(location.search).get('game'):'');frame.hidden=false;
  await sync();
 }
 async function sync(){
- if(!profile||busy)return;busy=true;const current=epoch;
+ if(!profile)return;if(busy){syncQueued=true;return;}busy=true;const current=epoch;
  try{
   await rpc('neon_heartbeat',{tab_id:tabId,playing_id:game?.id??null,playing_name:game?.name??null});
   const rows=await rpc('neon_online');if(current!==epoch)return;
@@ -58,7 +64,7 @@ async function sync(){
   }
   const styles=await decorations(rows.map(row=>row.id));if(current!==epoch)return;
   send('members',{self:{id:profile.id,username:profile.username},members:rows.map(row=>({...row,avatar:avatarCache.get(row.id)?.url||null,decoration:styles.get(row.id)||'none'})),observedAt:Date.now()});
- }catch{if(current===epoch)send('unavailable',{message:'Online players couldn’t refresh. Reconnecting…'})}finally{busy=false}
+ }catch{if(current===epoch)send('unavailable',{message:'Online players couldn’t refresh. Reconnecting…'})}finally{busy=false;if(syncQueued){syncQueued=false;if(profile)setTimeout(sync,0);}}
 }
 $('#choose-signup').onclick=()=>selectMode('signup');$('#choose-login').onclick=()=>selectMode('login');
 $('#auth-form').onsubmit=async event=>{
@@ -67,9 +73,10 @@ $('#auth-form').onsubmit=async event=>{
   const name=username($('#username').value),password=$('#password').value;
   if(mode==='profile'){await rpc('neon_create_profile',{chosen_username:name});await enter();return}
   if(mode==='signup'){
+   if(await rpc('neon_device_status',{device_key:getBrowserKey()})){bannedGate();return;}
    const settings=await fetch(PROJECT+'/auth/v1/settings',{headers:{apikey:KEY}});if(!settings.ok)throw new Error('Account service could not be reached. Please try again.');
    const config=await settings.json();if(!config.mailer_autoconfirm)throw new Error('Signup is not ready yet. The site owner needs to turn off Confirm email in Supabase Authentication for username-only accounts.');
-   const {data,error}=await client.auth.signUp({email:loginIdentity(name),password,options:{data:{username:name}}});if(error)throw error;
+   const {data,error}=await client.auth.signUp({email:loginIdentity(name),password,options:{data:{username:name,neon_device_key:getBrowserKey()}}});if(error)throw error;
    if(!data.session)throw new Error('Signup needs owner configuration. No login session was created.');
    await rpc('neon_create_profile',{chosen_username:name});
   }else{const {error}=await client.auth.signInWithPassword({email:loginIdentity(name),password});if(error)throw error}
@@ -109,11 +116,11 @@ window.addEventListener('message',event=>{
  if(event.data.type==='profile-updated'){sync();return}
  if(event.data.type==='blank-game'){if(!openBlankGame({game:event.data.game,contentOrigin,accountOrigin:location.origin,pass:accessPass}))send('blank-game-blocked');return}
  if(event.data.type==='access-ready'&&accessPass){send('access-pass',{pass:accessPass});return}
- if(event.data.type==='ready'){sync();pollAnnouncements();pollMessages();if(requestedPlaylist)send('playlist-link',{token:requestedPlaylist});return}
+ if(event.data.type==='ready'){sync();pollAnnouncements();pollMessages();pollFriendRequests();if(requestedPlaylist)send('playlist-link',{token:requestedPlaylist});return}
  if(event.data.type==='profile'){openProfile();return}
  if(event.data.type==='activity'){
   const next=activity(event.data.game);if(next===undefined)return;game=next;
-  if(Date.now()-lastActivity>2000){lastActivity=Date.now();sync()}
+  clearTimeout(activityTimer);activityTimer=setTimeout(sync,200);
  }
 });
 // Auth events never run async Supabase operations inside the SDK callback lock.
