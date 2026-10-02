@@ -1,0 +1,11 @@
+# Keep one instance so browser sessions and outbound devices share this process.
+# Review the selected hosting plan and limits before deployment.
+services:
+  - type: web
+    name: neon-owner-relay
+    runtime: docker
+    plan: free
+    numInstances: 1
+    dockerfilePath: ./remote-relay/Dockerfile
+    dockerContext: ./remote-relay
+    healthCheckPath: /neon/health

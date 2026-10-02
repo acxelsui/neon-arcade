@@ -3,6 +3,9 @@ export function initOwnerToolkit(){
  const account=location.hostname==='localhost'?'http://localhost:3002':'https://neon-arcade-improvedv3.vercel.app';
  const $=id=>document.getElementById(id),dialog=$('owner-toolkit'),button=$('owner-toolkit-open');
  if(!dialog||!button)return;
+ const dashboard=document.createElement('button');dashboard.type='button';dashboard.textContent='Open owner dashboard';dashboard.className='owner-dashboard-open';
+ dashboard.onclick=()=>{if(ownerAllowed(me))parent.postMessage({channel:'neon-members-v1',type:'owner-dashboard'},account);};
+ dialog.querySelector('.owner-heading').after(dashboard);
  const pending=new Map();let me=null,self=null,offset=0,busy=false,version=0;
  function request(action,args={}){
   if(parent===window)return Promise.reject(Error('Open through your signed-in Neon account.'));

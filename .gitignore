@@ -17,4 +17,5 @@ public/clients/
 
 accounts/dist/
 remote-access/config.json
+remote-access/device-config.json
 remote-access/server/

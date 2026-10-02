@@ -1,5 +1,5 @@
 import {createChatPopout} from './chat-popout.js';
-import {createOwnerRemote} from './owner-remote.js?v=browser-compatible-20261002';
+import {initOwnerPortal} from './owner-portal.js';
 import {initMessageNotifications} from './message-notifications.js';
 import {initFriendNotifications} from './friend-notifications.js';
 import {browserIdentity} from './browser-identity.js';
@@ -23,7 +23,7 @@ const screenPopout=createChatPopout({opened:opened=>send('ai-popout-opened',{ope
 const pollMessages=initMessageNotifications({rpc,send,getProfile:()=>profile});
 const pollFriendRequests=initFriendNotifications({rpc,send,getProfile:()=>profile});
 const checkSiteAccess=createSiteAccessMonitor({rpc,getProfile:()=>profile,getDeviceKey:getBrowserKey,onBanned:bannedGate});
-const handleOwnerRemote=createOwnerRemote({rpc,getProfile:()=>profile,getSession:()=>client.auth.getSession(),send,getEpoch:()=>epoch});
+const ownerPortal=initOwnerPortal({client,rpc,getProfile:()=>profile,getEpoch:()=>epoch,onArcade:()=>{if(profile)frame.hidden=false;}});
 const handleChat=initChatBridge({rpc,send,getProfile:()=>profile,decorateRows:async rows=>{
  const ids=[...new Set(rows.map(row=>row.sender_id))];const decoration=await decorations(ids);
  const missing=ids.filter(id=>!avatarCache.has(id)||avatarCache.get(id).expires<Date.now());
@@ -39,7 +39,7 @@ const handleSocial=initSocialBridge({rpc,send,getProfile:()=>profile,avatars:asy
 function send(type,extra={}){frame.contentWindow?.postMessage({channel:'neon-members-v1',type,...extra},contentOrigin)}
 function message(text){$('#auth-status').textContent=text}
 function selectMode(next){mode=next;const setup=next==='profile';$('#auth-tabs').hidden=setup;$('#password-label').hidden=setup;$('#password').required=!setup;$('#password').autocomplete=next==='login'?'current-password':'new-password';$('#signup-note').hidden=next==='login';$('#gate-title').textContent=setup?'Choose your player name.':next==='login'?'Welcome back.':'Welcome to Neon.';$('#gate-description').textContent=setup?'One last step before you enter the arcade.':next==='login'?'Your next adventure is waiting.':'Create your player profile and make yourself at home.';$('#submit-auth').textContent=setup?'Save username ↗':next==='login'?'Sign in ↗':'Create account ↗';$('#choose-signup').setAttribute('aria-pressed',String(next==='signup'));$('#choose-login').setAttribute('aria-pressed',String(next==='login'));$('#gate-signout').hidden=!setup;message('')}
-function gate(){screenPopout.close();epoch++;profile=null;game=null;accessPass=null;frame.hidden=true;frame.removeAttribute('src');$('#gate').hidden=false;$('#profile-dialog').close()}
+function gate(){screenPopout.close();ownerPortal.reset();epoch++;profile=null;game=null;accessPass=null;frame.hidden=true;frame.removeAttribute('src');$('#gate').hidden=false;$('#profile-dialog').close();if(location.pathname.startsWith('/owner'))selectMode('login')}
 async function rpc(name,args){const {data,error}=await client.rpc(name,args);if(error)throw error;return data}
 async function decorations(ids){try{const rows=await rpc('neon_decorations',{player_ids:ids});return new Map(rows.map(row=>[row.id,row.decoration]));}catch{return new Map();}}
 async function enter(){
@@ -51,7 +51,7 @@ async function enter(){
  if(!accessPass)accessPass=await rpc('neon_issue_device_access',{device_key:getBrowserKey()});
  $('#gate').hidden=true;$('#profile-name').textContent=profile.username;$('#avatar-preview').textContent=profile.username[0].toUpperCase();
  if(!frame.getAttribute('src'))frame.src=contentOrigin+'/neon-access'+(/^[a-zA-Z0-9_-]{1,80}$/.test(new URLSearchParams(location.search).get('game')||'')?'#game='+new URLSearchParams(location.search).get('game'):'');frame.hidden=false;
- await sync();
+ await sync();await ownerPortal.render();
 }
 async function sync(){
  if(!profile)return;if(busy){syncQueued=true;return;}busy=true;const current=epoch;
@@ -114,7 +114,7 @@ window.addEventListener('message',event=>{
  if(event.data.type==='ai-popout-preview'){screenPopout.preview(event.data.url);return}
  if(event.data.type==='ai-popout-open'){screenPopout.open().catch(error=>send('ai-popout-error',{error:error.message}));return}
  if(event.data.type==='chat-request'){handleChat(event.data);return}
- if(event.data.type==='owner-remote-request'){handleOwnerRemote(event.data);return}
+ if(event.data.type==='owner-dashboard'){const current=epoch;rpc('neon_owner_overview').then(()=>{if(epoch===current&&profile)ownerPortal.navigate('/owner');}).catch(()=>{});return}
  if(event.data.type==='social-request'){handleSocial(event.data);return}
  if(event.data.type==='profile-updated'){sync();return}
  if(event.data.type==='blank-game'){if(!openBlankGame({game:event.data.game,contentOrigin,accountOrigin:location.origin,pass:accessPass}))send('blank-game-blocked');return}

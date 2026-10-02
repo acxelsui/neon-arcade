@@ -1,5 +1,6 @@
 // Keep newest first. Dates describe when the change was added, not when a visitor opened Home.
 export const updates = [
+ {date:'2026-10-02',title:'An owner dashboard for the new remote relay',text:'Removed the old direct PC connection. Owners have separate player, device, remote and activity pages. The replacement requires authenticator verification and hosted relay setup before a PC can connect; existing player data is preserved.'},
  {date:'2026-10-02',title:'More compatible remote connections',text:'Remote launch supports browsers without the newer timeout API. An Open your PC link remains available when automatic navigation is blocked, and connection errors identify the failed step.'},
  {date:'2026-10-02',title:'Remote launch across laptops',text:'Owner remote access gets a one-use connection ticket from the account site and opens the PC directly. The connection window shows each loading step and reports failures instead of silently waiting on about:blank.'},
  {date:'2026-10-02',title:'Remote connection window fix',text:'Browser remote access continues inside the window you opened instead of relying on another popup. Stalled account checks show a retry message rather than waiting indefinitely.'},
