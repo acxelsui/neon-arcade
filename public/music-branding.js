@@ -21,7 +21,10 @@ export function brandMusicDocument(doc,original='Voidify',replacement='Neon Musi
    }
   }
  }
- const observer=new MutationObserver(()=>{if(!queued&&!stopped){queued=true;queueMicrotask(apply)}});
+ // Playback progress and lyrics change frequently. Only rescan the document
+ // when new text can contain branding, rather than on every player update.
+ function relevant(node){const text=String(node?.textContent||node?.nodeValue||'').toLowerCase();return text.includes(original.toLowerCase())||text.includes('void network')||text.includes('voidcraft');}
+ const observer=new MutationObserver(records=>{if(!queued&&!stopped&&records.some(record=>record.type==='characterData'?relevant(record.target):[...record.addedNodes].some(relevant))){queued=true;queueMicrotask(apply)}});
  // Observe text/children, not styles, so our visibility edits do not loop.
  observer.observe(doc.body,{childList:true,subtree:true,characterData:true});apply();
  return ()=>{stopped=true;observer.disconnect()};

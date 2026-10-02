@@ -1,0 +1,13 @@
+/* Give the media itself the space previously occupied by its duplicate header. */
+#movies .browser,#sports .browser,.music-view .music-dock-heading{display:none}
+#movies:not([hidden]),#sports:not([hidden]){display:flex;flex-direction:column;height:calc(100svh - var(--chrome) - 24px);min-height:320px}
+#movies-frames,#sports-frames{flex:1;min-height:0;height:auto}
+#game-side-panel #movies:not([hidden]),#game-side-panel #sports:not([hidden]){height:100%;min-height:0}
+#movies-status:empty,#sports-status:empty{display:none}
+#movies-frames,#sports-frames,#music-frame{overflow:hidden;border-radius:14px;background:#0b1420;isolation:isolate}
+#movies-frames,#sports-frames{border:1px solid #91c9eb30}
+#movies-frames iframe,#sports-frames iframe,#music-frame iframe{display:block;width:100%;height:100%;border:0;background:#0b1420;animation:media-frame-enter .18s ease-out}
+.music-view #music-dock{backdrop-filter:none;-webkit-backdrop-filter:none}
+#movies-frames:fullscreen,#sports-frames:fullscreen,#music-frame:fullscreen{border:0;border-radius:0}
+@keyframes media-frame-enter{from{opacity:0}to{opacity:1}}
+@media(prefers-reduced-motion:reduce){#movies-frames iframe,#sports-frames iframe,#music-frame iframe{animation:none}}

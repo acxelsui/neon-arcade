@@ -1,6 +1,8 @@
 import {chatText} from './chat-rules.js';
+import {ownerRequest} from './owner-rules.js';
 const uuid=/^[a-f0-9]{8}-[a-f0-9]{4}-[a-f0-9]{4}-[a-f0-9]{4}-[a-f0-9]{12}$/i;
 export function chatRequest(data){
+ if(typeof data.action==='string'&&data.action.startsWith('owner-'))return ownerRequest(data);
  const peer=data.peer??null;
  if(peer!==null&&(typeof peer!=='string'||!uuid.test(peer)))throw new Error('Choose a valid player.');
  switch(data.action){
@@ -25,7 +27,7 @@ export function initChatBridge({rpc,send,getProfile,decorateRows}){
   if(pending>=5){send('chat-result',{requestId:data.requestId,error:'Please wait for chat to catch up.'});return}
   pending++;const owner=getProfile().id;
   try{const [name,args]=chatRequest(data);let result=await rpc(name,args);if(data.action==='history'&&decorateRows)result=await decorateRows(result);if(getProfile()?.id===owner)send('chat-result',{requestId:data.requestId,result,self:owner})}
-  catch(error){if(getProfile()?.id===owner)send('chat-result',{requestId:data.requestId,error:['PGRST202','42883'].includes(error.code)?'Chat needs its database setup. Ask the site owner to run chat.sql.':error.message||'Chat could not connect. Try again.'})}
+  catch(error){if(getProfile()?.id===owner)send('chat-result',{requestId:data.requestId,error:['PGRST202','42883'].includes(error.code)?(data.action.startsWith('owner-')?'The owner toolkit needs its database setup. Run owner-toolkit.sql.':'Chat needs its database setup. Ask the site owner to run chat.sql.'):error.message||'Chat could not connect. Try again.'})}
   finally{pending--}
  };
 }

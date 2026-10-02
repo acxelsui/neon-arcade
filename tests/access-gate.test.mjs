@@ -25,6 +25,13 @@ test('revoked passes stop working after the short validation cache',async()=>{
  const req=()=>request('/catalog.json',{headers:{cookie:'neon_arcade_pass='+pass}});
  assert.equal(await gate(req()),null);allowed=false;now=16000;assert.equal((await gate(req())).status,401);
 });
+
+test('active-session checks detect a ban immediately despite the resource cache',async()=>{
+ let allowed=true;const gate=createAccessGate({fetcher:async()=>Response.json(allowed)}),headers={cookie:'neon_arcade_pass='+pass};
+ assert.equal(await gate(request('/catalog.json',{headers})),null);allowed=false;
+ assert.equal((await gate(request('/neon-access?check=1',{headers}))).status,401);
+ assert.equal((await gate(request('/api/wisp/',{headers}))).status,401);
+});
 test('service errors fail closed; bridge rejects foreign submissions and invalid bodies',async()=>{
  const gate=createAccessGate({fetcher:async()=>new Response('error',{status:500})});
  assert.equal((await gate(request('/games/a',{headers:{cookie:'neon_arcade_pass='+pass}}))).status,503);

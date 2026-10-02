@@ -1,5 +1,5 @@
 let video;
-function play(){if(video&&!document.hidden)video.play().catch(()=>{});}
+function play(){if(video&&!document.hidden&&!document.fullscreenElement)video.play().catch(()=>{});}
 export function setWallpaperMedia(url,poster=''){
  const layer=document.querySelector('#wallpaper');
  if(video?.getAttribute('src')===url){play();return;}
@@ -14,4 +14,7 @@ export function setWallpaperMedia(url,poster=''){
  media.src=url;layer.append(media);play();
 }
 document.addEventListener('visibilitychange',()=>{if(document.hidden)video?.pause();else play()});
+// Fullscreen media covers the wallpaper completely; avoid decoding a second
+// video behind it. Resume the same full-quality wallpaper on exit.
+document.addEventListener('fullscreenchange',()=>{if(document.fullscreenElement)video?.pause();else play()});
 document.addEventListener('pointerdown',play,{passive:true});

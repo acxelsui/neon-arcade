@@ -1,6 +1,7 @@
 import {createChatPopout} from './chat-popout.js';
 import {initMessageNotifications} from './message-notifications.js';
 import {initChatBridge} from './chat-bridge.js';
+import {createSiteAccessMonitor} from './site-access.js';
 import {initSocialBridge} from './social-bridge.js';
 import {openBlankGame} from './blank-game.js';
 import {readPlaylistToken} from './playlist-sharing.js';
@@ -15,6 +16,7 @@ const requestedPlaylist=readPlaylistToken(new URLSearchParams(location.search).g
 const tabId=crypto.randomUUID();let profile=null,mode='signup',game=null,busy=false,epoch=0,booting=true,lastActivity=0,avatarCache=new Map(),accessPass=null;
 const screenPopout=createChatPopout({opened:opened=>send('ai-popout-opened',{opened}),action:(action,question)=>send('ai-popout-action',{action,question})});
 const pollMessages=initMessageNotifications({rpc,send,getProfile:()=>profile});
+const checkSiteAccess=createSiteAccessMonitor({rpc,getProfile:()=>profile,onBanned:status=>{gate();selectMode('login');message('This account is banned from Neon Arcade.'+(status.reason?' Reason: '+status.reason:''));}});
 const handleChat=initChatBridge({rpc,send,getProfile:()=>profile,decorateRows:async rows=>{
  const ids=[...new Set(rows.map(row=>row.sender_id))];const decoration=await decorations(ids);
  const missing=ids.filter(id=>!avatarCache.has(id)||avatarCache.get(id).expires<Date.now());
@@ -37,6 +39,7 @@ async function enter(){
  const {data,error}=await client.auth.getUser();if(error||!data.user){gate();return}
  const rows=await rpc('neon_my_profile');profile=rows?.[0]||null;
  if(!profile){gate();selectMode('profile');$('#username').value=data.user.user_metadata?.username||'';return}
+ const siteStatus=await checkSiteAccess();if(siteStatus?.banned)return;
  if(!accessPass)accessPass=await rpc('neon_issue_access');
  $('#gate').hidden=true;$('#profile-name').textContent=profile.username;$('#avatar-preview').textContent=profile.username[0].toUpperCase();
  if(!frame.getAttribute('src'))frame.src=contentOrigin+'/neon-access'+(/^[a-zA-Z0-9_-]{1,80}$/.test(new URLSearchParams(location.search).get('game')||'')?'#game='+new URLSearchParams(location.search).get('game'):'');frame.hidden=false;
@@ -116,6 +119,9 @@ window.addEventListener('message',event=>{
 // Auth events never run async Supabase operations inside the SDK callback lock.
 client.auth.onAuthStateChange(event=>{if(event==='SIGNED_OUT'&&!booting){gate();selectMode('login')}});
 setInterval(sync,30000);window.addEventListener('online',sync);
+setInterval(()=>checkSiteAccess().catch(()=>{}),15000);
+window.addEventListener('focus',()=>checkSiteAccess().catch(()=>{}));
+document.addEventListener('visibilitychange',()=>{if(!document.hidden)checkSiteAccess().catch(()=>{});});
 async function boot(){
  try{await new Promise(resolve=>setTimeout(resolve,1100));const {data,error}=await client.auth.getSession();if(error)throw error;if(data.session)await enter();else gate()}
  catch{gate();message('Could not restore your account. Sign in again or retry when your connection returns.')}
