@@ -1,4 +1,5 @@
 import {createChatPopout} from './chat-popout.js';
+import {createOwnerRemote} from './owner-remote.js';
 import {initMessageNotifications} from './message-notifications.js';
 import {initFriendNotifications} from './friend-notifications.js';
 import {browserIdentity} from './browser-identity.js';
@@ -22,6 +23,7 @@ const screenPopout=createChatPopout({opened:opened=>send('ai-popout-opened',{ope
 const pollMessages=initMessageNotifications({rpc,send,getProfile:()=>profile});
 const pollFriendRequests=initFriendNotifications({rpc,send,getProfile:()=>profile});
 const checkSiteAccess=createSiteAccessMonitor({rpc,getProfile:()=>profile,getDeviceKey:getBrowserKey,onBanned:bannedGate});
+const handleOwnerRemote=createOwnerRemote({rpc,getProfile:()=>profile,getSession:()=>client.auth.getSession(),send,getEpoch:()=>epoch});
 const handleChat=initChatBridge({rpc,send,getProfile:()=>profile,decorateRows:async rows=>{
  const ids=[...new Set(rows.map(row=>row.sender_id))];const decoration=await decorations(ids);
  const missing=ids.filter(id=>!avatarCache.has(id)||avatarCache.get(id).expires<Date.now());
@@ -112,6 +114,7 @@ window.addEventListener('message',event=>{
  if(event.data.type==='ai-popout-preview'){screenPopout.preview(event.data.url);return}
  if(event.data.type==='ai-popout-open'){screenPopout.open().catch(error=>send('ai-popout-error',{error:error.message}));return}
  if(event.data.type==='chat-request'){handleChat(event.data);return}
+ if(event.data.type==='owner-remote-request'){handleOwnerRemote(event.data);return}
  if(event.data.type==='social-request'){handleSocial(event.data);return}
  if(event.data.type==='profile-updated'){sync();return}
  if(event.data.type==='blank-game'){if(!openBlankGame({game:event.data.game,contentOrigin,accountOrigin:location.origin,pass:accessPass}))send('blank-game-blocked');return}
