@@ -1,5 +1,5 @@
 import {createChatPopout} from './chat-popout.js';
-import {createOwnerRemote} from './owner-remote.js';
+import {createOwnerRemote} from './owner-remote.js?v=ticket-launch-20261002';
 import {initMessageNotifications} from './message-notifications.js';
 import {initFriendNotifications} from './friend-notifications.js';
 import {browserIdentity} from './browser-identity.js';

@@ -12,7 +12,7 @@ export function initOwnerRemote(){
  function request(action){
   if(parent===window){status.textContent='Open through your signed-in Neon account.';return;}
   const requestId=crypto.randomUUID();
-  const timer=setTimeout(()=>{pending.delete(requestId);button.disabled=false;status.textContent='Could not connect. Check the host PC is awake and online, then try again.';},15000);
+  const timer=setTimeout(()=>{pending.delete(requestId);button.disabled=false;status.textContent='Could not connect. Check the host PC is awake and online, then try again.';},35000);
   pending.set(requestId,{timer,action});
   parent.postMessage({channel:'neon-members-v1',type:'owner-remote-request',requestId,action},account);
  }

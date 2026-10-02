@@ -16,16 +16,20 @@ function accountStep(task,milliseconds){
  const timeout=new Promise((_,reject)=>{timer=setTimeout(()=>reject(new Error('Account check timed out. Check your connection to Neon Arcade and try again.')),milliseconds);});
  return Promise.race([task,timeout]).finally(()=>clearTimeout(timer));
 }
-export function submitRemoteConnection({popup,token}){
- // The reserved about:blank window inherits the account origin and policy.
- // Submit inside it: disowning the opener can prevent named-target lookup
- // from finding this window and leave it stranded behind a blocked popup.
- const doc=popup.document;
- const form=doc.createElement('form');form.method='POST';form.action=remoteOrigin+'/api/open';form.target='_self';form.hidden=true;
- const input=doc.createElement('input');input.type='hidden';input.name='access_token';input.value=token;form.append(input);doc.body.append(form);
- try{form.submit();}finally{input.value='';form.remove();}
+export async function requestRemoteTicket(token,{fetcher=fetch}={}){
+ const response=await fetcher('/api/owner-remote',{method:'POST',headers:{Authorization:'Bearer '+token},signal:AbortSignal.timeout(14000),cache:'no-store'});
+ let data;try{data=await response.json();}catch{throw Error('The remote connection service is unavailable. Refresh Neon Arcade and try again.');}
+ if(!response.ok)throw Error(data.error||'Your PC could not open a connection.');
+ if(typeof data.ticket!=='string'||!/^[\w-]{43}$/.test(data.ticket))throw Error('The connection could not be verified. Try again.');
+ return data.ticket;
 }
-export function createOwnerRemote({rpc,getProfile,getSession,send,submit=submitRemoteConnection,openWindow=()=>window.open('about:blank','_blank'),getEpoch=()=>0,accountTimeout=6000}){
+export function submitRemoteConnection({popup,ticket}){
+ // A one-use, 30-second ticket reaches the fixed PC. The account JWT stays
+ // off the remote address and is never sent to the public game frame.
+ if(typeof ticket!=='string'||!/^[\w-]{43}$/.test(ticket))throw Error('Invalid connection ticket.');
+ popup.location.replace(remoteOrigin+'/connect#'+ticket);
+}
+export function createOwnerRemote({rpc,getProfile,getSession,send,requestTicket=requestRemoteTicket,submit=submitRemoteConnection,openWindow=()=>window.open('about:blank','_blank'),getEpoch=()=>0,accountTimeout=6000}){
  let busy=false;
  return async data=>{
   const requestId=data?.requestId;
@@ -42,14 +46,21 @@ export function createOwnerRemote({rpc,getProfile,getSession,send,submit=submitR
   busy=true;
   try{
    if(popup){popup.opener=null;waitingWindow(popup);}
+   connectionError(popup,'Checking your Neon owner access…');
    await accountStep(rpc('neon_owner_overview'),accountTimeout);
    if(!current())throw Error('Your account changed. Open Remote Access again.');
    if(data.action==='status'){reply({allowed:true});return;}
+   connectionError(popup,'Checking your signed-in account…');
    const {data:sessionData,error}=await accountStep(getSession(),accountTimeout);
    if(error||!sessionData?.session?.access_token)throw Error('Sign in again before connecting.');
    if(!current())throw Error('Your account changed. Open Remote Access again.');
    if(popup.closed)throw Error('The connection window was closed.');
-   submit({popup,token:sessionData.session.access_token});
+   connectionError(popup,'Connecting to your host PC…');
+   const ticket=await requestTicket(sessionData.session.access_token);
+   if(!current())throw Error('Your account changed. Open Remote Access again.');
+   if(popup.closed)throw Error('The connection window was closed.');
+   connectionError(popup,'Opening your remote desktop…');
+   submit({popup,ticket});
    reply({allowed:true,opened:true});
   }catch(error){
    const message=error.name==='TypeError'||error.name==='TimeoutError'?'Cannot reach your PC. Keep the host PC awake with its remote services running and its internet connection active.':error.message||'Remote access could not open.';
