@@ -1,0 +1,105 @@
+import http from 'node:http';
+import {randomBytes,createHash,timingSafeEqual} from 'node:crypto';
+import {readFile,mkdir,writeFile,rename} from 'node:fs/promises';
+import path from 'node:path';
+import {fileURLToPath} from 'node:url';
+import {verifyOwner} from './auth.mjs';
+import {RemoteError,ownerAction} from './protocol.mjs';
+const secret=()=>randomBytes(32).toString('hex'),id=prefix=>prefix+randomBytes(16).toString('hex');
+const hash=value=>createHash('sha256').update(value).digest('hex');
+const equal=(a,b)=>typeof a==='string'&&typeof b==='string'&&a.length===b.length&&timingSafeEqual(Buffer.from(a),Buffer.from(b));
+
+export async function createRelay({bridgeKey,storePath=null,ownerVerifier=verifyOwner,now=Date.now}={}){
+ if(typeof bridgeKey!=='string'||bridgeKey.length<32)throw Error('Set NEON_REMOTE_BRIDGE_KEY to a random secret of at least 32 characters.');
+ let saved={devices:[],logs:[]};
+ if(storePath){try{saved=JSON.parse(await readFile(storePath,'utf8'));}catch(error){if(error.code!=='ENOENT')throw error;}}
+ const devices=new Map(saved.devices.map(device=>[device.id,{...device,enabled:false,lastSeen:0,frame:null,sequence:0,commands:[],nextCommand:device.nextCommand||0}]));
+ const logs=saved.logs||[],enrollments=new Map(),sessions=new Map(),limits=new Map();let saving=Promise.resolve(),dirty=false;
+ function persist(){if(!storePath||!dirty)return;dirty=false;const content=JSON.stringify({devices:[...devices.values()].map(({id,owner,name,credentialHash,created,nextCommand})=>({id,owner,name,credentialHash,created,nextCommand})),logs});saving=saving.then(async()=>{await mkdir(path.dirname(storePath),{recursive:true});await writeFile(storePath+'.tmp',content,{mode:0o600});await rename(storePath+'.tmp',storePath);});return saving;}
+ function log(owner,device,action,session=null){dirty=true;logs.push({owner,device,action,session,at:new Date(now()).toISOString()});while(logs.length>2000)logs.shift();}
+ function closeSession(session,reason){if(!sessions.has(session.id))return;sessions.delete(session.id);const device=devices.get(session.device);if(device){device.frame=null;device.commands=[];device.commands.push({id:++device.nextCommand,type:'release'});}log(session.owner,session.device,reason,session.id);}
+ function sweep(){for(const [code,item] of enrollments)if(item.expires<=now())enrollments.delete(code);for(const item of sessions.values())if(item.expires<=now()||item.lastSeen+15000<=now())closeSession(item,'session-expired');for(const [key,item] of limits)if(item.until<=now())limits.delete(key);}
+ function rate(key,max,period){const current=limits.get(key)||{count:0,until:now()+period};if(current.until<=now()){current.count=0;current.until=now()+period;}if(++current.count>max)throw new RemoteError('Too many requests. Try again shortly.',429);limits.set(key,current);}
+ function owned(owner,deviceId){const device=devices.get(deviceId);if(!device||device.owner!==owner.id)throw new RemoteError('Computer not found.',404);return device;}
+ function sessionFor(owner,sessionId){const session=sessions.get(sessionId);if(!session||session.owner!==owner.id)throw new RemoteError('The remote session ended.',403);const device=owned(owner,session.device);if(!device.enabled||device.lastSeen+10000<now()){closeSession(session,'host-disconnected');throw new RemoteError('The computer is not sharing.',409);}return {session,device};}
+ async function read(req){let bytes=0,text='';for await(const chunk of req){bytes+=chunk.length;if(bytes>800000)throw new RemoteError('Request is too large.',413);text+=chunk.toString();}try{return JSON.parse(text||'{}');}catch{throw new RemoteError('JSON is required.');}}
+ async function handleOwner(owner,body){
+  const action=ownerAction(body);rate('owner:'+owner.id,300,10000);
+  if(action.action==='list')return {configured:true,devices:[...devices.values()].filter(d=>d.owner===owner.id).map(d=>({id:d.id,name:d.name,online:d.enabled&&d.lastSeen+10000>now(),lastSeen:d.lastSeen||null})),transport:'encrypted-relay'};
+  if(action.action==='pair'){
+   rate('pair:'+owner.id,10,60000);const enrollment=enrollments.get(action.code);if(!enrollment||enrollment.expires<=now())throw new RemoteError('That code expired or is incorrect. Get a new one from the launcher.',404);if(enrollment.owner)throw new RemoteError('That computer is already paired.',409);
+   enrollment.owner=owner.id;enrollment.ownerName=owner.name;enrollment.expires=now()+60000;
+   log(owner.id,enrollment.id,'device-paired');return {paired:true,name:enrollment.name};
+  }
+  if(action.action==='logs')return {logs:logs.filter(row=>row.owner===owner.id).slice(-50).reverse()};
+  if(action.action==='forget'){
+   const device=owned(owner,action.device);for(const session of sessions.values())if(session.device===device.id)closeSession(session,'device-removed');devices.delete(device.id);log(owner.id,device.id,'device-removed');return {removed:true};
+  }
+  if(action.action==='open'){
+   const device=owned(owner,action.device);if(!device.enabled||device.lastSeen+10000<now())throw new RemoteError('Open Neon Launcher on that PC and start sharing.',409);
+   for(const old of sessions.values())if(old.device===device.id)closeSession(old,'session-replaced');
+   device.frame=null;const session={id:id('ses_'),owner:owner.id,ownerName:owner.name,device:device.id,expires:now()+600000,lastSeen:now()};sessions.set(session.id,session);log(owner.id,device.id,'session-started',session.id);
+   return {session:session.id,name:device.name,expires:session.expires};
+  }
+  const {session,device}=sessionFor(owner,action.session);
+  if(action.action==='close'){closeSession(session,'session-ended');return {closed:true};}
+  session.lastSeen=now();
+  if(action.action==='input'){
+   if(device.commands.length+action.events.length>250)throw new RemoteError('The PC is catching up. Try again.',429);
+   for(const event of action.events)device.commands.push({id:++device.nextCommand,...event});dirty=true;return {accepted:true};
+  }
+  return {sequence:device.sequence,expires:session.expires,...(device.sequence>action.sequence&&device.frame?{frame:device.frame,width:device.width,height:device.height}:{}),waiting:!device.frame};
+ }
+ async function handleDevice(req,body,ip){
+  const operation=new URL(req.url,'http://relay').pathname;
+  if(operation==='/device/enroll'){
+   rate('enroll:'+ip,5,60000);if(enrollments.size>=500)throw new RemoteError('Pairing is busy. Try again.',429);
+   const code=randomBytes(8).toString('hex').toUpperCase(),credential=secret();
+   enrollments.set(code,{id:id('dev_'),name:String(body.name||'Windows PC').slice(0,60),credentialHash:hash(credential),expires:now()+300000,owner:null});
+   return {code,credential,expires:now()+300000};
+  }
+  const token=/^Device ([a-f0-9]{64})$/.exec(req.headers.authorization||'')?.[1];if(!token)throw new RemoteError('Pair the launcher first.',401);const digest=hash(token);
+  if(operation==='/device/claim'){
+   const enrollment=[...enrollments.entries()].find(([,item])=>equal(item.credentialHash,digest));if(!enrollment)throw new RemoteError('Pairing expired. Create another code.',401);
+   const [code,item]=enrollment;if(!item.owner)return {paired:false};enrollments.delete(code);
+   const device={id:item.id,name:item.name,owner:item.owner,credentialHash:item.credentialHash,created:now(),lastSeen:0,enabled:false,frame:null,sequence:0,commands:[],nextCommand:0};devices.set(device.id,device);dirty=true;
+   return {paired:true,id:device.id,ownerName:item.ownerName};
+  }
+  if(operation!=='/device/poll')throw new RemoteError('Unknown device action.',404);
+  const device=[...devices.values()].find(item=>equal(item.credentialHash,digest));if(!device)throw new RemoteError('This launcher is not paired.',401);
+  rate('device:'+device.id,100,10000);device.lastSeen=now();device.enabled=body.enabled===true;
+  if(!device.enabled){for(const session of sessions.values())if(session.device===device.id)closeSession(session,'host-stopped-sharing');device.frame=null;device.commands=[];return {active:false,commands:[]};}
+  const active=[...sessions.values()].find(item=>item.device===device.id);
+  if(body.frame&&active){
+   if(typeof body.frame!=='string'||body.frame.length>700000||!Number.isInteger(body.width)||!Number.isInteger(body.height)||body.width<1||body.width>1920||body.height<1||body.height>1920)throw new RemoteError('Invalid screen frame.');
+   const jpeg=Buffer.from(body.frame,'base64');if(jpeg.length<4||jpeg[0]!==255||jpeg[1]!==216||jpeg.at(-2)!==255||jpeg.at(-1)!==217)throw new RemoteError('JPEG frame required.');
+   device.frame=body.frame;device.width=body.width;device.height=body.height;device.sequence++;
+  }
+  if(Number.isSafeInteger(body.ack)&&body.ack>=0)device.commands=device.commands.filter(command=>command.id>body.ack);
+  return {active:!!active,ownerName:active?.ownerName||null,commands:device.commands.slice(0,40)};
+ }
+ const server=http.createServer(async(req,res)=>{
+  const reply=(status,data)=>{res.writeHead(status,{'Content-Type':'application/json','Cache-Control':'no-store','X-Content-Type-Options':'nosniff'});res.end(JSON.stringify(data));};
+  try{
+   const route=new URL(req.url,'http://relay').pathname;if(route==='/health'){reply(200,{ok:true});return;}
+   if(req.method!=='POST')throw new RemoteError('POST required.',405);
+   if(!equal(req.headers['x-neon-relay-key'],bridgeKey))throw new RemoteError('Unauthorized relay connection.',401);
+   sweep();const ip=String(req.headers['x-neon-client-ip']||req.socket.remoteAddress).slice(0,80);rate('request:'+ip,800,10000);
+   const body=await read(req);let result;
+   if(route==='/owner'){
+    const token=/^Bearer ([a-zA-Z0-9._-]{40,12000})$/.exec(req.headers.authorization||'')?.[1];let owner;
+    try{owner=await ownerVerifier(token);}catch(error){for(const session of sessions.values())if(session.token===token)closeSession(session,'owner-access-revoked');throw error;}
+    result=await handleOwner(owner,body);
+    if(result.session)sessions.get(result.session).token=token;
+   }else result=await handleDevice(req,body,ip);
+   await persist();reply(200,result);
+  }catch(error){reply(error.status||503,{error:error.status?error.message:'The relay could not complete the request.'});}
+ });
+ return {server,close:async()=>{for(const session of sessions.values())closeSession(session,'relay-stopped');await persist();await saving;server.close();},devices,sessions};
+}
+
+if(process.argv[1]&&path.resolve(process.argv[1])===fileURLToPath(import.meta.url)){
+ const relay=await createRelay({bridgeKey:process.env.NEON_REMOTE_BRIDGE_KEY,storePath:process.env.NEON_REMOTE_STORE||'/data/neon-remote.json'});
+ relay.server.listen(Number(process.env.PORT)||8080,'0.0.0.0',()=>console.log('Neon remote relay ready'));
+ for(const signal of ['SIGINT','SIGTERM'])process.on(signal,async()=>{await relay.close();process.exit(0);});
+}
