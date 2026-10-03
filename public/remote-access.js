@@ -80,7 +80,8 @@ export function initRemoteAccess({navigate}){
   try{
    const result=await remoteRequest({action:'connection-check'});if(self!==accountId||!access.isAllowed())return;
    results.replaceChildren();for(const step of result.checks){const row=document.createElement('li');row.dataset.passed=String(step.ok);row.textContent=step.label+' · '+(step.ok?'OK':step.message);results.append(row);}
-   const hint=document.createElement('li');hint.textContent=result.ok?'Connection checks passed. Get a fresh code from Neon Launcher and pair it.':'Send the failed line above so we can locate the problem.';results.append(hint);
+   for(const detail of result.details||[]){const row=document.createElement('li');row.textContent=detail;results.append(row);}
+   const hint=document.createElement('li');hint.textContent=result.ok?'Connection checks passed. Get a fresh code from Neon Launcher and pair it.':'Send the failed line and connection details above so we can locate the problem.';results.append(hint);
   }catch(error){if(self===accountId&&access.isAllowed()){const row=document.createElement('li');row.textContent=error.message;results.replaceChildren(row);}}
   finally{checkButton.disabled=false;}
  };

@@ -59,3 +59,49 @@ test('connection check does not forward a session or show a report after the acc
  let current='owner';const replies=[];const bridge=createRemoteBridge({getProfile:()=>({id:current}),getSession:async()=>{current='another';return {data:{session:{access_token:token}}};},send:(type,value)=>replies.push(value),fetcher:()=>assert.fail('Changed-account credentials must not be used')});
  await bridge({requestId:'check',action:'connection-check'});assert.deepEqual(replies,[]);
 });
+
+function policyEvent(patch={}){
+ const event=new Event('securitypolicyviolation');
+ Object.assign(event,{disposition:'enforce',effectiveDirective:'connect-src',blockedURI:origin+'/api/remote-access',documentURI:origin+'/',originalPolicy:"default-src 'none'; connect-src https://xfwjzxjeessduxuuqeop.supabase.co",...patch});return event;
+}
+
+test('connection details capture a late enforced policy while stripping credentials, nonces and query strings',async()=>{
+ const target=new EventTarget();
+ const result=await checkRemoteConnection({policyTarget:target,pageLocation:{href:origin+'/?secret='+token},getSession:async()=>({data:{session:{access_token:token}}}),fetcher:async()=>{
+  setTimeout(()=>target.dispatchEvent(policyEvent({blockedURI:origin+'/api/remote-access?secret='+token,documentURI:origin+'/?secret='+token,originalPolicy:"script-src 'nonce-"+token+"'; connect-src https://xfwjzxjeessduxuuqeop.supabase.co/private?secret="+token})),0);
+  throw TypeError(token);
+ }});
+ assert.equal(result.ok,false);assert.match(result.checks[1].message,/page security rule/);
+ assert.ok(result.details.includes('Blocking rule: connect-src https://xfwjzxjeessduxuuqeop.supabase.co'));
+ assert.ok(result.details.includes('Policy document: '+origin));assert.ok(result.details.includes('Check version: remote-details-v1'));
+ assert.equal(JSON.stringify(result).includes(token),false);assert.equal(JSON.stringify(result).includes('?secret='),false);assert.equal(JSON.stringify(result).includes('nonce-'),false);
+});
+
+test('connection details ignore report-only policies and violations for unrelated requests',async()=>{
+ const target=new EventTarget();
+ const result=await checkRemoteConnection({policyTarget:target,pageLocation:{href:origin+'/'},getSession:async()=>({data:{session:{access_token:token}}}),fetcher:async()=>{
+  for(const patch of [{disposition:'report'},{effectiveDirective:'script-src'},{blockedURI:'https://other.example/api/remote-access'},{blockedURI:origin+'/api/chat'}])target.dispatchEvent(policyEvent(patch));
+  throw TypeError('Failed to fetch');
+ }});
+ assert.match(result.checks[1].message,/browser request failed/);assert.ok(result.details.includes('No matching page security violation was reported.'));
+ assert.equal(result.details.some(line=>line.startsWith('Blocking rule:')),false);
+});
+
+test('connection details remove policy listeners after success and failure and suppress changed-account reports',async()=>{
+ for(const succeed of [true,false]){
+  const target=new EventTarget();let adds=0,removes=0,current=true;
+  const add=target.addEventListener.bind(target),remove=target.removeEventListener.bind(target);
+  target.addEventListener=(...args)=>{adds++;add(...args);};target.removeEventListener=(...args)=>{removes++;remove(...args);};
+  const result=await checkRemoteConnection({policyTarget:target,pageLocation:{href:origin+'/'},isCurrent:()=>current,getSession:async()=>({data:{session:{access_token:token}}}),fetcher:async()=>{
+   if(succeed)return {ok:true,json:async()=>({configured:true,devices:[]})};current=false;throw TypeError('Failed to fetch');
+  }});
+  assert.equal(adds,1);assert.equal(removes,1);assert.equal(succeed?result.ok:result===null,true);
+ }
+});
+
+test('connection details distinguish a timeout without exposing arbitrary browser error text',async()=>{
+ const result=await checkRemoteConnection({getSession:async()=>({data:{session:{access_token:token}}}),fetcher:async()=>{throw new DOMException(token,'TimeoutError');}});
+ assert.ok(result.details.some(line=>/^Browser result: TimeoutError after \d+ ms$/.test(line)));assert.equal(JSON.stringify(result).includes(token),false);
+ const unknown=await checkRemoteConnection({getSession:async()=>({data:{session:{access_token:token}}}),fetcher:async()=>{throw {name:token,message:token};}});
+ assert.ok(unknown.details.some(line=>line.startsWith('Browser result: RequestError')));assert.equal(JSON.stringify(unknown).includes(token),false);
+});
