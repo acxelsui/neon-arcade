@@ -30,6 +30,7 @@ export function ownerAction(value){
   if(typeof value.session!=='string'||!/^ses_[a-f0-9]{32}$/.test(value.session))throw new RemoteError('Choose a remote session.');result.session=value.session;
  }
  if(value.action==='input')result.events=inputBatch(value.events);
- if(value.action==='poll')result.sequence=Number.isSafeInteger(value.sequence)&&value.sequence>=0?value.sequence:0;
+ if(value.action==='open')result.video=value.video===true;
+ if(value.action==='poll'){result.sequence=Number.isSafeInteger(value.sequence)&&value.sequence>=0?value.sequence:0;if(/^[a-f0-9]{32}$/.test(value.videoStream||''))result.videoStream=value.videoStream;}
  return result;
 }

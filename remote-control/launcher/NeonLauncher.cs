@@ -1,6 +1,7 @@
 using System;
 using System.Collections.Generic;
 using System.Drawing;
+using System.Drawing.Drawing2D;
 using System.Drawing.Imaging;
 using System.IO;
 using System.Net;
@@ -17,11 +18,13 @@ public class NeonLauncher : Form {
  readonly HttpClient http=new HttpClient();
  readonly JavaScriptSerializer json=new JavaScriptSerializer {MaxJsonLength=1000000};
  readonly Label status=new Label(),pairCode=new Label(),account=new Label();
- readonly Button pair=new Button(),sharing=new Button(),website=new Button();
+ readonly Button pair=new Button(),sharing=new Button(),website=new Button(),videoSetup=new Button();
  readonly System.Windows.Forms.Timer timer=new System.Windows.Forms.Timer();
  readonly HashSet<int> heldKeys=new HashSet<int>(),heldButtons=new HashSet<int>();
  readonly string saved=Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData),"Neon Arcade","launcher.dat");
  string credential=null,code=null;bool paired=false,enabled=false,active=false,busy=false,closing=false;long ack=0;
+ NeonVideoCapture videoCapture=null;bool videoReady=false,videoMode=false,videoFailed=false;string mediaSession=null;Rectangle videoBounds;
+ Bitmap captureBitmap=null;Graphics captureGraphics=null;Rectangle captureBounds;NeonFrameEncoder frameEncoder=null;
  [DllImport("user32.dll")]static extern bool SetProcessDPIAware();
  [DllImport("user32.dll")]static extern bool SetCursorPos(int x,int y);
  [DllImport("user32.dll",SetLastError=true)]static extern uint SendInput(uint count,INPUT[] input,int size);
@@ -31,20 +34,21 @@ public class NeonLauncher : Form {
  [StructLayout(LayoutKind.Sequential)]struct KEYBDINPUT{public ushort vk,scan;public uint flags,time;public IntPtr extra;}
 
  public NeonLauncher(){
-  Text="Neon Launcher · Remote access";Size=new Size(560,435);MinimumSize=Size;MaximumSize=Size;StartPosition=FormStartPosition.CenterScreen;BackColor=Color.FromArgb(12,24,40);ForeColor=Color.FromArgb(230,243,255);Font=new Font("Segoe UI",10);FormBorderStyle=FormBorderStyle.FixedSingle;MaximizeBox=false;
+  Text="Neon Launcher · Remote access · 1.2 · 60 fps video";Size=new Size(560,505);MinimumSize=Size;MaximumSize=Size;StartPosition=FormStartPosition.CenterScreen;BackColor=Color.FromArgb(12,24,40);ForeColor=Color.FromArgb(230,243,255);Font=new Font("Segoe UI",10);FormBorderStyle=FormBorderStyle.FixedSingle;MaximizeBox=false;
   var title=new Label {Text="NEON LAUNCHER",Font=new Font("Segoe UI",19,FontStyle.Bold),Location=new Point(26,25),Size=new Size(470,42)};
   var note=new Label {Text="Pair this PC with your Neon owner account. You control when sharing is enabled. Closing this window stops sharing.",Location=new Point(28,80),Size=new Size(465,58)};
   account.Location=new Point(28,142);account.Size=new Size(470,25);account.Text="Not paired with a Neon account";
   pairCode.Location=new Point(28,178);pairCode.Size=new Size(470,35);pairCode.Font=new Font("Consolas",16,FontStyle.Bold);pairCode.Text="Pair this PC to get a code";
   SetButton(pair,"Pair this PC",28,235,145);SetButton(website,"Open Neon",188,235,145);SetButton(sharing,"Start sharing",348,235,155);sharing.Enabled=false;
-  status.Location=new Point(28,297);status.Size=new Size(475,65);status.Text="Sharing is off. No screen is being captured.";
-  Controls.AddRange(new Control[]{title,note,account,pairCode,pair,website,sharing,status});
+  SetButton(videoSetup,"Set up 60 fps · host download",28,290,475);videoSetup.Click+=async(s,e)=>await InstallVideo();
+  status.Location=new Point(28,350);status.Size=new Size(475,90);status.Text="Sharing is off. No screen is being captured.";
+  Controls.AddRange(new Control[]{title,note,account,pairCode,pair,website,sharing,videoSetup,status});
   http.Timeout=TimeSpan.FromSeconds(12);ServicePointManager.SecurityProtocol=SecurityProtocolType.Tls12;
   pair.Click+=async(s,e)=>await Enroll();website.Click+=(s,e)=>System.Diagnostics.Process.Start(AccountSite+"/?remote=1");
-  sharing.Click+=async(s,e)=>{enabled=!enabled;active=false;ReleaseAll();sharing.Text=enabled?"Stop sharing":"Start sharing";status.Text=enabled?"Sharing enabled. Waiting for your Neon owner account to connect.":"Sharing is off. No screen is being captured.";await Poll();};
-  FormClosing+=(s,e)=>{closing=true;enabled=false;ReleaseAll();timer.Stop();http.Dispose();};
+  sharing.Click+=async(s,e)=>{enabled=!enabled;active=false;ReleaseAll();ReleaseCapture();sharing.Text=enabled?"Stop sharing":"Start sharing";status.Text=enabled?"Sharing enabled. Waiting for your Neon owner account to connect.":"Sharing is off. No screen is being captured.";await Poll();};
+  FormClosing+=(s,e)=>{closing=true;enabled=false;ReleaseAll();ReleaseCapture();timer.Stop();http.Dispose();};
   timer.Interval=5000;timer.Tick+=async(s,e)=>{if(!busy)await Poll();};
-  Load+=(s,e)=>{Restore();timer.Start();};
+  Load+=(s,e)=>{Restore();videoReady=NeonVideoEngine.Available();if(videoReady){videoSetup.Text="60 fps video ready";videoSetup.Enabled=false;}timer.Start();};
  }
  void SetButton(Button b,string text,int x,int y,int width){b.Text=text;b.Location=new Point(x,y);b.Size=new Size(width,40);b.FlatStyle=FlatStyle.Flat;b.FlatAppearance.BorderColor=Color.FromArgb(65,114,154);b.BackColor=Color.FromArgb(23,54,85);b.ForeColor=ForeColor;}
  async Task<Dictionary<string,object>> Request(string action,Dictionary<string,object> body=null,bool authenticate=true){
@@ -58,8 +62,15 @@ public class NeonLauncher : Form {
    }
   }
  }
+ async Task InstallVideo(){
+  if(busy||closing)return;if(MessageBox.Show("Download approximately 115 MB of verified FFmpeg video components to this PC? Sharing stays off during setup. Nothing is installed on the viewing laptop.","Set up 60 fps video",MessageBoxButtons.OKCancel,MessageBoxIcon.Information)!=DialogResult.OK)return;
+  busy=true;enabled=false;active=false;ReleaseAll();ReleaseCapture();sharing.Text="Start sharing";sharing.Enabled=false;pair.Enabled=false;videoSetup.Enabled=false;
+  try{await NeonVideoEngine.Install(text=>{if(!closing)status.Text=text;});videoReady=true;videoSetup.Text="60 fps video ready";status.Text="Video components ready. Click Start sharing, then reconnect from Neon Arcade. Video targets 60 fps; actual performance depends on both PCs and the connection.";}
+  catch(Exception error){status.Text="Video setup failed: "+error.Message;}
+  finally{busy=false;if(!closing){pair.Enabled=true;sharing.Enabled=paired;videoSetup.Enabled=!videoReady;}}
+ }
  async Task Enroll(){
-  if(busy)return;busy=true;pair.Enabled=false;enabled=false;active=false;sharing.Enabled=false;sharing.Text="Start sharing";ReleaseAll();
+  if(busy)return;busy=true;pair.Enabled=false;enabled=false;active=false;sharing.Enabled=false;sharing.Text="Start sharing";ReleaseAll();ReleaseCapture();
   try{
    var result=await Request("enroll",new Dictionary<string,object>{{"name",Environment.MachineName}},false);
    credential=Convert.ToString(result["credential"]);code=Convert.ToString(result["code"]);paired=false;ack=0;
@@ -76,24 +87,32 @@ public class NeonLauncher : Form {
     }return;
    }
    var body=new Dictionary<string,object>{{"enabled",enabled},{"ack",ack}};
-   if(enabled&&active){int w,h;body["frame"]=CaptureScreen(out w,out h);body["width"]=w;body["height"]=h;}
+   if(enabled&&active){
+    body["mediaSession"]=mediaSession;
+    if(videoMode&&videoReady&&!videoFailed){
+     try{Rectangle bounds=Screen.PrimaryScreen.Bounds;if(videoCapture==null||videoBounds!=bounds){ReleaseCapture();videoBounds=bounds;videoCapture=new NeonVideoCapture(bounds);}var footage=videoCapture.Take();if(footage!=null)body["video"]=footage;}
+     catch{ReleaseCapture();videoFailed=true;}
+    }
+    if(!videoMode||!videoReady||videoFailed){int w,h;body["frame"]=CaptureScreen(out w,out h);body["width"]=w;body["height"]=h;}
+   }
    var result=await Request("poll",body);if(closing)return;bool nextActive=enabled&&Convert.ToBoolean(result["active"]);
-   if(!nextActive)ReleaseAll();active=nextActive;
-   if(active){status.Text="SHARING LIVE with Neon owner "+Convert.ToString(result["ownerName"])+". Click Stop sharing to end control.";}
+   string nextSession=result.ContainsKey("session")?Convert.ToString(result["session"]):null;
+   if(!nextActive||nextSession!=mediaSession){ReleaseAll();ReleaseCapture();videoFailed=false;}active=nextActive;mediaSession=nextSession;videoMode=result.ContainsKey("mode")&&Convert.ToString(result["mode"])=="video";
+   if(active){status.Text="SHARING LIVE with Neon owner "+Convert.ToString(result["ownerName"])+". "+(videoCapture!=null?"Video · 60 fps target. ":"Compatibility mode. ")+"Click Stop sharing to end control.";}
    else status.Text=enabled?"Sharing enabled. Waiting for your owner account to connect.":"Sharing is off. No screen is being captured.";
    var commands=result["commands"] as object[];
    if(commands!=null)foreach(var value in commands){var command=value as Dictionary<string,object>;if(command==null)continue;long sequence=Convert.ToInt64(command["id"]);if(sequence<=ack)continue;if(enabled&&active)Apply(command);else ReleaseAll();ack=sequence;}
-  }catch(Exception error){active=false;ReleaseAll();if(!closing)status.Text="Connection paused: "+error.Message;}
-  finally{timer.Interval=active?750:paired?5000:2000;busy=false;}
+  }catch(Exception error){active=false;ReleaseAll();ReleaseCapture();if(!closing)status.Text="Connection paused: "+error.Message;}
+  finally{timer.Interval=active?150:paired?5000:2000;busy=false;}
  }
  string CaptureScreen(out int width,out int height){
-  Rectangle screen=Screen.PrimaryScreen.Bounds;double scale=Math.Min(1.0,1280.0/Math.Max(screen.Width,screen.Height));width=Math.Max(1,(int)(screen.Width*scale));height=Math.Max(1,(int)(screen.Height*scale));
-  using(var original=new Bitmap(screen.Width,screen.Height))using(var graphics=Graphics.FromImage(original)){
-   graphics.CopyFromScreen(screen.Location,Point.Empty,screen.Size);using(var scaled=new Bitmap(width,height))using(var drawing=Graphics.FromImage(scaled))using(var output=new MemoryStream()){
-    drawing.DrawImage(original,0,0,width,height);ImageCodecInfo codec=null;foreach(var item in ImageCodecInfo.GetImageEncoders())if(item.MimeType=="image/jpeg")codec=item;
-    using(var parameters=new EncoderParameters(1)){parameters.Param[0]=new EncoderParameter(System.Drawing.Imaging.Encoder.Quality,55L);scaled.Save(output,codec,parameters);}return Convert.ToBase64String(output.ToArray());
-   }
-  }
+  Rectangle screen=Screen.PrimaryScreen.Bounds;
+  if(captureBitmap==null||captureBounds!=screen){ReleaseCapture();captureBounds=screen;captureBitmap=new Bitmap(screen.Width,screen.Height,PixelFormat.Format24bppRgb);captureGraphics=Graphics.FromImage(captureBitmap);frameEncoder=new NeonFrameEncoder();}
+  captureGraphics.CopyFromScreen(screen.Location,Point.Empty,screen.Size);return frameEncoder.Encode(captureBitmap,out width,out height);
+ }
+ void ReleaseCapture(){
+  if(videoCapture!=null)videoCapture.Dispose();videoCapture=null;
+  if(captureGraphics!=null)captureGraphics.Dispose();if(captureBitmap!=null)captureBitmap.Dispose();if(frameEncoder!=null)frameEncoder.Dispose();captureGraphics=null;captureBitmap=null;frameEncoder=null;
  }
  void SendKey(int key,bool down){var input=new INPUT {type=1,value=new InputUnion {key=new KEYBDINPUT {vk=(ushort)key,flags=down?0U:2U}}};SendInput(1,new[]{input},Marshal.SizeOf(typeof(INPUT)));}
  void SendMouse(uint flags,int delta=0){var input=new INPUT {type=0,value=new InputUnion {mouse=new MOUSEINPUT {dwFlags=flags,mouseData=unchecked((uint)delta)}}};SendInput(1,new[]{input},Marshal.SizeOf(typeof(INPUT)));}
@@ -121,4 +140,26 @@ public class NeonLauncher : Form {
   }
   SetProcessDPIAware();Application.EnableVisualStyles();Application.SetCompatibleTextRenderingDefault(false);Application.Run(new NeonLauncher());
  }
+}
+
+// Encoding buffers are reused only while sharing is active. This class can be
+// checked with generated bitmaps without capturing a user's desktop.
+public sealed class NeonFrameEncoder : IDisposable {
+ Bitmap scaled=null;Graphics drawing=null;readonly MemoryStream output=new MemoryStream(131072);
+ readonly ImageCodecInfo codec;readonly EncoderParameters parameters=new EncoderParameters(1);bool disposed=false;
+ public NeonFrameEncoder(){
+  foreach(var item in ImageCodecInfo.GetImageEncoders())if(item.MimeType=="image/jpeg")codec=item;
+  if(codec==null)throw new InvalidOperationException("JPEG encoding is unavailable.");parameters.Param[0]=new EncoderParameter(System.Drawing.Imaging.Encoder.Quality,55L);
+ }
+ public string Encode(Bitmap source,out int width,out int height){
+  if(disposed)throw new ObjectDisposedException("NeonFrameEncoder");
+  double scale=Math.Min(1.0,1280.0/Math.Max(source.Width,source.Height));width=Math.Max(1,(int)(source.Width*scale));height=Math.Max(1,(int)(source.Height*scale));
+  if(scaled==null||scaled.Width!=width||scaled.Height!=height){
+   if(drawing!=null)drawing.Dispose();if(scaled!=null)scaled.Dispose();scaled=new Bitmap(width,height,PixelFormat.Format24bppRgb);drawing=Graphics.FromImage(scaled);
+   drawing.CompositingMode=CompositingMode.SourceCopy;drawing.CompositingQuality=CompositingQuality.HighSpeed;drawing.InterpolationMode=InterpolationMode.Bilinear;drawing.SmoothingMode=SmoothingMode.None;
+  }
+  drawing.DrawImage(source,0,0,width,height);output.Position=0;output.SetLength(0);scaled.Save(output,codec,parameters);
+  return Convert.ToBase64String(output.GetBuffer(),0,checked((int)output.Length));
+ }
+ public void Dispose(){if(disposed)return;disposed=true;if(drawing!=null)drawing.Dispose();if(scaled!=null)scaled.Dispose();parameters.Dispose();output.Dispose();}
 }
