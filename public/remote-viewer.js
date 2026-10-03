@@ -3,11 +3,11 @@ export const remoteKeys={Backspace:8,Tab:9,Enter:13,ShiftLeft:16,ShiftRight:16,C
 export function remoteKey(code){if(Object.hasOwn(remoteKeys,code))return remoteKeys[code];if(/^Key[A-Z]$/.test(code))return code.charCodeAt(3);if(/^Digit[0-9]$/.test(code))return code.charCodeAt(5);if(/^F([1-9]|1[0-2])$/.test(code))return 111+Number(code.slice(1));if(/^Numpad[0-9]$/.test(code))return 96+Number(code.slice(6));return null;}
 export function screenPoint(event,rect){if(!rect.width||!rect.height)return null;const x=(event.clientX-rect.left)/rect.width,y=(event.clientY-rect.top)/rect.height;return x<0||x>1||y<0||y>1?null:{x,y};}
 
-export function remotePollDelay(started,now=Date.now()){return Math.max(30,150-Math.max(0,now-started));}
+export function remotePollDelay(started,now=Date.now()){return Math.max(25,100-Math.max(0,now-started));}
 
 // Keep a regular send deadline: restarting it on every pointer move would
 // postpone all movement until the user stopped moving the mouse.
-export function createRemoteInputPump({send,onError=()=>{},onOverflow=()=>{},schedule=setTimeout,cancel=clearTimeout,now=Date.now,interval=80}){
+export function createRemoteInputPump({send,onError=()=>{},onOverflow=()=>{},schedule=setTimeout,cancel=clearTimeout,now=Date.now,interval=60}){
  let queue=[],timer=null,busy=false,version=0,lastSent=-Infinity;
  function plan(){if(timer===null&&!busy&&queue.length)timer=schedule(flush,Math.max(0,interval-(now()-lastSent)));}
  async function flush(){
@@ -30,6 +30,7 @@ export function initRemoteViewer({page,request,access,status}){
  const video=page.querySelector('#remote-screen-video'),mode=page.querySelector('#remote-stream-mode');
  const videoPlayer=createRemoteVideo({video,onError:async error=>{const previous=epoch;await stop();if(epoch===previous+1)note(error.message);}});
  const display=()=>video.hidden?image:video;
+ page.querySelector('#remote-video-priority').onchange=event=>videoPlayer.setLowDelay(event.target.value==='fast');
  const note=text=>status.textContent=text;
  const inputs=createRemoteInputPump({send:events=>request({action:'input',session,events}),onError:async error=>{const previous=epoch;await stop();if(epoch===previous+1)note('Control stopped: '+error.message);},onOverflow:()=>{control=false;controlButton.textContent='Enable control';controlButton.setAttribute('aria-pressed','false');note('Control paused while the connection catches up.');}});
  function clear(){epoch++;clearTimeout(timer);timer=null;inputs.clear();control=false;controlButton.textContent='Enable control';controlButton.setAttribute('aria-pressed','false');videoPlayer.clear();video.hidden=true;image.hidden=false;mode.textContent='';image.removeAttribute('src');if(blobURL)URL.revokeObjectURL(blobURL);blobURL=null;panel.hidden=true;session=null;sequence=0;}
@@ -67,7 +68,7 @@ export function initRemoteViewer({page,request,access,status}){
  window.addEventListener('neon-page',event=>{if(event.detail!=='remote'&&session)stop();});
  return {async connect(device,name){
   await stop();const version=epoch;note('Connecting to '+name+'…');
-  try{const result=await request({action:'open',device,video:videoPlayer.supported()});if(version!==epoch||!access.isAllowed()){request({action:'close',session:result.session}).catch(()=>{});return;}session=result.session;sessionTitle.textContent=name;panel.hidden=false;sequence=0;poll(version,Date.now());}
+  try{const result=await request({action:'open',device,video:videoPlayer.supported()});if(version!==epoch||!access.isAllowed()){request({action:'close',session:result.session}).catch(()=>{});return;}session=result.session;sessionTitle.textContent=name;panel.hidden=false;sequence=0;control=true;controlButton.textContent='Control enabled';controlButton.setAttribute('aria-pressed','true');screen.focus();poll(version,Date.now());}
   catch(error){if(version===epoch)note(error.message);}
  },stop};
 }

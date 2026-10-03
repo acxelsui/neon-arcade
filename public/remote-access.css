@@ -19,3 +19,5 @@
 @media(max-width:650px){#remote-pair-form{flex-direction:column;align-items:stretch}.remote-device-row{flex-wrap:wrap}.remote-session-toolbar{flex-wrap:wrap}.remote-session-toolbar strong{flex-basis:100%}.remote-session-toolbar button{font-size:11px;padding:8px}}
 
 #remote-screen [hidden]{display:none!important}#remote-stream-mode{font-size:.8rem;color:#9fcae4}#remote-screen-video{pointer-events:none}
+
+.remote-device-row{flex-wrap:wrap}.remote-approved-owners{flex-basis:100%;display:grid;gap:8px;padding-top:8px}.remote-approved-owners button{font-size:.8rem;margin-left:8px}.remote-shared-label{font-size:.8rem;color:#9fcae4}#remote-add-computer{margin:20px 0;padding:14px;border:1px solid #315a73;border-radius:12px}#remote-add-computer summary{cursor:pointer}.remote-priority-label{font-size:.8rem}.remote-priority-label select{background:#102338;color:#edf6ff;border:1px solid #41677f;border-radius:8px;padding:6px}

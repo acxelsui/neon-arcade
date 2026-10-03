@@ -17,19 +17,21 @@ export function inputBatch(value){
  });
 }
 export function ownerAction(value){
- if(!value||typeof value!=='object'||!['list','pair','open','poll','input','close','forget','logs'].includes(value.action))throw new RemoteError('Choose a remote action.');
+ if(!value||typeof value!=='object'||!['list','pair','open','poll','input','close','forget','logs','grant','revoke'].includes(value.action))throw new RemoteError('Choose a remote action.');
  const result={action:value.action};
  if(value.action==='pair'){
   const code=String(value.code||'').replace(/[\s-]/g,'').toUpperCase();
   if(!/^[A-F0-9]{16}$/.test(code))throw new RemoteError('Enter the pairing code shown by Neon Launcher.');result.code=code;
  }
- if(['open','forget'].includes(value.action)){
+ if(['open','forget','grant','revoke'].includes(value.action)){
   if(typeof value.device!=='string'||!/^dev_[a-f0-9]{32}$/.test(value.device))throw new RemoteError('Choose a computer.');result.device=value.device;
  }
  if(['poll','input','close'].includes(value.action)){
   if(typeof value.session!=='string'||!/^ses_[a-f0-9]{32}$/.test(value.session))throw new RemoteError('Choose a remote session.');result.session=value.session;
  }
  if(value.action==='input')result.events=inputBatch(value.events);
+ if(value.action==='grant'){const username=String(value.username||'').trim();if(!/^[a-zA-Z0-9_]{3,24}$/.test(username))throw new RemoteError('Enter the other owner account username.');result.username=username;}
+ if(value.action==='revoke'){if(!/^[a-f0-9]{8}-[a-f0-9]{4}-[a-f0-9]{4}-[a-f0-9]{4}-[a-f0-9]{12}$/.test(value.target||''))throw new RemoteError('Choose an approved owner.');result.target=value.target;}
  if(value.action==='open')result.video=value.video===true;
  if(value.action==='poll'){result.sequence=Number.isSafeInteger(value.sequence)&&value.sequence>=0?value.sequence:0;if(/^[a-f0-9]{32}$/.test(value.videoStream||''))result.videoStream=value.videoStream;}
  return result;

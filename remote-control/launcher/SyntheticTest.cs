@@ -19,7 +19,7 @@ class SyntheticTest {
   Require(NeonVideoCapture.OutputSize(new Size(101,77))==new Size(100,76),"Video dimensions must be even");
   string init=null;var segments=new List<Dictionary<string,object>>();long id=0;
   using(var input=File.OpenRead(args[0]))new NeonMp4Reader(input).Read(bytes=>init=Convert.ToBase64String(bytes),bytes=>segments.Add(new Dictionary<string,object>{{"id",++id},{"data",Convert.ToBase64String(bytes)}}));
-  Require(init!=null&&segments.Count==15,"Generated video did not split into 15 fragments");
+  Require(init!=null&&segments.Count==30,"Generated video did not split into 30 fragments");
   using(var input=new MemoryStream(new byte[]{0,0,0,8,109,111,111,102})){
    bool rejected=false;try{new NeonMp4Reader(input).Read(bytes=>{},bytes=>{});}catch(EndOfStreamException){rejected=true;}Require(rejected,"Truncated fragment was accepted");
   }

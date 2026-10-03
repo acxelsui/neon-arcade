@@ -34,9 +34,9 @@ public class NeonLauncher : Form {
  [StructLayout(LayoutKind.Sequential)]struct KEYBDINPUT{public ushort vk,scan;public uint flags,time;public IntPtr extra;}
 
  public NeonLauncher(){
-  Text="Neon Launcher · Remote access · 1.2 · 60 fps video";Size=new Size(560,505);MinimumSize=Size;MaximumSize=Size;StartPosition=FormStartPosition.CenterScreen;BackColor=Color.FromArgb(12,24,40);ForeColor=Color.FromArgb(230,243,255);Font=new Font("Segoe UI",10);FormBorderStyle=FormBorderStyle.FixedSingle;MaximizeBox=false;
+  Text="Neon Launcher · Remote access · 1.3 · Faster remote control";Size=new Size(560,505);MinimumSize=Size;MaximumSize=Size;StartPosition=FormStartPosition.CenterScreen;BackColor=Color.FromArgb(12,24,40);ForeColor=Color.FromArgb(230,243,255);Font=new Font("Segoe UI",10);FormBorderStyle=FormBorderStyle.FixedSingle;MaximizeBox=false;
   var title=new Label {Text="NEON LAUNCHER",Font=new Font("Segoe UI",19,FontStyle.Bold),Location=new Point(26,25),Size=new Size(470,42)};
-  var note=new Label {Text="Pair this PC with your Neon owner account. You control when sharing is enabled. Closing this window stops sharing.",Location=new Point(28,80),Size=new Size(465,58)};
+  var note=new Label {Text="Link this PC once. Sign into Neon on another laptop and click Connect while this PC is sharing. Closing this window stops sharing.",Location=new Point(28,80),Size=new Size(465,58)};
   account.Location=new Point(28,142);account.Size=new Size(470,25);account.Text="Not paired with a Neon account";
   pairCode.Location=new Point(28,178);pairCode.Size=new Size(470,35);pairCode.Font=new Font("Consolas",16,FontStyle.Bold);pairCode.Text="Pair this PC to get a code";
   SetButton(pair,"Pair this PC",28,235,145);SetButton(website,"Open Neon",188,235,145);SetButton(sharing,"Start sharing",348,235,155);sharing.Enabled=false;
@@ -83,7 +83,7 @@ public class NeonLauncher : Form {
   try{
    if(!paired){
     var claimed=await Request("claim");if(Convert.ToBoolean(claimed["paired"])){
-     paired=true;string name=Convert.ToString(claimed["ownerName"]);account.Text="Linked to Neon owner: "+name;pairCode.Text="PC paired · sharing is off";sharing.Enabled=true;status.Text="Click Start sharing when you want to make this PC available.";Save(name);
+     paired=true;string name=Convert.ToString(claimed["ownerName"]);account.Text="Linked to Neon owner: "+name;pairCode.Text="PC saved · sharing is off";sharing.Enabled=true;status.Text="Click Start sharing when you want to make this PC available.";Save(name);
     }return;
    }
    var body=new Dictionary<string,object>{{"enabled",enabled},{"ack",ack}};
@@ -103,7 +103,7 @@ public class NeonLauncher : Form {
    var commands=result["commands"] as object[];
    if(commands!=null)foreach(var value in commands){var command=value as Dictionary<string,object>;if(command==null)continue;long sequence=Convert.ToInt64(command["id"]);if(sequence<=ack)continue;if(enabled&&active)Apply(command);else ReleaseAll();ack=sequence;}
   }catch(Exception error){active=false;ReleaseAll();ReleaseCapture();if(!closing)status.Text="Connection paused: "+error.Message;}
-  finally{timer.Interval=active?150:paired?5000:2000;busy=false;}
+  finally{timer.Interval=active?80:paired?(enabled?2000:5000):2000;busy=false;}
  }
  string CaptureScreen(out int width,out int height){
   Rectangle screen=Screen.PrimaryScreen.Bounds;
@@ -131,7 +131,7 @@ public class NeonLauncher : Form {
   Directory.CreateDirectory(Path.GetDirectoryName(saved));byte[] bytes=Encoding.UTF8.GetBytes(json.Serialize(new Dictionary<string,object>{{"credential",credential},{"owner",owner}}));File.WriteAllBytes(saved,ProtectedData.Protect(bytes,null,DataProtectionScope.CurrentUser));
  }
  void Restore(){
-  if(!File.Exists(saved))return;try{var value=json.DeserializeObject(Encoding.UTF8.GetString(ProtectedData.Unprotect(File.ReadAllBytes(saved),null,DataProtectionScope.CurrentUser))) as Dictionary<string,object>;string token=Convert.ToString(value["credential"]);if(token.Length!=64)return;credential=token;paired=true;sharing.Enabled=true;account.Text="Linked to Neon owner: "+Convert.ToString(value["owner"]);pairCode.Text="PC paired · sharing is off";}catch{status.Text="Pair this PC again to restore its Neon connection.";}
+  if(!File.Exists(saved))return;try{var value=json.DeserializeObject(Encoding.UTF8.GetString(ProtectedData.Unprotect(File.ReadAllBytes(saved),null,DataProtectionScope.CurrentUser))) as Dictionary<string,object>;string token=Convert.ToString(value["credential"]);if(token.Length!=64)return;credential=token;paired=true;sharing.Enabled=true;account.Text="Linked to Neon owner: "+Convert.ToString(value["owner"]);pairCode.Text="PC saved · sharing is off";}catch{status.Text="Pair this PC again to restore its Neon connection.";}
  }
  [STAThread]public static void Main(string[] args){
   if(args.Length>0&&args[0]=="--self-test"){

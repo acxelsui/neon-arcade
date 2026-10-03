@@ -45,12 +45,12 @@ test('video requires the current authenticated device session and stays account-
  time+=16000;await call('/device/poll',{enabled:true},auth);assert.equal(relay.devices.get(device.id).video,null);assert.equal(relay.sessions.size,0);
 });
 
-function playerFixture(){
+function playerFixture({lowDelay=false,now=Date.now}={}){
  const sources=[],revoked=[],appended=[];let buffered=[];
  class BufferSource extends EventTarget{updating=false;get buffered(){return {length:buffered.length,start:i=>buffered[i][0],end:i=>buffered[i][1]};}appendBuffer(bytes){this.updating=true;appended.push([...bytes]);}remove(start,end){this.updating=true;buffered=buffered.map(([a,b])=>[Math.max(a,end),b]);}finish(ranges){if(ranges)buffered=ranges;this.updating=false;this.dispatchEvent(new Event('updateend'));}}
  class Media extends EventTarget{static isTypeSupported=()=>true;buffer=new BufferSource();constructor(){super();sources.push(this);}addSourceBuffer(){return this.buffer;}open(){this.dispatchEvent(new Event('sourceopen'));}}
  const video={currentTime:0,playbackRate:1,src:null,pause(){},removeAttribute(){this.src=null;},load(){},play:async()=>{}};
- let errors=0;const player=createRemoteVideo({video,MediaSourceClass:Media,urls:{createObjectURL:()=>`blob:${sources.length}`,revokeObjectURL:url=>revoked.push(url)},onError:()=>errors++});
+ let errors=0;const player=createRemoteVideo({video,lowDelay,now,MediaSourceClass:Media,urls:{createObjectURL:()=>`blob:${sources.length}`,revokeObjectURL:url=>revoked.push(url)},onError:()=>errors++});
  return {player,sources,video,appended,revoked,errors:()=>errors};
 }
 test('browser appends initialization first, ignores duplicates and discards an obsolete source',()=>{
@@ -61,7 +61,7 @@ test('browser appends initialization first, ignores duplicates and discards an o
  s.player.clear();s.sources[1].buffer.dispatchEvent(new Event('error'));assert.equal(s.errors(),0);assert.equal(s.player.stream(),null);assert.equal(s.revoked.length,2);
 });
 test('browser catches up to fresh video instead of building growing delay',()=>{
- assert.equal(remotePlaybackTime(0,10,1),9.75);assert.equal(remotePlaybackTime(5,5.2,0),5);assert.equal(remotePlaybackTime(0,1,.6),.6);
+ assert.equal(remotePlaybackTime(0,10,1),9.88);assert.equal(remotePlaybackTime(5,5.2,0),5.08);assert.equal(remotePlaybackTime(0,1,.9),.9);
  const s=playerFixture();s.player.push(footage());s.sources[0].open();s.sources[0].buffer.finish();s.sources[0].buffer.finish([[2,4]]);assert.equal(s.video.currentTime,3.65);
  s.player.dispose();s.player.push(footage([segment(2)]));assert.equal(s.sources.length,1);
 });
@@ -70,4 +70,15 @@ test('browser bounds queued fragments while the decoder is slow',()=>{
  for(let id=2;id<=30;id++)s.player.push({...footage([segment(id)]),init:undefined});
  for(let i=0;i<8;i++)s.sources[0].buffer.finish();
  const ids=s.appended.slice(1).map(bytes=>bytes.at(-1));assert.deepEqual(ids,[25,26,27,28,29,30]);
+});
+
+
+test('fast response stays close to fresh video even when network delivery becomes slow',()=>{
+ let time=0;const s=playerFixture({lowDelay:true,now:()=>time});s.player.push(footage());s.sources[0].open();s.sources[0].buffer.finish();s.sources[0].buffer.finish([[0,1]]);assert.equal(s.video.currentTime,.88);
+ time=2000;s.player.push({...footage([segment(2)]),init:undefined});s.sources[0].buffer.finish([[0,4]]);assert.equal(s.video.currentTime,3.88,'A slow response must not inflate the fast-mode video buffer to 1.4 seconds');
+ s.player.setLowDelay(false);s.video.currentTime=1;s.player.setLowDelay(true);assert.equal(s.video.currentTime,3.88);
+});
+test('fast response discards queued old keyframes while the decoder is busy',()=>{
+ const s=playerFixture({lowDelay:true});s.player.push(footage());s.sources[0].open();for(let id=2;id<=20;id++)s.player.push({...footage([segment(id)]),init:undefined});
+ for(let i=0;i<5;i++)s.sources[0].buffer.finish();assert.deepEqual(s.appended.slice(1).map(bytes=>bytes.at(-1)),[19,20]);
 });

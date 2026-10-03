@@ -72,7 +72,7 @@ public sealed class NeonVideoCapture : IDisposable {
  readonly Process process;readonly int width,height;readonly string stream=Guid.NewGuid().ToString("N");
  string initialization=null,failure=null;long sequence=0;int queuedBytes=0;bool stopped=false;
  public static Size OutputSize(Size source){double scale=Math.Min(1.0,1280.0/Math.Max(source.Width,source.Height));return new Size(Math.Max(2,((int)(source.Width*scale)/2)*2),Math.Max(2,((int)(source.Height*scale)/2)*2));}
- public static string EncodingArguments(int width,int height){return " -an -vf scale="+width+":"+height+" -c:v libx264 -preset ultrafast -tune zerolatency -profile:v baseline -level:v 4.2 -pix_fmt yuv420p -b:v 2500k -maxrate 3500k -bufsize 700k -g 12 -keyint_min 12 -sc_threshold 0 -r 60 -movflags +empty_moov+default_base_moof+frag_keyframe -flush_packets 1 -f mp4 pipe:1";}
+ public static string EncodingArguments(int width,int height){return " -an -vf scale="+width+":"+height+" -c:v libx264 -preset ultrafast -tune zerolatency -profile:v baseline -level:v 4.2 -pix_fmt yuv420p -b:v 2500k -maxrate 3500k -bufsize 700k -g 6 -keyint_min 6 -sc_threshold 0 -r 60 -movflags +empty_moov+default_base_moof+frag_keyframe -flush_packets 1 -f mp4 pipe:1";}
  public NeonVideoCapture(Rectangle screen){
   var size=OutputSize(screen.Size);width=size.Width;height=size.Height;
   string args="-hide_banner -loglevel error -nostdin -f gdigrab -framerate 60 -draw_mouse 1 -offset_x "+screen.Left+" -offset_y "+screen.Top+" -video_size "+screen.Width+"x"+screen.Height+" -i desktop"+EncodingArguments(width,height);

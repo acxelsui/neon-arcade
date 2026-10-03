@@ -14,7 +14,7 @@ function clock(){
 test('continuous pointer movement is sent during movement rather than after it stops',async()=>{
  const time=clock(),sent=[];const pump=createRemoteInputPump({...time,send:async events=>sent.push({at:time.now(),events})});
  for(let index=0;index<125;index++){pump.push({type:'move',x:index/125,y:.5});await time.advance(8);}
- assert.ok(sent.length>=10,'A continuously moving pointer must make regular progress');assert.ok(sent.length<=14,'Movement must stay bounded by the send cadence');
+ assert.ok(sent.length>=15,'A continuously moving pointer must make regular progress');assert.ok(sent.length<=18,'Movement must stay bounded by the send cadence');
  assert.ok(sent[0].at<20);assert.ok(sent.some(batch=>batch.at>=400&&batch.at<=600));assert.ok(sent.every(batch=>batch.events.length===1));
  await time.advance(80);assert.equal(sent.at(-1).events[0].x,124/125);pump.clear();
 });
@@ -48,5 +48,5 @@ test('an overflowing slow input connection releases controls instead of accumula
 });
 
 test('frame polling counts network time toward the cadence and never adds the old 750ms wait',()=>{
- assert.equal(remotePollDelay(1000,1050),100);assert.equal(remotePollDelay(1000,1300),30);assert.equal(remotePollDelay(1000,1000),150);
+ assert.equal(remotePollDelay(1000,1050),50);assert.equal(remotePollDelay(1000,1300),25);assert.equal(remotePollDelay(1000,1000),100);
 });
