@@ -24,30 +24,39 @@ export function createRemoteInputPump({send,onError=()=>{},onOverflow=()=>{},sch
  };
 }
 
-export function initRemoteViewer({page,request,access,status}){
+export function initRemoteViewer({page,request,watch=null,access,status}){
  const screen=page.querySelector('#remote-screen'),image=page.querySelector('#remote-screen-image'),panel=page.querySelector('#remote-session'),controlButton=page.querySelector('#remote-control-toggle'),sessionTitle=page.querySelector('#remote-session-title');
- let session=null,sequence=0,control=false,epoch=0,timer=null,blobURL=null;
+ let session=null,sequence=0,control=false,epoch=0,timer=null,blobURL=null,live=null;
  const video=page.querySelector('#remote-screen-video'),mode=page.querySelector('#remote-stream-mode');
  const videoPlayer=createRemoteVideo({video,onError:async error=>{const previous=epoch;await stop();if(epoch===previous+1)note(error.message);}});
  const display=()=>video.hidden?image:video;
  page.querySelector('#remote-video-priority').onchange=event=>videoPlayer.setLowDelay(event.target.value==='fast');
  const note=text=>status.textContent=text;
  const inputs=createRemoteInputPump({send:events=>request({action:'input',session,events}),onError:async error=>{const previous=epoch;await stop();if(epoch===previous+1)note('Control stopped: '+error.message);},onOverflow:()=>{control=false;controlButton.textContent='Enable control';controlButton.setAttribute('aria-pressed','false');note('Control paused while the connection catches up.');}});
- function clear(){epoch++;clearTimeout(timer);timer=null;inputs.clear();control=false;controlButton.textContent='Enable control';controlButton.setAttribute('aria-pressed','false');videoPlayer.clear();video.hidden=true;image.hidden=false;mode.textContent='';image.removeAttribute('src');if(blobURL)URL.revokeObjectURL(blobURL);blobURL=null;panel.hidden=true;session=null;sequence=0;}
+ function clear(){epoch++;clearTimeout(timer);timer=null;live?.cancel();live=null;inputs.clear();control=false;controlButton.textContent='Enable control';controlButton.setAttribute('aria-pressed','false');videoPlayer.clear();video.hidden=true;image.hidden=false;mode.textContent='';image.removeAttribute('src');if(blobURL)URL.revokeObjectURL(blobURL);blobURL=null;panel.hidden=true;session=null;sequence=0;}
  async function stop(){const old=session;clear();const current=epoch;if(old){try{await request({action:'close',session:old});if(current===epoch)note('Disconnected.');}catch{if(current===epoch)note('Disconnected here. The PC session will expire automatically.');}}}
- async function poll(version,started){
-  if(!session||version!==epoch||!access.isAllowed())return;
-  const requestedAt=Date.now();
-  try{
-   const result=await request({action:'poll',session,sequence,videoStream:videoPlayer.stream()});if(version!==epoch)return;
+ function render(result,started,streaming=false){
    if(result.video){
-    if(result.waiting&&!sequence&&Date.now()-started>15000)throw Error('The launcher has not sent video. Check Start sharing on that PC and reconnect.');videoPlayer.push(result.video);sequence=result.sequence;video.hidden=false;image.hidden=true;mode.textContent='Video · 60 fps target';if(!result.waiting)note(control?'Control enabled. Click the screen to use your mouse and keyboard.':'Connected · View only.');
+    if(result.waiting&&!sequence&&Date.now()-started>15000)throw Error('The launcher has not sent video. Check Start sharing on that PC and reconnect.');videoPlayer.push(result.video);sequence=result.sequence;video.hidden=false;image.hidden=true;mode.textContent=streaming?'Live video · 60 fps target':'Video · 60 fps target';if(!result.waiting)note(control?'Control enabled. Click the screen to use your mouse and keyboard.':'Connected · View only.');
    }else if(result.frame){videoPlayer.clear();video.hidden=true;image.hidden=false;mode.textContent='Compatibility mode · update the launcher and set up 60 fps';
     const bytes=decodeRemoteBytes(result.frame),nextURL=URL.createObjectURL(new Blob([bytes],{type:'image/jpeg'}));
     const previous=blobURL;blobURL=nextURL;image.src=nextURL;if(previous)URL.revokeObjectURL(previous);sequence=result.sequence;note(control?'Control enabled. Click the screen to use your mouse and keyboard.':'Connected · View only.');
    }else if(!sequence){if(Date.now()-started>15000)throw Error('The launcher has not sent a screen. Check Start sharing on that PC and try again.');note('Waiting for your PC to send its screen…');}
-   timer=setTimeout(()=>poll(version,started),remotePollDelay(requestedAt));
-  }catch(error){if(version===epoch){const old=session;clear();request({action:'close',session:old}).catch(()=>{});note(error.message);}}
+ }
+ function failed(error,version){if(version===epoch){const old=session;clear();request({action:'close',session:old}).catch(()=>{});note(error.message);}}
+ async function poll(version,started){
+  if(!session||version!==epoch||!access.isAllowed())return;const requestedAt=Date.now();
+  try{const result=await request({action:'poll',session,sequence,videoStream:videoPlayer.stream()});if(version!==epoch)return;render(result,started);timer=setTimeout(()=>poll(version,started),remotePollDelay(requestedAt));}catch(error){failed(error,version);}
+ }
+ async function stream(version,started){
+  if(!session||version!==epoch||!access.isAllowed())return;
+  try{
+   live=watch({session,sequence,videoStream:videoPlayer.stream()},result=>{if(version===epoch&&access.isAllowed())render(result,started,true);});await live.done;
+   if(version!==epoch)return;live=null;timer=setTimeout(()=>stream(version,started),25);
+  }catch(error){if(version!==epoch)return;live?.cancel();live=null;
+   if([401,403,409].includes(error.status)){failed(error,version);return;}
+   note('Live video is unavailable. Using the compatibility connection.');poll(version,started);
+  }
  }
  function input(event){
   if(!session||!access.isAllowed())return;
@@ -68,7 +77,7 @@ export function initRemoteViewer({page,request,access,status}){
  window.addEventListener('neon-page',event=>{if(event.detail!=='remote'&&session)stop();});
  return {async connect(device,name){
   await stop();const version=epoch;note('Connecting to '+name+'…');
-  try{const result=await request({action:'open',device,video:videoPlayer.supported()});if(version!==epoch||!access.isAllowed()){request({action:'close',session:result.session}).catch(()=>{});return;}session=result.session;sessionTitle.textContent=name;panel.hidden=false;sequence=0;control=true;controlButton.textContent='Control enabled';controlButton.setAttribute('aria-pressed','true');screen.focus();poll(version,Date.now());}
+  try{const result=await request({action:'open',device,video:videoPlayer.supported()});if(version!==epoch||!access.isAllowed()){request({action:'close',session:result.session}).catch(()=>{});return;}session=result.session;sessionTitle.textContent=name;panel.hidden=false;sequence=0;control=true;controlButton.textContent='Control enabled';controlButton.setAttribute('aria-pressed','true');screen.focus();if(watch)stream(version,Date.now());else poll(version,Date.now());}
   catch(error){if(version===epoch)note(error.message);}
  },stop};
 }

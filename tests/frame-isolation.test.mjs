@@ -27,8 +27,9 @@ test('the account policy explicitly permits the owner API without exposing a dir
  const policy=headers['content-security-policy'];
  const sources=policy.match(/(?:^|;)\s*connect-src\s+([^;]+)/)[1].trim().split(/\s+/);
  const remote=sources.filter(source=>source.startsWith('https://neon-arcade-improvedv3.vercel.app'));
- assert.equal(remote.length,1);
- const endpoint=new URL(remote[0]);assert.equal(endpoint.pathname,'/api/remote-access');assert.equal(endpoint.search,'');
+ assert.equal(remote.length,2);
+ assert.deepEqual(remote.map(source=>new URL(source).pathname).sort(),['/api/remote-access','/api/remote-stream']);
+ for(const source of remote)assert.equal(new URL(source).search,'');
  assert.ok(!sources.some(source=>source==='*'||source==='https:'||source.includes('workers.dev')));
  assert.match(policy,/default-src 'none'/);assert.match(policy,/form-action 'none'/);assert.match(policy,/frame-ancestors 'none'/);
  const config=JSON.parse(await readFile(new URL('accounts/vercel.json',root),'utf8'));

@@ -1,5 +1,6 @@
 // Keep newest first. Dates describe when the change was added, not when a visitor opened Home.
 export const updates = [
+ {date:'2026-10-03',title:'Live remote connection',text:'Neon Launcher 1.4 receives clicks while video uploads, and Remote access streams screen updates as they arrive. Update the home launcher and reconnect to use the live connection.'},
  {date:'2026-10-03',title:'Faster remote access and saved computers',text:'Remote access defaults to faster response. Saved computers reconnect with one click, and their original owner can approve another owner account once without repeating pairing codes.'},
  {date:'2026-10-03',title:'Smoother remote video',text:'Remote access adds video targeting 60 fps with the updated Windows launcher. Set up video on the shared PC, then reconnect in your browser. Mouse movement also sends continuously.'},
  {date:'2026-10-02',title:'Remote connection details',text:'The connection check shows blocking connection rules and browser errors, helping owners report problems without opening developer tools.'},

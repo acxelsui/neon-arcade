@@ -52,11 +52,31 @@ export async function checkRemoteConnection({getSession,fetcher=fetch,isCurrent=
  }finally{clearTimeout(timer);if(listening)policyTarget.removeEventListener('securitypolicyviolation',onPolicy);}
 }
 
+export async function readRemoteStream(response,{receive,isCurrent=()=>true}={}){
+ if(!response.ok){let result;try{result=await response.json();}catch{}throw Object.assign(Error(result?.error||'The live stream could not connect.'),{status:response.status});}
+ if(!response.body?.getReader||!response.headers.get('content-type')?.startsWith('application/x-ndjson'))throw Object.assign(Error('Live video is unavailable.'),{status:503});
+ const reader=response.body.getReader(),decoder=new TextDecoder();let text='',bytes=0;
+ try{for(;;){const {done,value}=await reader.read();if(!isCurrent())return;if(done){if(text.trim())throw Error('Incomplete live video data.');return;}bytes+=value.byteLength;if(bytes>4500000)throw Error('Live video response is too large.');text+=decoder.decode(value,{stream:true});if(text.length>1000000)throw Error('Live video chunk is too large.');
+  let boundary;while((boundary=text.indexOf('\n'))>=0){const line=text.slice(0,boundary);text=text.slice(boundary+1);if(!line.trim())continue;const data=JSON.parse(line);if(data.error)throw Object.assign(Error(data.error),{status:data.status||503});receive(data);}
+ }}finally{await reader.cancel().catch(()=>{});}
+}
+
 export function createRemoteBridge({getProfile,getSession,send,fetcher=fetch}){
- let pending=0;
+ let pending=0,watch=null;
  return async data=>{
   const owner=getProfile()?.id;if(!owner||typeof data.requestId!=='string'||data.requestId.length>80)return;
   const reply=extra=>{if(getProfile()?.id===owner)send('owner-remote-v2-result',{requestId:data.requestId,self:owner,...extra});};
+  if(data.action==='cancel-watch'){if(watch?.id===data.watch&&watch.owner===owner)watch.controller.abort();return;}
+  if(data.action==='watch'){
+   watch?.controller.abort();const current={id:data.requestId,owner,controller:new AbortController()};watch=current;
+   try{
+    const action=remoteRequest({...data,action:'poll'}),session=await getSession();if(getProfile()?.id!==owner||current.controller.signal.aborted)return;
+    const token=session.data?.session?.access_token;if(!token)throw Object.assign(Error('Sign in again.'),{status:401});
+    const response=await fetcher('/api/remote-stream',{method:'POST',headers:{Authorization:'Bearer '+token,'Content-Type':'application/json'},body:JSON.stringify(action),cache:'no-store',redirect:'error',signal:AbortSignal.any([current.controller.signal,AbortSignal.timeout(13000)])});
+    await readRemoteStream(response,{isCurrent:()=>getProfile()?.id===owner&&!current.controller.signal.aborted,receive:result=>reply({stream:true,result})});reply({done:true});
+   }catch(error){if(!current.controller.signal.aborted)reply({done:true,error:error.message||'Live video could not connect.',status:error.status||503});}
+   finally{if(watch===current)watch=null;current.controller.abort();}return;
+  }
   if(pending>=4){reply({error:'The remote connection is catching up.'});return;}
   pending++;
   try{

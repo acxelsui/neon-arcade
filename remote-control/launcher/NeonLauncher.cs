@@ -23,6 +23,7 @@ public class NeonLauncher : Form {
  readonly HashSet<int> heldKeys=new HashSet<int>(),heldButtons=new HashSet<int>();
  readonly string saved=Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData),"Neon Arcade","launcher.dat");
  string credential=null,code=null;bool paired=false,enabled=false,active=false,busy=false,closing=false;long ack=0;
+ NeonLiveConnection live=null;DateTime nextLiveAttempt=DateTime.MinValue;
  NeonVideoCapture videoCapture=null;bool videoReady=false,videoMode=false,videoFailed=false;string mediaSession=null;Rectangle videoBounds;
  Bitmap captureBitmap=null;Graphics captureGraphics=null;Rectangle captureBounds;NeonFrameEncoder frameEncoder=null;
  [DllImport("user32.dll")]static extern bool SetProcessDPIAware();
@@ -34,7 +35,7 @@ public class NeonLauncher : Form {
  [StructLayout(LayoutKind.Sequential)]struct KEYBDINPUT{public ushort vk,scan;public uint flags,time;public IntPtr extra;}
 
  public NeonLauncher(){
-  Text="Neon Launcher · Remote access · 1.3 · Faster remote control";Size=new Size(560,505);MinimumSize=Size;MaximumSize=Size;StartPosition=FormStartPosition.CenterScreen;BackColor=Color.FromArgb(12,24,40);ForeColor=Color.FromArgb(230,243,255);Font=new Font("Segoe UI",10);FormBorderStyle=FormBorderStyle.FixedSingle;MaximizeBox=false;
+  Text="Neon Launcher · Remote access · 1.4 · Live connection";Size=new Size(560,505);MinimumSize=Size;MaximumSize=Size;StartPosition=FormStartPosition.CenterScreen;BackColor=Color.FromArgb(12,24,40);ForeColor=Color.FromArgb(230,243,255);Font=new Font("Segoe UI",10);FormBorderStyle=FormBorderStyle.FixedSingle;MaximizeBox=false;
   var title=new Label {Text="NEON LAUNCHER",Font=new Font("Segoe UI",19,FontStyle.Bold),Location=new Point(26,25),Size=new Size(470,42)};
   var note=new Label {Text="Link this PC once. Sign into Neon on another laptop and click Connect while this PC is sharing. Closing this window stops sharing.",Location=new Point(28,80),Size=new Size(465,58)};
   account.Location=new Point(28,142);account.Size=new Size(470,25);account.Text="Not paired with a Neon account";
@@ -46,7 +47,7 @@ public class NeonLauncher : Form {
   http.Timeout=TimeSpan.FromSeconds(12);ServicePointManager.SecurityProtocol=SecurityProtocolType.Tls12;
   pair.Click+=async(s,e)=>await Enroll();website.Click+=(s,e)=>System.Diagnostics.Process.Start(AccountSite+"/?remote=1");
   sharing.Click+=async(s,e)=>{enabled=!enabled;active=false;ReleaseAll();ReleaseCapture();sharing.Text=enabled?"Stop sharing":"Start sharing";status.Text=enabled?"Sharing enabled. Waiting for your Neon owner account to connect.":"Sharing is off. No screen is being captured.";await Poll();};
-  FormClosing+=(s,e)=>{closing=true;enabled=false;ReleaseAll();ReleaseCapture();timer.Stop();http.Dispose();};
+  FormClosing+=(s,e)=>{closing=true;enabled=false;StopLive();ReleaseAll();ReleaseCapture();timer.Stop();http.Dispose();};
   timer.Interval=5000;timer.Tick+=async(s,e)=>{if(!busy)await Poll();};
   Load+=(s,e)=>{Restore();videoReady=NeonVideoEngine.Available();if(videoReady){videoSetup.Text="60 fps video ready";videoSetup.Enabled=false;}timer.Start();};
  }
@@ -64,13 +65,13 @@ public class NeonLauncher : Form {
  }
  async Task InstallVideo(){
   if(busy||closing)return;if(MessageBox.Show("Download approximately 115 MB of verified FFmpeg video components to this PC? Sharing stays off during setup. Nothing is installed on the viewing laptop.","Set up 60 fps video",MessageBoxButtons.OKCancel,MessageBoxIcon.Information)!=DialogResult.OK)return;
-  busy=true;enabled=false;active=false;ReleaseAll();ReleaseCapture();sharing.Text="Start sharing";sharing.Enabled=false;pair.Enabled=false;videoSetup.Enabled=false;
+  busy=true;enabled=false;active=false;StopLive();ReleaseAll();ReleaseCapture();sharing.Text="Start sharing";sharing.Enabled=false;pair.Enabled=false;videoSetup.Enabled=false;
   try{await NeonVideoEngine.Install(text=>{if(!closing)status.Text=text;});videoReady=true;videoSetup.Text="60 fps video ready";status.Text="Video components ready. Click Start sharing, then reconnect from Neon Arcade. Video targets 60 fps; actual performance depends on both PCs and the connection.";}
   catch(Exception error){status.Text="Video setup failed: "+error.Message;}
   finally{busy=false;if(!closing){pair.Enabled=true;sharing.Enabled=paired;videoSetup.Enabled=!videoReady;}}
  }
  async Task Enroll(){
-  if(busy)return;busy=true;pair.Enabled=false;enabled=false;active=false;sharing.Enabled=false;sharing.Text="Start sharing";ReleaseAll();ReleaseCapture();
+  if(busy)return;busy=true;pair.Enabled=false;enabled=false;active=false;sharing.Enabled=false;sharing.Text="Start sharing";StopLive();ReleaseAll();ReleaseCapture();
   try{
    var result=await Request("enroll",new Dictionary<string,object>{{"name",Environment.MachineName}},false);
    credential=Convert.ToString(result["credential"]);code=Convert.ToString(result["code"]);paired=false;ack=0;
@@ -86,6 +87,7 @@ public class NeonLauncher : Form {
      paired=true;string name=Convert.ToString(claimed["ownerName"]);account.Text="Linked to Neon owner: "+name;pairCode.Text="PC saved · sharing is off";sharing.Enabled=true;status.Text="Click Start sharing when you want to make this PC available.";Save(name);
     }return;
    }
+   if(enabled&&live==null&&DateTime.UtcNow>=nextLiveAttempt)await ConnectLive();if(closing)return;
    var body=new Dictionary<string,object>{{"enabled",enabled},{"ack",ack}};
    if(enabled&&active){
     body["mediaSession"]=mediaSession;
@@ -95,15 +97,26 @@ public class NeonLauncher : Form {
     }
     if(!videoMode||!videoReady||videoFailed){int w,h;body["frame"]=CaptureScreen(out w,out h);body["width"]=w;body["height"]=h;}
    }
-   var result=await Request("poll",body);if(closing)return;bool nextActive=enabled&&Convert.ToBoolean(result["active"]);
+   if(live!=null&&live.Ready){await live.Send(body);return;}
+   var result=await Request("poll",body);if(closing)return;AcceptResult(result);
+  }catch(Exception error){active=false;StopLive();nextLiveAttempt=DateTime.UtcNow.AddSeconds(30);ReleaseAll();ReleaseCapture();if(!closing)status.Text="Connection paused: "+error.Message;}
+  finally{timer.Interval=active?80:paired?(enabled?2000:5000):2000;busy=false;}
+ }
+ void AcceptResult(Dictionary<string,object> result){
+   bool nextActive=enabled&&Convert.ToBoolean(result["active"]);
    string nextSession=result.ContainsKey("session")?Convert.ToString(result["session"]):null;
    if(!nextActive||nextSession!=mediaSession){ReleaseAll();ReleaseCapture();videoFailed=false;}active=nextActive;mediaSession=nextSession;videoMode=result.ContainsKey("mode")&&Convert.ToString(result["mode"])=="video";
-   if(active){status.Text="SHARING LIVE with Neon owner "+Convert.ToString(result["ownerName"])+". "+(videoCapture!=null?"Video · 60 fps target. ":"Compatibility mode. ")+"Click Stop sharing to end control.";}
+   if(active){status.Text="SHARING LIVE with Neon owner "+Convert.ToString(result["ownerName"])+". "+(live!=null&&live.Ready?"Live connection. ":"Compatibility connection. ")+(videoCapture!=null?"Video · 60 fps target. ":"Compatibility mode. ")+"Click Stop sharing to end control.";}
    else status.Text=enabled?"Sharing enabled. Waiting for your owner account to connect.":"Sharing is off. No screen is being captured.";
    var commands=result["commands"] as object[];
    if(commands!=null)foreach(var value in commands){var command=value as Dictionary<string,object>;if(command==null)continue;long sequence=Convert.ToInt64(command["id"]);if(sequence<=ack)continue;if(enabled&&active)Apply(command);else ReleaseAll();ack=sequence;}
-  }catch(Exception error){active=false;ReleaseAll();ReleaseCapture();if(!closing)status.Text="Connection paused: "+error.Message;}
-  finally{timer.Interval=active?80:paired?(enabled?2000:5000):2000;busy=false;}
+   timer.Interval=active?80:enabled?2000:5000;
+ }
+ void StopLive(){var old=live;live=null;if(old!=null)old.Dispose();}
+ async Task ConnectLive(){
+  nextLiveAttempt=DateTime.UtcNow.AddSeconds(30);NeonLiveConnection connection=null;
+  connection=new NeonLiveConnection(result=>{if(!closing)try{BeginInvoke(new Action(()=>{if(!closing&&live==connection){try{AcceptResult(result);}catch{StopLive();active=false;ReleaseAll();ReleaseCapture();}}}));}catch{}},()=>{if(!closing)try{BeginInvoke(new Action(()=>{if(live==connection){StopLive();active=false;ReleaseAll();ReleaseCapture();status.Text="Live connection paused. Reconnecting through Neon.";}}));}catch{}});
+  live=connection;try{await connection.Open(credential);if(closing||!enabled){StopLive();return;}}catch{if(live==connection)StopLive();}
  }
  string CaptureScreen(out int width,out int height){
   Rectangle screen=Screen.PrimaryScreen.Bounds;

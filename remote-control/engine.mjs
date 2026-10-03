@@ -15,7 +15,17 @@ export async function createRelayState({bridgeKey,store=null,ownerVerifier=verif
  if(store)saved=await store.load();
 
  const devices=new Map(saved.devices.map(device=>[device.id,{...device,enabled:false,lastSeen:0,frame:null,sequence:0,commands:[],nextCommand:device.nextCommand||0,commandCeiling:device.nextCommand||0}]));
- const logs=saved.logs||[],enrollments=new Map(),sessions=new Map(),limits=new Map(),assertions=new Map();let saving=Promise.resolve(),dirty=false,storageFailed=false;
+ const logs=saved.logs||[],enrollments=new Map(),sessions=new Map(),limits=new Map(),assertions=new Map(),hosts=new Map(),viewers=new Set();let saving=Promise.resolve(),dirty=false,storageFailed=false;
+ function hostStatus(device){const active=device.enabled&&[...sessions.values()].find(s=>s.device===device.id);return {active:!!active,session:active?.id||null,mode:active?.video?'video':'images',ownerName:active?.ownerName||null,commands:device.commands.slice(0,40)};}
+ function notify(){
+  for(const [id,host] of hosts){const device=devices.get(id);try{host.send(device&&!storageFailed?hostStatus(device):null);}catch{}}
+  for(const view of viewers){try{
+   if(storageFailed)throw Error('storage');const {session,device}=sessionFor({id:view.owner},view.session);
+   const data=device.video?{expires:session.expires,...videoReply(device.video,{sequence:view.sequence,videoStream:view.stream})}:{sequence:device.sequence,expires:session.expires,...(device.sequence>view.sequence&&device.frame?{frame:device.frame,width:device.width,height:device.height}:{}),waiting:!device.frame};
+   if(data.sequence===view.sequence&&(!data.video||data.video.stream===view.stream)&&view.started)continue;
+   view.started=true;view.sequence=data.sequence;if(data.video)view.stream=data.video.stream;view.send(data);
+  }catch{viewers.delete(view);try{view.send(null);}catch{}}}
+ }
  function persist(){
   if(!store||!dirty)return saving;dirty=false;
   const snapshot={devices:[...devices.values()].map(({id,owner,name,credentialHash,created,commandCeiling,nextCommand,grants})=>({id,owner,name,credentialHash,created,nextCommand:commandCeiling??nextCommand,...(grants?.length?{grants:grants.map(g=>({...g}))}:{})})),logs:logs.map(row=>({...row}))};
@@ -91,7 +101,7 @@ export async function createRelayState({bridgeKey,store=null,ownerVerifier=verif
   if(!device.enabled){for(const session of sessions.values())if(session.device===device.id)closeSession(session,'host-stopped-sharing');device.frame=null;device.video=null;device.commands=[];return {active:false,commands:[]};}
   const active=[...sessions.values()].find(item=>item.device===device.id);
   if(body.video&&active&&active.video&&body.mediaSession===active.id){device.video=acceptVideo(device.video,body.video);device.frame=null;}
-  if(body.frame&&active){device.video=null;
+  if(body.frame&&active&&(!body.mediaSession||body.mediaSession===active.id)){device.video=null;
    if(typeof body.frame!=='string'||body.frame.length>700000||!Number.isInteger(body.width)||!Number.isInteger(body.height)||body.width<1||body.width>1920||body.height<1||body.height>1920)throw new RemoteError('Invalid screen frame.');
    const jpeg=Buffer.from(body.frame,'base64');if(jpeg.length<4||jpeg[0]!==255||jpeg[1]!==216||jpeg.at(-2)!==255||jpeg.at(-1)!==217)throw new RemoteError('JPEG frame required.');
    device.frame=body.frame;device.width=body.width;device.height=body.height;device.sequence++;
@@ -102,7 +112,7 @@ export async function createRelayState({bridgeKey,store=null,ownerVerifier=verif
  async function handle({route,method,headers={},readBody=async()=>({}),ip='unknown'}){
   const reply=(status,data)=>({status,data});
   try{
-   if(route==='/health')return reply(storageFailed?503:200,{ok:!storageFailed,version:'remote-fast-owners-v2'});
+   if(route==='/health')return reply(storageFailed?503:200,{ok:!storageFailed,version:'remote-live-v3'});
    if(storageFailed)throw new RemoteError('Remote storage is unavailable. Restart the relay after fixing its connection.',503);
    if(method!=='POST')throw new RemoteError('POST required.',405);
    if(!bridgeAllowed(headers['x-neon-relay-key'],bridgeKey))throw new RemoteError('Unauthorized relay connection.',401);
@@ -121,8 +131,21 @@ export async function createRelayState({bridgeKey,store=null,ownerVerifier=verif
     result=await handleOwner(owner,body,token);
     if(result.session)sessions.get(result.session).token=token;
    }else result=await handleDevice(route,headers,body,ip);
-   await persist();return reply(200,result);
-  }catch(error){return reply(error.status||503,{error:error.status?error.message:'The relay could not complete the request.'});}
+   await persist();notify();return reply(200,result);
+  }catch(error){notify();return reply(error.status||503,{error:error.status?error.message:'The relay could not complete the request.'});}
  }
- return {handle,close:async()=>{for(const session of sessions.values())closeSession(session,'relay-stopped');await persist();},devices,sessions};
+ function attachHost(credential,send){
+  if(storageFailed||!/^Device [a-f0-9]{64}$/.test(credential||''))throw new RemoteError('Pair the launcher first.',401);
+  const digest=hash(credential.slice(7)),device=[...devices.values()].find(d=>equal(d.credentialHash,digest));if(!device)throw new RemoteError('This launcher is not paired.',401);
+  rate('host-connect:'+device.id,10,60000);const previous=hosts.get(device.id);if(previous)previous.send(null);
+  const host={send};hosts.set(device.id,host);send(hostStatus(device));
+  return async()=>{if(hosts.get(device.id)!==host)return;hosts.delete(device.id);device.enabled=false;device.lastSeen=0;for(const s of [...sessions.values()])if(s.device===device.id)closeSession(s,'host-disconnected');await persist();notify();};
+ }
+ // Called only after the stream request has passed handle('/owner', poll).
+ function subscribeMedia(sessionId,send){
+  const session=sessions.get(sessionId);if(!session||storageFailed)throw new RemoteError('The remote session ended.',403);
+  if(viewers.size>=500)throw new RemoteError('Streaming is busy.',429);
+  const view={session:sessionId,owner:session.owner,sequence:0,stream:null,started:false,send};viewers.add(view);notify();return ()=>viewers.delete(view);
+ }
+ return {handle,attachHost,subscribeMedia,close:async()=>{for(const session of [...sessions.values()])closeSession(session,'relay-stopped');await persist();notify();},devices,sessions};
 }

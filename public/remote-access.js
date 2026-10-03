@@ -57,7 +57,16 @@ export function initRemoteAccess({navigate}){
    pending.set(requestId,{resolve,reject,timer,self,remote:true});parent.postMessage({channel:'neon-members-v1',type:'owner-remote-v2-request',requestId,...args},account);
   });
  }
- const viewer=initRemoteViewer({page,request:remoteRequest,access,status});let deviceList=[],loadingDevices=false,rowsKey=null,listedAccount=null;
+ function watchRemote(args,receive){
+  const requestId=crypto.randomUUID(),accountId=self;
+  const cancel=()=>{const item=pending.get(requestId);if(item){clearTimeout(item.timer);pending.delete(requestId);item.resolve();}parent.postMessage({channel:'neon-members-v1',type:'owner-remote-v2-request',requestId:crypto.randomUUID(),action:'cancel-watch',watch:requestId},account);};
+  const done=new Promise((resolve,reject)=>{
+   if(!access.isAllowed()){reject(Object.assign(Error('Owner access is required.'),{status:403}));return;}
+   const timer=setTimeout(()=>{pending.delete(requestId);parent.postMessage({channel:'neon-members-v1',type:'owner-remote-v2-request',requestId:crypto.randomUUID(),action:'cancel-watch',watch:requestId},account);reject(Object.assign(Error('Live video timed out.'),{status:503}));},15000);
+   pending.set(requestId,{resolve,reject,timer,self:accountId,remote:true,stream:true,receive});parent.postMessage({channel:'neon-members-v1',type:'owner-remote-v2-request',requestId,action:'watch',...args},account);
+  });return {done,cancel};
+ }
+ const viewer=initRemoteViewer({page,request:remoteRequest,watch:watchRemote,access,status});let deviceList=[],loadingDevices=false,rowsKey=null,listedAccount=null;
  async function loadDevices(){
   if(loadingDevices||!access.isAllowed())return;loadingDevices=true;refresh.disabled=true;const accountId=self;
   try{
@@ -111,7 +120,9 @@ export function initRemoteAccess({navigate}){
    if(self!==next){deviceList=[];rowsKey=null;listedAccount=null;page.querySelector('#remote-devices').replaceChildren();page.querySelector('#remote-logs').replaceChildren();page.querySelector('#remote-connection-results').replaceChildren();access.revoke();for(const item of pending.values()){clearTimeout(item.timer);item.reject(Error('Account changed.'));}pending.clear();self=next;}
    if(self)verify();return;
   }
-  if(!['chat-result','owner-remote-v2-result'].includes(data.type))return;const item=pending.get(data.requestId);if(!item||!!item.remote!==(data.type==='owner-remote-v2-result'))return;clearTimeout(item.timer);pending.delete(data.requestId);
+  if(!['chat-result','owner-remote-v2-result'].includes(data.type))return;const item=pending.get(data.requestId);if(!item||!!item.remote!==(data.type==='owner-remote-v2-result'))return;
+  if(item.stream){try{const result=remoteReplyResult(data,self,item.self);if(data.done){clearTimeout(item.timer);pending.delete(data.requestId);item.resolve();}else if(data.stream)item.receive(result);}catch(error){clearTimeout(item.timer);pending.delete(data.requestId);item.reject(Object.assign(error,{status:data.status||503}));}return;}
+  clearTimeout(item.timer);pending.delete(data.requestId);
   try{item.resolve(remoteReplyResult(data,self,item.self));}catch(error){item.reject(error);}
  });
  setInterval(()=>{if(!document.hidden&&!page.hidden&&self&&access.isAllowed())loadDevices();},4000);
