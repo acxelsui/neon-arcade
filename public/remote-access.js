@@ -1,6 +1,13 @@
 import {initRemoteViewer} from './remote-viewer.js';
 const account=globalThis.location?.hostname==='localhost'?'http://localhost:3002':'https://neon-arcade-improvedv3.vercel.app';
 
+// Called only for a matching request from the trusted account parent.
+export function remoteReplyResult(data,self,expectedSelf){
+ if(!self||data.self!==self||(expectedSelf&&expectedSelf!==self))throw Error('Owner access is required.');
+ if(data.error)throw Error(typeof data.error==='string'?data.error.slice(0,400):'The remote request failed. Try again.');
+ return data.result;
+}
+
 // The check must succeed through the authenticated server RPC, never a local role flag.
 export function createOwnerPageAccess({check,onChange}){
  let allowed=false,version=0;
@@ -78,7 +85,7 @@ export function initRemoteAccess({navigate}){
    if(self)verify();return;
   }
   if(!['chat-result','owner-remote-v2-result'].includes(data.type))return;const item=pending.get(data.requestId);if(!item||!!item.remote!==(data.type==='owner-remote-v2-result'))return;clearTimeout(item.timer);pending.delete(data.requestId);
-  if(data.error||data.self!==self||(item.self&&item.self!==self))item.reject(Error('Owner access is required.'));else item.resolve(data.result);
+  try{item.resolve(remoteReplyResult(data,self,item.self));}catch(error){item.reject(error);}
  });
  setInterval(()=>{if(!document.hidden&&self)verify();},15000);
  window.addEventListener('focus',()=>{if(self)verify();});
