@@ -9,7 +9,7 @@
       "headers": [
         {
           "key": "Content-Security-Policy",
-          "value": "default-src 'none'; script-src 'self'; style-src 'self'; img-src 'self' blob: https://xfwjzxjeessduxuuqeop.supabase.co; connect-src 'self' https://xfwjzxjeessduxuuqeop.supabase.co; frame-src https://neongoatarcadd.vercel.app; frame-ancestors 'none'; base-uri 'none'; form-action 'none'; object-src 'none'"
+          "value": "default-src 'none'; script-src 'self'; style-src 'self'; img-src 'self' blob: https://xfwjzxjeessduxuuqeop.supabase.co; connect-src 'self' https://xfwjzxjeessduxuuqeop.supabase.co https://neon-arcade-improvedv3.vercel.app/api/remote-access; frame-src https://neongoatarcadd.vercel.app; frame-ancestors 'none'; base-uri 'none'; form-action 'none'; object-src 'none'"
         },
         {
           "key": "X-Content-Type-Options",
@@ -32,6 +32,14 @@
           "value": "credentialless"
         }
       ]
+    },
+    {
+      "source": "/",
+      "headers": [{"key": "Cache-Control", "value": "private, no-store"}]
+    },
+    {
+      "source": "/index.html",
+      "headers": [{"key": "Cache-Control", "value": "private, no-store"}]
     },
     {
       "source": "/downloads/:path*",

@@ -21,3 +21,20 @@ test('the public access bridge also opts into isolation before loading the authe
   assert.equal(response.status,200);assert.equal(response.headers.get('cross-origin-embedder-policy'),'credentialless');assert.equal(response.headers.get('cross-origin-resource-policy'),'cross-origin');
  }
 });
+
+test('the account policy explicitly permits the owner API without exposing a direct relay connection',async()=>{
+ const headers=await configuredHeaders('accounts/vercel.json');
+ const policy=headers['content-security-policy'];
+ const sources=policy.match(/(?:^|;)\s*connect-src\s+([^;]+)/)[1].trim().split(/\s+/);
+ const remote=sources.filter(source=>source.startsWith('https://neon-arcade-improvedv3.vercel.app'));
+ assert.equal(remote.length,1);
+ const endpoint=new URL(remote[0]);assert.equal(endpoint.pathname,'/api/remote-access');assert.equal(endpoint.search,'');
+ assert.ok(!sources.some(source=>source==='*'||source==='https:'||source.includes('workers.dev')));
+ assert.match(policy,/default-src 'none'/);assert.match(policy,/form-action 'none'/);assert.match(policy,/frame-ancestors 'none'/);
+ const config=JSON.parse(await readFile(new URL('accounts/vercel.json',root),'utf8'));
+ for(const path of ['/','/index.html']){
+  const rows=config.headers.filter(row=>row.source==='/(.*)'||row.source===path);
+  const applied=Object.fromEntries(rows.flatMap(row=>row.headers.map(header=>[header.key.toLowerCase(),header.value])));
+  assert.match(applied['cache-control'],/\bno-store\b/);
+ }
+});

@@ -1,5 +1,6 @@
 // Keep newest first. Dates describe when the change was added, not when a visitor opened Home.
 export const updates = [
+ {date:'2026-10-02',title:'Remote connection policy',text:'Remote access has an explicit website connection rule, and the login page loads without browser caching.'},
  {date:'2026-10-02',title:'Remote connection check',text:'Owners can check their sign-in and remote connection directly on the Remote access page, without opening browser developer tools.'},
  {date:'2026-10-02',title:'Clearer remote pairing messages',text:'Remote access shows the actual pairing or connection error so an expired code is not mistaken for a missing owner role.'},
  {date:'2026-10-02',title:'Neon Launcher download fix',text:'The Windows launcher download opens separately so the Remote access page stays open while you download.'},
