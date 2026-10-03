@@ -1,5 +1,6 @@
 import {RemoteError} from './protocol.mjs';
-const project='https://xfwjzxjeessduxuuqeop.supabase.co',key='sb_publishable_5xjkSLY22XORDMqM1Qp4HQ_J8Ez86mX';
+export const SUPABASE_PROJECT='https://xfwjzxjeessduxuuqeop.supabase.co',PUBLISHABLE_KEY='sb_publishable_5xjkSLY22XORDMqM1Qp4HQ_J8Ez86mX';
+const project=SUPABASE_PROJECT,key=PUBLISHABLE_KEY;
 export async function verifyOwner(token,{fetcher=fetch}={}){
  if(typeof token!=='string'||!/^[a-zA-Z0-9._-]{40,12000}$/.test(token))throw new RemoteError('Sign into Neon Arcade first.',401);
  const headers={apikey:key,Authorization:'Bearer '+token};
