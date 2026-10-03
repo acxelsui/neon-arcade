@@ -1,5 +1,6 @@
 // Keep newest first. Dates describe when the change was added, not when a visitor opened Home.
 export const updates = [
+ {date:'2026-10-02',title:'Remote connection check',text:'Owners can check their sign-in and remote connection directly on the Remote access page, without opening browser developer tools.'},
  {date:'2026-10-02',title:'Clearer remote pairing messages',text:'Remote access shows the actual pairing or connection error so an expired code is not mistaken for a missing owner role.'},
  {date:'2026-10-02',title:'Neon Launcher download fix',text:'The Windows launcher download opens separately so the Remote access page stays open while you download.'},
  {date:'2026-10-02',title:'Neon owner remote access',text:'Owners now have a Remote access tab and Windows Neon Launcher. Pair your Windows PC to your Neon account, start sharing on that PC, and use the same owner account to view or control it from another laptop in the browser.'},
