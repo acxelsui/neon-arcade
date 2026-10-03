@@ -32,10 +32,24 @@
           "value": "credentialless"
         }
       ]
+    },
+    {
+      "source": "/downloads/:path*",
+      "headers": [
+        {"key": "Content-Type", "value": "application/octet-stream"},
+        {"key": "Content-Disposition", "value": "attachment; filename=\"NeonLauncher.exe\""},
+        {"key": "X-Content-Type-Options", "value": "nosniff"}
+      ]
     }
   ],
   "functions": {
     "api/owner-remote.js": {
+      "maxDuration": 20
+    },
+    "api/remote-access.js": {
+      "maxDuration": 30
+    },
+    "api/remote-agent.js": {
       "maxDuration": 20
     }
   }

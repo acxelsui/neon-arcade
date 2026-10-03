@@ -5,9 +5,6 @@ import net from 'node:net';
 import {once} from 'node:events';
 import {readFile} from 'node:fs/promises';
 import {createGateway,verifyOwner} from '../remote-access/gateway.mjs';
-import {createOwnerRemote,remoteOrigin,submitRemoteConnection,requestRemoteTicket} from '../accounts/owner-remote.js';
-import {createTicketBridge} from '../accounts/api/owner-remote.js';
-const sampleTicket='a'.repeat(43);
 const token='owner-token-'.repeat(6),account='https://neon-arcade-improvedv3.vercel.app';
 async function listen(server){server.listen(0,'127.0.0.1');await once(server,'listening');return 'http://127.0.0.1:'+server.address().port;}
 async function setup(t,ownerUsername='neon-owner'){
@@ -26,6 +23,8 @@ async function setup(t,ownerUsername='neon-owner'){
  async function session(){const response=await ticket();const {ticket:value}=await response.json();const redeemed=await redeem(value);assert.equal(redeemed.status,200);return redeemed.headers.get('set-cookie').split(';')[0];}
  return {origin,ticket,redeem,session,seen:()=>seen,deny:()=>allowed=false,advance:ms=>time+=ms};
 }
+import retiredOwnerRemote from '../accounts/api/owner-remote.js';
+
 test('owner verification fails closed for nonowners and account service failures',async()=>{
  for(const fetcher of [async()=>({ok:false}),async()=>{throw Error('offline');},async()=>({ok:true,json:async()=>({})})])assert.equal(await verifyOwner(token,{fetcher}),false);
  let authorization;
@@ -104,39 +103,12 @@ test('revoking an owner disconnects an active desktop WebSocket',async t=>{
  assert.match((await received)[0].toString(),/101 Switching/);assert.equal(s.seen()['x-neon-remote-user'],'neon-owner');
  const closed=once(socket,'close');s.deny();s.advance(21);await Promise.race([closed,new Promise((_,reject)=>{const timer=setTimeout(()=>reject(Error('Desktop connection stayed open after revocation')),1500);timer.unref();})]);
 });
-test('the trusted account bridge submits only to its own PC without exposing credentials to the proxy frame',async()=>{
- let replies=[],closed=false,request;
- const popup={closed:false,opener:{},close:()=>closed=true};
- const handle=createOwnerRemote({rpc:async()=>({players:1}),getProfile:()=>({id:'owner'}),getSession:async()=>({data:{session:{access_token:token}}}),send:(type,data)=>replies.push({type,...data}),openWindow:()=>popup,requestTicket:async()=>sampleTicket,submit:value=>request=value});
- await handle({requestId:'1',action:'open',endpoint:'https://attacker.example'});
- assert.equal(popup.opener,null);assert.equal(request.popup,popup);assert.equal(request.ticket,sampleTicket);assert.equal(request.token,undefined);
- assert.equal(JSON.stringify(replies).includes(token),false);assert.equal(closed,false);
-});
-test('account changes and role failures close the pending connection without forwarding a token',async()=>{
- let player='owner',submissions=0,closed=0;
- const handle=createOwnerRemote({rpc:async()=>{player='member';},getProfile:()=>({id:player}),getSession:async()=>{throw Error('Should not read token');},send:()=>{},openWindow:()=>({close:()=>closed++,opener:{}}),submit:()=>submissions++});
- await handle({requestId:'2',action:'open'});assert.equal(closed,1);assert.equal(submissions,0);
-});
 test('the account policy permits its ticket endpoint while blocking direct remote forms',async()=>{
  const config=JSON.parse(await readFile(new URL('../accounts/vercel.json',import.meta.url),'utf8'));
  const policy=config.headers[0].headers.find(header=>header.key==='Content-Security-Policy').value;
  const sources=policy.match(/(?:^|;)\s*form-action\s+([^;]+)/)[1].split(/\s+/);
  assert.deepEqual(sources,["'none'"]);assert.match(policy,/connect-src 'self' https:\/\/xfwjzxjeessduxuuqeop\.supabase\.co/);
  assert.match(policy,/Cross-Origin-Opener|frame-ancestors 'none'/);
-});
-test('failed connections stay visible with a plain-text error instead of closing a white popup',async()=>{
- let closed=false,replies=[],status={textContent:''},sheet;
- const doc={head:{append:value=>sheet=value},body:{replaceChildren:()=>{}},createElement:()=>({}),getElementById:()=>status};
- const popup={document:doc,closed:false,opener:{},close:()=>closed=true};
- const handle=createOwnerRemote({rpc:async()=>({players:1}),getProfile:()=>({id:'owner'}),getSession:async()=>({data:{session:{access_token:token}}}),send:(type,data)=>replies.push({type,...data}),openWindow:()=>popup,requestTicket:async()=>sampleTicket,submit:()=>{throw new TypeError('Navigation denied');}});
- await handle({requestId:'3',action:'open'});
- assert.equal(closed,false);assert.match(status.textContent,/browser prevented opening the PC connection/);assert.match(sheet.href,/remote-window\.css$/);assert.equal(popup.opener,null);
- assert.equal(replies.at(-1).allowed,false);assert.equal(JSON.stringify(replies).includes(token),false);
-});
-test('popup errors report recovery without requesting desktop credentials',async()=>{
- let calls=0,reply;
- const handle=createOwnerRemote({rpc:async()=>calls++,getProfile:()=>({id:'owner'}),getSession:async()=>calls++,send:(type,data)=>reply=data,openWindow:()=>{throw Error('Blocked');}});
- await handle({requestId:'4',action:'open'});assert.equal(calls,0);assert.match(reply.error,/Allow the remote connection window/);
 });
 test('direct navigation grants a private session only for a signed-in active owner from the account site',async t=>{
  const s=await setup(t);
@@ -149,84 +121,12 @@ test('direct navigation grants a private session only for a signed-in active own
  assert.equal((await fetch(s.origin+'/',{headers:{Cookie:cookie.split(';')[0]}})).status,200);
  s.deny();assert.equal((await open(token)).status,403);
 });
-test('the popup navigates directly with a one-use ticket and never the account JWT',()=>{
- let address;
- const popup={opener:null,location:{replace:value=>address=value}};
- submitRemoteConnection({popup,ticket:sampleTicket});
- assert.equal(address,remoteOrigin+'/connect#'+sampleTicket);assert.equal(address.includes(token),false);assert.equal(popup.opener,null);
- assert.throws(()=>submitRemoteConnection({popup,ticket:token}));
-});
-
-test('a stalled owner check reports recovery and cannot submit after its timeout',async()=>{
- let release,reads=0,submissions=0,reply,status={textContent:''};
- const stalled=new Promise(resolve=>release=resolve);
- const popup={closed:false,opener:{},document:{head:{append:()=>{}},body:{replaceChildren:()=>{}},createElement:()=>({}),getElementById:()=>status},close:()=>{throw Error('Keep the error visible');}};
- const handle=createOwnerRemote({rpc:()=>stalled,getProfile:()=>({id:'owner'}),getSession:async()=>{reads++;return {data:{session:{access_token:token}}};},send:(type,data)=>reply=data,openWindow:()=>popup,submit:()=>submissions++,accountTimeout:10});
- await handle({requestId:'timeout',action:'open'});
- assert.equal(reply.allowed,false);assert.match(status.textContent,/Account check timed out/);assert.equal(reads,0);assert.equal(submissions,0);
- release({players:1});await new Promise(resolve=>setImmediate(resolve));assert.equal(reads,0);assert.equal(submissions,0);
-});
-
-test('browser ticket requests keep the JWT in a same-origin header and reject invalid replies',async()=>{
- let seen;
- assert.equal(await requestRemoteTicket(token,{fetcher:async(url,options)=>{seen={url,...options};return {ok:true,json:async()=>({ticket:sampleTicket})};}}),sampleTicket);
- assert.equal(seen.url,'/api/owner-remote');assert.equal(seen.headers.Authorization,'Bearer '+token);assert.equal(seen.url.includes(token),false);assert.equal(seen.cache,'no-store');
- await assert.rejects(requestRemoteTicket(token,{fetcher:async()=>({ok:false,json:async()=>({error:'PC offline'})})}),/PC offline/);
- await assert.rejects(requestRemoteTicket(token,{fetcher:async()=>({ok:true,json:async()=>({ticket:token})})}),/could not be verified/);
-});
-
-test('the account server hands off only a fixed-host ticket and desktop access still checks the owner',async t=>{
- const s=await setup(t);let seen,calls=0;
- const bridge=http.createServer(createTicketBridge({fetcher:(url,options)=>{calls++;seen={url,...options};return fetch(s.origin+'/api/owner-session',options);}}));
- const address=await listen(bridge);t.after(()=>bridge.close());
- const open=(value=token,origin=account)=>fetch(address+'/?endpoint=https://attacker.example',{method:'POST',headers:{Origin:origin,Authorization:'Bearer '+value}});
- assert.equal((await fetch(address)).status,405);
- assert.equal((await open(token,'https://neongoatarcadd.vercel.app')).status,403);assert.equal(calls,0);
- assert.equal((await open('')).status,401);assert.equal(calls,0);
- assert.equal((await open('member-token-'.repeat(6))).status,403);
- const response=await open();assert.equal(response.status,200);assert.equal(response.headers.get('cache-control'),'no-store');
- const result=await response.json();assert.deepEqual(Object.keys(result),['ticket']);assert.equal(JSON.stringify(result).includes(token),false);
- assert.equal(seen.url,remoteOrigin+'/api/owner-session');assert.equal(seen.headers.Origin,account);assert.equal(seen.headers.Authorization,'Bearer '+token);assert.equal(seen.redirect,'error');
- const redeem=await s.redeem(result.ticket);assert.equal(redeem.status,200);
- const cookie=redeem.headers.get('set-cookie').split(';')[0];assert.equal((await fetch(s.origin+'/',{headers:{Cookie:cookie}})).status,200);
- assert.equal((await s.redeem(result.ticket)).status,403);
- s.deny();assert.equal((await open()).status,403);
-});
-
-test('an unavailable gateway or malformed ticket never opens access through the account server',async t=>{
- for(const fetcher of [async()=>{throw Error('offline');},async()=>({ok:true,json:async()=>({ticket:token})}),async()=>({ok:false,status:500})]){
-  const bridge=http.createServer(createTicketBridge({fetcher}));const address=await listen(bridge);t.after(()=>bridge.close());
-  const response=await fetch(address,{method:'POST',headers:{Origin:account,Authorization:'Bearer '+token}});
-  assert.equal(response.status,503);assert.equal((await response.text()).includes(token),false);
+test('the retired website endpoint cannot forward credentials or create a remote session',async t=>{
+ const previous=globalThis.fetch;let calls=0;globalThis.fetch=async()=>{calls++;throw Error('Retired endpoint must not contact the PC');};t.after(()=>globalThis.fetch=previous);
+ for(const method of ['GET','POST']){
+  let status,headers,body;
+  retiredOwnerRemote({method,headers:{origin:account,authorization:'Bearer '+token}},{writeHead:(code,values)=>{status=code;headers=values;},end:value=>body=value});
+  assert.equal(status,410);assert.equal(headers['Cache-Control'],'no-store');assert.match(JSON.parse(body).error,/removed/);assert.equal(body.includes(token),false);
  }
-});
-
-test('changing accounts while a ticket is being created cancels the launch',async()=>{
- let player='owner',release,submissions=0,closed=0;
- const pending=new Promise(resolve=>release=resolve);
- const handle=createOwnerRemote({rpc:async()=>({players:1}),getProfile:()=>({id:player}),getSession:async()=>({data:{session:{access_token:token}}}),send:()=>{},requestTicket:()=>pending,openWindow:()=>({closed:false,opener:{},close:()=>closed++}),submit:()=>submissions++});
- const opening=handle({requestId:'changed-ticket',action:'open'});await new Promise(resolve=>setImmediate(resolve));player='member';release(sampleTicket);await opening;
- assert.equal(submissions,0);assert.equal(closed,1);
-});
-
-test('a browser without AbortSignal.timeout can still obtain its remote ticket',async t=>{
- const previous=AbortSignal.timeout;AbortSignal.timeout=undefined;t.after(()=>AbortSignal.timeout=previous);
- let signal;
- assert.equal(await requestRemoteTicket(token,{fetcher:async(url,options)=>{signal=options.signal;return {ok:true,json:async()=>({ticket:sampleTicket})};}}),sampleTicket);
- assert.ok(signal instanceof AbortSignal);assert.equal(signal.aborted,false);
-});
-
-test('blocked automatic navigation leaves a clickable one-use connection instead of blaming the PC',()=>{
- let link,status={textContent:''};
- const popup={document:{createElement:()=>({}),body:{append:value=>link=value},getElementById:()=>status},location:{replace:()=>{throw new TypeError('Navigation blocked');}}};
- assert.equal(submitRemoteConnection({popup,ticket:sampleTicket}),false);
- assert.equal(link.href,remoteOrigin+'/connect#'+sampleTicket);assert.equal(link.target,'_self');assert.equal(link.href.includes(token),false);assert.match(status.textContent,/Click Open your PC/);
-});
-
-test('ticket network failures identify the connection service and keep the error visible',async()=>{
- const status={textContent:''};let reply;
- const popup={closed:false,document:{head:{append:()=>{}},body:{replaceChildren:()=>{}},createElement:()=>({}),getElementById:()=>status},close:()=>{throw Error('Error window must remain visible');}};
- const handle=createOwnerRemote({rpc:async()=>({players:1}),getProfile:()=>({id:'owner'}),getSession:async()=>({data:{session:{access_token:token}}}),send:(type,data)=>reply=data,openWindow:()=>popup,requestTicket:async()=>{throw new TypeError('Failed to fetch');}});
- await handle({requestId:'service-error',action:'open'});
- assert.equal(reply.allowed,false);assert.match(status.textContent,/browser could not contact the Neon connection service/);assert.doesNotMatch(status.textContent,/Keep the host PC awake/);
+ assert.equal(calls,0);
 });

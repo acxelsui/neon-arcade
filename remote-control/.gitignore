@@ -1,0 +1,5 @@
+node_modules/
+.wrangler/
+.dev.vars
+neon-remote-local.json
+neon-remote-local.json.tmp

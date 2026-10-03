@@ -1,4 +1,4 @@
-export const pagePresence={home:'On Home',games:'Browsing Games',search:'Using Search',sports:'Watching Sports',movies:'Watching Movies',cloud:'In Neon Cloud Gaming',weather:'Checking Weather',ai:'Using AI Chat',music:'Listening to Music',settings:'In Settings',community:'In Neon Arcade Chat',profile:'Viewing a Profile',friends:'In Friends',playlists:'Browsing Playlists'};
+export const pagePresence={home:'On Home',games:'Browsing Games',search:'Using Search',sports:'Watching Sports',movies:'Watching Movies',cloud:'In Neon Cloud Gaming',weather:'Checking Weather',ai:'Using AI Chat',music:'Listening to Music',settings:'In Settings',community:'In Neon Arcade Chat',profile:'Viewing a Profile',friends:'In Friends',playlists:'Browsing Playlists',remote:'Using Remote Access'};
 export function pageActivity(page){const id=Object.hasOwn(pagePresence,page)?page:'home';return {id:'page:'+id,name:pagePresence[id]};}
 export function formatPresence(player,elapsed=false){
  if(!player.online)return 'Offline';
