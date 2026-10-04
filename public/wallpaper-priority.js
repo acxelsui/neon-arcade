@@ -1,5 +1,5 @@
 import {wallpapers} from './wallpaper-options.js';
-import {createWallpaperVideo} from './wallpaper-stream.js';
+import {createWallpaperVideo,cachedWallpaperFull} from './wallpaper-stream.js';
 export function startWallpaperEarly(doc=globalThis.document,storage){
  const layer=doc?.querySelector('#wallpaper');if(!layer||layer.querySelector('video'))return;
  let saved;try{saved=JSON.parse((storage||globalThis.localStorage).getItem('neon-wallpaper'));}catch{}
@@ -9,6 +9,7 @@ export function startWallpaperEarly(doc=globalThis.document,storage){
  layer.style.backgroundImage=`url(${JSON.stringify(choice.poster||choice.preview)})`;
  const media=createWallpaperVideo(doc,choice.url,choice.poster||choice.preview);
  layer.append(media);if(!doc.hidden&&!doc.fullscreenElement)media.play().catch(()=>{});
+ cachedWallpaperFull(choice.url).then(saved=>{if(!saved||layer.querySelector('video')!==media||media.readyState>=2||media.error)return;media.dataset.neonWallpaperFull='true';media.src=choice.url;if(!doc.hidden&&!doc.fullscreenElement)media.play().catch(()=>{});});
  // Register the existing proxy worker early so cached videos can stream locally.
  globalThis.navigator?.serviceWorker?.register('/sw.js',{scope:'/',updateViaCache:'none'}).catch(()=>{});
  return media;

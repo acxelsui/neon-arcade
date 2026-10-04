@@ -1,6 +1,6 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import {wallpaperStreamUrl,hasWallpaperBuffer} from '../public/wallpaper-stream.js';
+import {wallpaperStreamUrl,hasWallpaperBuffer,cachedWallpaperFull} from '../public/wallpaper-stream.js';
 const url='/wallpapers/4k/minecraft-falling-snow.3840x2160.mp4',stream=url.replace('/4k/','/4k-start/');
 test('every bundled choice has a light source without rewriting custom videos or account paths',()=>{
  assert.equal(wallpaperStreamUrl(url),stream);for(const other of ['/api/private.mp4','blob:personal','/custom/video.mp4'])assert.equal(wallpaperStreamUrl(other),other);
@@ -44,3 +44,7 @@ test('4K stalls recover to the 4K opening loop without refreshing the page',asyn
   setWallpaperMedia('/custom/still.jpg');
  }finally{globalThis.document=previous;}
 });
+
+test('only complete prepared originals can skip the opening download',async()=>{for(const [response,want] of [[new Response('movie',{headers:{'content-type':'video/mp4'}}),true],[new Response('part',{status:206,headers:{'content-type':'video/mp4'}}),false],[new Response('login',{headers:{'content-type':'text/html'}}),false],[null,false]]){const storage={async open(){return{async match(key){assert.equal(key,url);return response;}};}};assert.equal(Boolean(await cachedWallpaperFull(url,storage)),want);}assert.equal(await cachedWallpaperFull('/api/private.mp4',{open(){throw Error('must not open');}}),false);assert.equal(await cachedWallpaperFull(url,null),false);});
+
+test('a prepared original is used without constructing a second video or downloading the new clip',async()=>{const previous={document:globalThis.document,caches:globalThis.caches},f=fixture();globalThis.document=f.doc;globalThis.caches={async open(){return{async match(){return new Response('movie',{headers:{'content-type':'video/mp4'}});}};}};try{const {setWallpaperMedia}=await import('../public/wallpaper-media.js?prepared-original');setWallpaperMedia(url);await new Promise(resolve=>setImmediate(resolve));const media=f.nodes[0];assert.equal(media.src,url);assert.equal(media.dataset.neonWallpaperFull,'true');media.readyState=4;media.emit('loadeddata');assert.equal(f.nodes.length,1);setWallpaperMedia('/custom/still.jpg');}finally{globalThis.document=previous.document;globalThis.caches=previous.caches;}});

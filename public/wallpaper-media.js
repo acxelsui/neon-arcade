@@ -1,5 +1,5 @@
 import {wallpaperPreparation} from './wallpaper-preload.js';
-import {wallpaperStreamUrl,createWallpaperVideo,hasWallpaperBuffer} from './wallpaper-stream.js';
+import {wallpaperStreamUrl,createWallpaperVideo,hasWallpaperBuffer,cachedWallpaperFull} from './wallpaper-stream.js';
 let video,pending,currentUrl,epoch=0,release=[],timers=[],visible=Promise.resolve();
 function canPlay(){return !document.hidden&&!document.fullscreenElement;}
 function play(){if(video&&canPlay())video.play().catch(()=>{});}
@@ -26,9 +26,9 @@ export function setWallpaperMedia(url,poster=''){
  video=media;if(media!==early)layer.append(media);media.style.opacity=media.readyState>=2?'1':'0';
  status('Starting your live wallpaper…');
  let upgrading=false,retries=0;
- function live(){if(version!==epoch||video!==media)return;media.style.opacity='1';ready();status(stream===url?'4K live wallpaper playing.':media.dataset.neonWallpaper4kFailed==='true'?'4K live wallpaper playing · opening loop.':'4K live wallpaper playing · preparing the full loop.');upgrade();}
+ function live(){if(version!==epoch||video!==media)return;media.style.opacity='1';ready();status(stream===url||media.dataset.neonWallpaperFull==='true'?'4K live wallpaper playing · full loop.':media.dataset.neonWallpaper4kFailed==='true'?'4K live wallpaper playing · opening loop.':'4K live wallpaper playing · preparing the full loop.');upgrade();}
  function upgrade(){
-  if(upgrading||stream===url||version!==epoch||video!==media)return;upgrading=true;media.dataset.neonWallpaperPending4k='true';changed();
+  if(upgrading||stream===url||media.dataset.neonWallpaperFull==='true'||version!==epoch||video!==media)return;upgrading=true;media.dataset.neonWallpaperPending4k='true';changed();
   const high=createWallpaperVideo(document,url,poster,url);pending=high;high.autoplay=false;high.style.opacity='0';layer.append(high);
   let seeking=false,stopped=false,stall;
   function stop(){
@@ -65,7 +65,7 @@ export function setWallpaperMedia(url,poster=''){
   timers.push(setTimeout(()=>{
    if(version!==epoch||video!==media)return;
    // Bypass an interrupted cached response without deleting game or account data.
-   media.src=stream+'?wallpaper-retry='+retries;media.load();play();
+   delete media.dataset.neonWallpaperFull;media.src=stream+'?wallpaper-retry='+retries;media.load();play();
   },retries*500));
  }
  media.addEventListener('loadeddata',live);media.addEventListener('playing',()=>{if(version===epoch&&video===media){media.style.opacity='1';ready();live();}});
@@ -73,6 +73,7 @@ export function setWallpaperMedia(url,poster=''){
  let lightStall;
  media.addEventListener('waiting',()=>{clearTimeout(lightStall);lightStall=setTimeout(retry,6000);timers.push(lightStall);});
  media.addEventListener('playing',()=>clearTimeout(lightStall));
+ cachedWallpaperFull(url).then(saved=>{if(!saved||upgrading||version!==epoch||video!==media||media.readyState>=2)return;media.dataset.neonWallpaperFull='true';media.src=url;play();});
  if(media.readyState>=2)live();
  changed();play();
 }

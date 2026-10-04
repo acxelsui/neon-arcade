@@ -1,5 +1,6 @@
 // Keep newest first. Dates describe when the change was added, not when a visitor opened Home.
 export const updates = [
+ {date:'2026-10-04',title:'Use prepared 4K wallpapers immediately',text:'Choosing a wallpaper uses its already-prepared original 4K video directly when available, instead of downloading a new opening clip. Startup and recovery remain in original 4K quality.'},
  {date:'2026-10-04',title:'Original 4K from the first frame',text:'Wallpapers start with short clips copied directly from their original 4K footage, then continue with the full video when ready. There is no HD downgrade or extra compression. The opening clips are prepared for faster repeat visits, and all 28 full wallpapers remain available.'},
  {date:'2026-10-04',title:'Live wallpapers start lighter',text:'Every live wallpaper starts with a smaller HD playback copy, then switches to its existing 4K video when buffered. Stalled 4K playback falls back to HD, interrupted starts retry automatically, and background preparation includes the quicker copies. All 28 wallpapers remain available.'},
  {date:'2026-10-04',title:'BuildNow.gg joins the arcade',text:'BuildNow.gg opens as a game-only frame through the existing Neon proxy, with the Neon game menu for fullscreen, exit, reload, and side tabs.'},
