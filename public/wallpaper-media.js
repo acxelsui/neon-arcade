@@ -15,18 +15,19 @@ export function setWallpaperMedia(url,poster=''){
  }
  if(poster)wallpaperPreparation.source(poster).then(source=>{if(!source)return;if(version!==epoch){source.release();return;}release.push(source.release);layer.style.backgroundImage=`url(${JSON.stringify(source.url)})`;});
  if(!/\.mp4(?:[?#]|$)/i.test(url))return;
- const media=document.createElement('video');video=media;
+ const early=layer.querySelector?.('video[data-neon-wallpaper-url]');
+ const reuse=early?.dataset.neonWallpaperUrl===url&&!early.error;
+ if(early&&!reuse){early.pause();early.removeAttribute('src');early.load();early.remove();}
+ const media=reuse?early:document.createElement('video');video=media;
  media.className='wallpaper-video';media.muted=true;media.defaultMuted=true;media.loop=true;media.autoplay=true;media.playsInline=true;media.preload='auto';
  media.setAttribute('aria-hidden','true');media.setAttribute('disablepictureinpicture','');media.setAttribute('muted','');media.setAttribute('playsinline','');
  if(poster)media.poster=poster;
- media.style.opacity='0';media.addEventListener('loadeddata',()=>{if(version===epoch){media.style.opacity='1';ready();}},{once:true});media.addEventListener('error',()=>{if(version!==epoch)return;if(media.src.startsWith('blob:')){media.src=url;media.load();play();}else ready();});
+ media.style.opacity=media.readyState>=2?'1':'0';if(media.readyState>=2)ready();media.addEventListener('loadeddata',()=>{if(version===epoch){media.style.opacity='1';ready();}},{once:true});media.addEventListener('error',()=>{if(version===epoch)ready();});
  media.addEventListener('waiting',()=>{if(version===epoch&&typeof window!=='undefined')window.dispatchEvent(new Event('neon-wallpaper-playback'));});
- layer.append(media);
- function start(source){if(version!==epoch){source?.release();return;}if(source)release.push(source.release);media.src=source?.url||url;play();}
- // A slow or unavailable cache must never hold up ordinary playback.
- if(!globalThis.caches){start(null);return;}
- let started=false;const timer=setTimeout(()=>{started=true;start(null);},250);
- wallpaperPreparation.source(url).then(source=>{if(started){source?.release();return;}started=true;clearTimeout(timer);start(source);});
+ if(!reuse){layer.append(media);media.src=url;}
+ // The browser and existing worker stream cached bytes directly. Never wait
+ // for a whole 4K file to be copied into a blob before starting playback.
+ play();
 }
 document.addEventListener('visibilitychange',()=>{if(document.hidden)video?.pause();else play()});
 // Fullscreen media covers the wallpaper completely; avoid decoding a second

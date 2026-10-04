@@ -8,6 +8,7 @@ import {createHash} from 'node:crypto';
 export async function bundleUI(root){
  const publicDir=path.join(root,'public'),index=path.join(publicDir,'index.html');
  let html=await readFile(index,'utf8');
+ const wallpaper=await build({entryPoints:[path.join(publicDir,'wallpaper-priority.js')],bundle:true,write:false,format:'iife',platform:'browser',target:['chrome100','firefox100','safari15.4'],minify:true});
  const styles=['style.css','chat.css','music.css','refresh.css','shell.css','weather.css','members.css','social.css','avatar-decorations.css','playlists.css','neon-dashboard.css','community-chat.css','announcements.css','game-extras.css','owner-toolkit.css','media-frames.css','remote-access.css','shell-reveal.css','mac-desktop.css','neon-loading.css'];
  const script=await build({stdin:{contents:["wallpaper-start.js","owner-toolkit.js","site-access.js","app.js"].map(src=>`import './${src}';`).join('\n'),resolveDir:publicDir,sourcefile:'neon-runtime-entry.js'},bundle:true,write:false,format:'esm',platform:'browser',target:['chrome100','firefox100','safari15.4'],minify:true,metafile:true,outfile:path.join(publicDir,'neon-runtime.js')});
  const css=await build({stdin:{contents:styles.map(src=>`@import './${src}';`).join('\n'),resolveDir:publicDir,sourcefile:'neon-style-entry.css',loader:'css'},bundle:true,write:false,minify:true,outfile:path.join(publicDir,'neon-style.css'),plugins:[{name:'keep-public-image-addresses',setup(builder){builder.onResolve({filter:/.*/},args=>args.kind==='url-token'?{path:args.path,external:true}:undefined);}}]});
@@ -18,6 +19,8 @@ export async function bundleUI(root){
  }
  html=html.replace(/<link\b[^>]*rel="stylesheet"[^>]*>/g,'').replace(/<link\b[^>]*rel="modulepreload"[^>]*>/g,'');
  html=html.replace(/<script type="module" src="(?:\/?(?:wallpaper-start|owner-toolkit|site-access|app)\.js|\/?neon-runtime-[a-f0-9]{16}\.js)"><\/script>/g,'');
+ html=html.replace(/<script id="neon-wallpaper-priority">[\s\S]*?<\/script>/g,'');
+ html=html.replace('<div id="wallpaper"></div>',`<div id="wallpaper"></div><script id="neon-wallpaper-priority">${wallpaper.outputFiles[0].text.replace(/<\/script/gi,'<\\/script')}</script>`);
  html=html.replace('</head>',`<link rel="stylesheet" href="/${files[1]}"><link rel="modulepreload" href="/${files[0]}"></head>`);
  html=html.replace('</body>',`<script type="module" src="/${files[0]}"></script></body>`);
  await writeFile(index,html);

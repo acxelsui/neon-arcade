@@ -10,7 +10,7 @@ test('fullscreen media pauses only the covered wallpaper and resumes it without 
  }finally{globalThis.document=previous;}
 });
 
-test('a failed cached video falls back to the bundled video and a failed selected video can retry',async()=>{
+test('video starts directly without copying a cached file, and an errored wallpaper can retry',async()=>{
  const {wallpaperPreparation}=await import('../public/wallpaper-preload.js');
  const previous={document:globalThis.document,caches:globalThis.caches,source:wallpaperPreparation.source};
  const media=[],layer={style:{},append(){}};let releases=0;
@@ -19,10 +19,10 @@ test('a failed cached video falls back to the bundled video and a failed selecte
  try{
   const {setWallpaperMedia,whenWallpaperVisible}=await import('../public/wallpaper-media.js?cache-failure');
   setWallpaperMedia('/wallpapers/4k/repair.mp4');await new Promise(resolve=>setImmediate(resolve));
-  assert.equal(media[0].src,'blob:cached-video');media[0].handlers.error();assert.equal(media[0].src,'/wallpapers/4k/repair.mp4');assert.equal(media[0].loads,1);
+  assert.equal(media[0].src,'/wallpapers/4k/repair.mp4');assert.equal(media[0].loads,0);
   media[0].error={code:4};media[0].handlers.error();await whenWallpaperVisible(30);
   setWallpaperMedia('/wallpapers/4k/repair.mp4');await new Promise(resolve=>setImmediate(resolve));
-  assert.equal(media.length,2,'selecting an errored wallpaper again must recreate the video');assert.equal(releases,1);
+  assert.equal(media.length,2,'selecting an errored wallpaper again must recreate the video');assert.equal(releases,0);
   setWallpaperMedia('/custom/photo.jpg');
  }finally{globalThis.document=previous.document;globalThis.caches=previous.caches;wallpaperPreparation.source=previous.source;}
 });
@@ -33,8 +33,8 @@ test('late cached sources are released and cannot replace a newer wallpaper',asy
  globalThis.document={hidden:false,fullscreenElement:null,querySelector:()=>layer,addEventListener(){},createElement(){const node={style:{},handlers:{},play:async()=>{},pause(){},load(){},remove(){},removeAttribute(){},setAttribute(){},addEventListener(type,fn){this.handlers[type]=fn;}};media.push(node);return node;}};
  try{
   const {setWallpaperMedia,whenWallpaperVisible}=await import('../public/wallpaper-media.js?cache-race');setWallpaperMedia('/wallpapers/4k/a.mp4','/artwork/wallpaper-posters/a.webp');setWallpaperMedia('/wallpapers/4k/b.mp4','/artwork/wallpaper-posters/b.webp');
-  const source=url=>({url,release(){releases++;}});pending.get('/wallpapers/4k/b.mp4')(source('blob:new'));pending.get('/artwork/wallpaper-posters/b.webp')(source('blob:new-poster'));await new Promise(resolve=>setImmediate(resolve));
-  pending.get('/wallpapers/4k/a.mp4')(source('blob:old'));pending.get('/artwork/wallpaper-posters/a.webp')(source('blob:old-poster'));await new Promise(resolve=>setImmediate(resolve));
-  assert.equal(media[1].src,'blob:new');assert.match(layer.style.backgroundImage,/blob:new-poster/);assert.equal(releases,2);media[1].handlers.loadeddata();await whenWallpaperVisible(30);assert.equal(media[1].style.opacity,'1');setWallpaperMedia('/custom/photo.jpg');assert.equal(releases,4);
+  const source=url=>({url,release(){releases++;}});pending.get('/artwork/wallpaper-posters/b.webp')(source('blob:new-poster'));await new Promise(resolve=>setImmediate(resolve));
+  pending.get('/artwork/wallpaper-posters/a.webp')(source('blob:old-poster'));await new Promise(resolve=>setImmediate(resolve));
+  assert.equal(media[1].src,'/wallpapers/4k/b.mp4');assert.match(layer.style.backgroundImage,/blob:new-poster/);assert.equal(releases,1);media[1].handlers.loadeddata();await whenWallpaperVisible(30);assert.equal(media[1].style.opacity,'1');setWallpaperMedia('/custom/photo.jpg');assert.equal(releases,2);
  }finally{globalThis.document=previous.document;globalThis.caches=previous.caches;wallpaperPreparation.source=previous.source;}
 });

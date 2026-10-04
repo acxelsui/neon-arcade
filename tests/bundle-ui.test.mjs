@@ -12,11 +12,12 @@ test('bundling retains startup order, classic proxy bootstrap, styles and stable
  try{
   await mkdir(publicDir);await writeFile(path.join(root,'package.json'),'{"type":"module"}');
   for(const style of styles)await writeFile(path.join(publicDir,style+'.css'),`.${style}{color:white;background-image:url('/artwork/example.webp')}`);
-  for(const script of ['wallpaper-start','owner-toolkit','site-access','app'])await writeFile(path.join(publicDir,script+'.js'),`globalThis.neonBundleOrder.push('${script}');`);
-  await writeFile(path.join(publicDir,'index.html'),'<html><head><link rel="stylesheet" href="style.css"><script type="module" src="/wallpaper-start.js"></script><script type="module" src="/site-access.js"></script><link rel="modulepreload" href="/app.js"></head><body><button id="all-features">Everything</button><script src="/bootstrap-init.js"></script><script type="module" src="app.js"></script></body></html>');
+  for(const script of ['wallpaper-priority','wallpaper-start','owner-toolkit','site-access','app'])await writeFile(path.join(publicDir,script+'.js'),`globalThis.neonBundleOrder.push('${script}');`);
+  await writeFile(path.join(publicDir,'index.html'),'<html><head><link rel="stylesheet" href="style.css"><script type="module" src="/wallpaper-start.js"></script><script type="module" src="/site-access.js"></script><link rel="modulepreload" href="/app.js"></head><body><div id="wallpaper"></div><button id="all-features">Everything</button><script src="/bootstrap-init.js"></script><script type="module" src="app.js"></script></body></html>');
   const files=await bundleUI(root),html=await readFile(path.join(publicDir,'index.html'),'utf8');
   assert.equal((html.match(/rel="stylesheet"/g)||[]).length,1);assert.equal((html.match(/<script type="module"/g)||[]).length,1);
   assert.ok(html.includes('id="all-features"'));assert.ok(html.indexOf('/bootstrap-init.js')<html.indexOf('src="/'+files[0]));
+  assert.ok(html.indexOf('id="neon-wallpaper-priority"')<html.indexOf('/bootstrap-init.js'));assert.equal((html.match(/id="neon-wallpaper-priority"/g)||[]).length,1);
   const css=await readFile(path.join(publicDir,files[1]),'utf8');for(const style of styles)assert.ok(css.includes('.'+style+'{'));assert.ok(css.includes('/artwork/example.webp'));
   globalThis.neonBundleOrder=[];await import(pathToFileURL(path.join(publicDir,files[0])).href);
   assert.deepEqual(globalThis.neonBundleOrder,['wallpaper-start','owner-toolkit','site-access','app']);

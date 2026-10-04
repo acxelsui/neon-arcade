@@ -1,0 +1,8 @@
+import test from 'node:test';
+import assert from 'node:assert/strict';
+import {staticAssetCache} from '../lib/static-asset-cache.mjs';
+test('packaged images and movies reuse browser downloads while personal and changing endpoints never cache',()=>{
+ for(const path of ['/artwork/thumbnails/game-33-1234567890abcdef.webp','/neon-runtime-1234567890abcdef.js','/neon-style-1234567890abcdef.css'])assert.match(staticAssetCache(path),/31536000, immutable/);
+ for(const path of ['/covers/33.png','/artwork/space-horizon.jpg','/artwork/wallpaper-posters/a-full.webp','/wallpapers/4k/a.mp4','/icon.svg'])assert.equal(staticAssetCache(path),'private, max-age=86400');
+ for(const path of ['/','/index.html','/catalog.json','/sw.js','/wallpaper-cache.js','/api/profile','/api/remote-access','/accounts/image.png','/~/sj/foo/cover.png','/game-runner.html','/artwork/fake.html','/artwork/avatar.json'])assert.equal(staticAssetCache(path),'private, no-store');
+});
