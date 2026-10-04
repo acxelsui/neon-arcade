@@ -1,7 +1,10 @@
 import {initShellReveal} from './shell-reveal.js';
+import {initMacDesktop} from './mac-desktop.js';
 const labels={home:'Home',games:'Games',search:'Search',sports:'Sports',movies:'Movies',cloud:'Neon Cloud Gaming',weather:'Weather',ai:'AI Chat',music:'Music',settings:'Settings',community:'Neon Arcade Chat',profile:'Player profile',friends:'Friends',playlists:'Playlists',remote:'Remote access'};
 export function initShell({navigate,search,reload}){
  initShellReveal();
+ // Initialize after the remote module has added its owner-gated page.
+ queueMicrotask(()=>initMacDesktop({navigate,search,reload}));
  const $=s=>document.querySelector(s),tabs=['home'];let active='home',history=[],position=-1,travelling=false;
  function render(){
   $('#shell-tabs').replaceChildren();

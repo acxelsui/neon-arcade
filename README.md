@@ -67,14 +67,20 @@ In Vercel project Settings → Environment Variables, add these for Production a
 
 - `AI_API_KEY`: your private provider key. Never put it in public files or send it in chat.
 - `AI_BASE_URL`: `https://api.groq.com/openai/v1` for Groq.
-- `AI_MODEL`: `openai/gpt-oss-20b` for Groq (check availability in your account).
+- `AI_MODEL`: your default model for other providers. Groq Auto prefers `openai/gpt-oss-120b` and can fall back to `openai/gpt-oss-20b` (check account permissions). The picker also retains the configured default.
+- `AI_MODELS` (optional): comma-separated additional model IDs permitted for the same provider. The browser cannot submit arbitrary models or change providers.
+- `AI_REQUESTS_PER_MINUTE` (optional): burst protection per address/server instance, default 30, configurable from 1 to 120. This resets each minute; Neon has no daily or lifetime message allowance.
 - `AI_VISION_MODEL` (optional): the image model. Groq defaults to `qwen/qwen3.8-27b`; other providers fall back to `AI_MODEL`. Use a vision-capable model available to your account.
 
 AI Chat is public and no longer uses `AI_ACCESS_CODE`. You may remove that old Vercel variable. The API key remains private on the server.
 
 Create a Groq key at https://console.groq.com/keys. Free-plan limits apply; no provider account or billing upgrade is created automatically. Other HTTPS OpenAI-compatible Chat Completions providers can be configured with their own base URL and model.
 
-For local development, set the same variables in your server environment before starting Node. No credentials are bundled into the website. The endpoint has request/context limits, a 45-second timeout, and a best-effort limit of 12 requests/minute per address per server instance. This is not a global usage quota: use provider spending limits for paid accounts. Missing configuration shows an honest setup message, never a simulated AI answer.
+For local development, set the same variables in your server environment before starting Node. No credentials are bundled into the website. The endpoint has request/context limits, a 45-second timeout, and a best-effort default limit of 30 requests/minute per address per server instance. This is not a global usage quota: use provider spending limits for paid accounts. Missing configuration shows an honest setup message, never a simulated AI answer. Auto tries at most three configured models on temporary 429/5xx errors or a missing model, within the same 45-second request deadline. Explicit selections stay selected. Provider Retry-After pauses requests to that model; when all choices are limited, a visible countdown allows manual retry without losing the message. Invalid requests do not spend the site burst budget. Images always use the configured vision model, and never fall back to a text-only model. Groq request history is reduced to recent complete turns within 12,000 characters; full browser history is preserved. Normal/quick replies use smaller output budgets (2,048/768 tokens; detailed 3,072). These reduce request size, but cannot remove provider minute/day quotas or guarantee a reply after a timer ends.
+
+Local previews that forward to the published AI service show its existing model until the new API is deployed. Model availability and authenticated live replies need verification against that deployment; no provider upgrade or extra credentials are created automatically.
+
+Model and limit references: https://console.groq.com/docs/models and https://console.groq.com/docs/rate-limits (checked October 3, 2026).
 
 
 Screenshot support: attach with the plus button or paste into the message box. Up to three images per request, 8 MB per original image. Images are resized locally to 1600 pixels on the longest edge and compressed for Vercel request limits. Only pressing Send transmits them to the configured AI provider. Up to the last three attached images are included in follow-up questions in the current conversation. Image data lives in page memory; saved history keeps filenames and text only. After refreshing, reattach a screenshot to ask about it again. Provider access or billing is not configured automatically, and live vision replies require a working provider key/model.

@@ -49,6 +49,7 @@ test('the viewer cancels its stream on disconnect and fails closed on a stream o
  await viewer.connect('dev_'+'a'.repeat(32),'Generated test PC');assert.equal(elements.get('#remote-session').hidden,false);assert.equal(elements.get('#remote-screen').focused,true);
  reject(Object.assign(Error('Owner access required'),{status:403}));await tick();assert.equal(elements.get('#remote-session').hidden,true);assert.ok(!actions.includes('poll'));assert.ok(actions.includes('close'));
  await viewer.connect('dev_'+'a'.repeat(32),'Generated test PC');await viewer.stop();await tick();assert.equal(cancelled,2);assert.equal(elements.get('#remote-session').hidden,true);
+ await viewer.connect('dev_'+'a'.repeat(32),'Generated test PC');const hidden=new Event('neon-window-hidden');hidden.detail='remote';globalThis.window.dispatchEvent(hidden);await tick();assert.equal(cancelled,3);assert.equal(elements.get('#remote-session').hidden,true);
  }finally{if(previous===undefined)delete globalThis.window;else globalThis.window=previous;}
 });
 test('the website stream checks owner identity before forwarding and binds the exact session',async()=>{

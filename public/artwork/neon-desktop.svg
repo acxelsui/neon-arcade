@@ -1,0 +1,18 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1920" height="1080" viewBox="0 0 1920 1080">
+ <defs>
+  <radialGradient id="bg" cx="65%" cy="55%" r="85%"><stop stop-color="#154b9b"/><stop offset=".5" stop-color="#092b66"/><stop offset="1" stop-color="#041025"/></radialGradient>
+  <linearGradient id="fold" x1="0" y1="0" x2="1" y2="1"><stop stop-color="#a5ddff"/><stop offset=".22" stop-color="#3b9ef0"/><stop offset=".54" stop-color="#1558be"/><stop offset=".8" stop-color="#071b68"/><stop offset="1" stop-color="#146fe1"/></linearGradient>
+  <linearGradient id="edge"><stop stop-color="#7aceff"/><stop offset=".4" stop-color="#1d68d4"/><stop offset="1" stop-color="#082965"/></linearGradient>
+  <filter id="shadow"><feGaussianBlur stdDeviation="28"/></filter>
+ </defs>
+ <path fill="url(#bg)" d="M0 0h1920v1080H0z"/>
+ <ellipse cx="1120" cy="810" rx="530" ry="160" fill="#000929" opacity=".5" filter="url(#shadow)"/>
+ <g transform="translate(110 40)">
+  <path d="M770 790C444 647 536 333 815 288c272-45 496 241 514 359 64-12 95-224-90-355C987 119 637 78 474 311c-182 260 66 582 387 580 249-2 508-109 543-241-175 109-416 179-634 140Z" fill="url(#fold)"/>
+  <path d="M756 743c-120-84-116-246 18-290 153-50 327 29 420 100-170-204-328-241-470-180-193 83-168 319 32 370Z" fill="url(#edge)"/>
+  <path d="M1212 661c-142-81-289-104-395-33 131-179 330-126 480-35 87 53 147 109 161 174-35-62-112-41-246-106Z" fill="url(#fold)"/>
+  <path d="M1289 728c-134-7-164 73-390 34 126 90 332 26 390-34Z" fill="#184eaa"/>
+  <path d="M546 368c121-206 420-188 682 0" fill="none" stroke="#80caff" stroke-width="2" opacity=".4"/>
+  <path d="M592 500c-26 175 114 333 337 339" fill="none" stroke="#54adff" stroke-width="2" opacity=".3"/>
+ </g>
+</svg>

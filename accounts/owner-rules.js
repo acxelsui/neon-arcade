@@ -1,6 +1,8 @@
+import {gameStatusRequest} from './game-status-rules.js';
 const uuid=/^[a-f0-9]{8}-[a-f0-9]{4}-[a-f0-9]{4}-[a-f0-9]{4}-[a-f0-9]{12}$/i;
 export function ownerRequest(data){
  switch(data.action){
+ case 'owner-game-status':case 'owner-game-review':return gameStatusRequest(data);
  case 'owner-overview':return ['neon_owner_overview',{}];
  case 'owner-players':
   if(!['all','banned','muted','staff'].includes(data.filter)||!Number.isInteger(data.offset)||data.offset<0||data.offset>100000)throw Error('Choose a valid player filter.');

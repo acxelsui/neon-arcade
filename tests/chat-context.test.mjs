@@ -12,3 +12,7 @@ test('screenshot context prioritizes recent images and leaves saved messages unt
 test('shared screen context identifies the current frame separately from earlier views',()=>{
  const context=conversationContext([{role:'user',content:'What changed?',images:['screen-frame'],screenCapturedAt:'2026-09-29T10:00:00Z'}]);assert.match(context[0].content,/shared screen captured with this question/);assert.match(context[0].content,/Earlier screen images may be out of date/);assert.deepEqual(context[0].images,['screen-frame']);
 });
+
+test('model context budgets keep the newest question and preserve original saved history',()=>{
+ const history=[{role:'user',content:'a'.repeat(7000)},{role:'assistant',content:'b'.repeat(7000)},{role:'user',content:'Newest question'}];const context=conversationContext(history,{maxChars:12000});assert.equal(context.at(-1).content,'Newest question');assert.ok(context.reduce((n,m)=>n+m.content.length,0)<=12000);assert.equal(history.length,3);assert.equal(history[0].content.length,7000);
+});

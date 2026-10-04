@@ -75,6 +75,7 @@ export function initRemoteViewer({page,request,watch=null,access,status}){
  page.querySelector('#remote-fullscreen').onclick=async()=>{try{if(document.fullscreenElement===panel)await document.exitFullscreen();else await panel.requestFullscreen();}catch{note('Fullscreen is unavailable.');}};
  window.addEventListener('neon-owner-access',event=>{if(event.detail!==true)stop();});
  window.addEventListener('neon-page',event=>{if(event.detail!=='remote'&&session)stop();});
+ window.addEventListener('neon-window-hidden',event=>{if(event.detail==='remote'&&session)stop();});
  return {async connect(device,name){
   await stop();const version=epoch;note('Connecting to '+name+'…');
   try{const result=await request({action:'open',device,video:videoPlayer.supported()});if(version!==epoch||!access.isAllowed()){request({action:'close',session:result.session}).catch(()=>{});return;}session=result.session;sessionTitle.textContent=name;panel.hidden=false;sequence=0;control=true;controlButton.textContent='Control enabled';controlButton.setAttribute('aria-pressed','true');screen.focus();if(watch)stream(version,Date.now());else poll(version,Date.now());}

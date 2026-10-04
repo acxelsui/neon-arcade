@@ -1,3 +1,5 @@
+import {initOwnerGameStatus} from './owner-game-status.js';
+import './game-status-bridge.js';
 export function ownerAllowed(me){return me?.role==='owner'&&!me.banned&&!(Date.parse(me.muted_until)>Date.now());}
 export function initOwnerToolkit(){
  const account=location.hostname==='localhost'?'http://localhost:3002':'https://neon-arcade-improvedv3.vercel.app';
@@ -8,7 +10,8 @@ export function initOwnerToolkit(){
   if(parent===window)return Promise.reject(Error('Open through your signed-in Neon account.'));
   const requestId=crypto.randomUUID();return new Promise((resolve,reject)=>{const timer=setTimeout(()=>{pending.delete(requestId);reject(Error('The toolkit could not connect. Please retry.'));},15000);pending.set(requestId,{resolve,reject,timer});parent.postMessage({channel:'neon-members-v1',type:'chat-request',action,requestId,...args},account);});
  }
- function hide(){version++;button.hidden=true;if(dialog.open)dialog.close();$('owner-players').replaceChildren();$('owner-audit').replaceChildren();for(const item of pending.values()){clearTimeout(item.timer);item.reject(Error('Owner access changed.'));}pending.clear();}
+ const gameStatus=initOwnerGameStatus({dialog,request,isAllowed:()=>ownerAllowed(me),onDenied:()=>checkRole()});
+ function hide(){version++;button.hidden=true;if(dialog.open)dialog.close();gameStatus.reset();$('owner-players').replaceChildren();$('owner-audit').replaceChildren();for(const item of pending.values()){clearTimeout(item.timer);item.reject(Error('Owner access changed.'));}pending.clear();}
  window.addEventListener('message',event=>{
   const data=event.data;if(event.source!==parent||event.origin!==account||data?.channel!=='neon-members-v1')return;
   if(data.type==='members'&&data.self?.id){if(self&&self!==data.self.id){me=null;hide();}self=data.self.id;checkRole();return;}
@@ -39,6 +42,7 @@ export function initOwnerToolkit(){
  }
  async function refresh(){
   if(!dialog.open)return;const generation=++version;const query=$('owner-query').value.trim(),filter=$('owner-filter').value;
+  gameStatus.refresh();
   try{const [overview,rows,audit]=await Promise.all([request('owner-overview'),request('owner-players',{query,filter,offset}),request('owner-audit')]);if(version!==generation||!dialog.open)return;
    $('owner-stats').replaceChildren(...[['players','Players'],['banned','Website bans'],['muted','Chat mutes'],['staff','Owners & admins']].map(([key,label])=>{const el=element('div');el.append(element('strong',String(overview[key]||0)),element('span',label));return el;}));
    $('owner-players').replaceChildren(...(rows.length?rows.map(playerCard):[element('p','No players match this filter.')]));$('owner-prev').disabled=offset===0;$('owner-next').disabled=rows.length<25;$('owner-page').textContent='Page '+(offset/25+1);

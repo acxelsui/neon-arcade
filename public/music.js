@@ -6,6 +6,7 @@ const MUSIC_URL='https://6ab87f0e6a91203ed89fa447--neoostesting.netlify.app/neo-
 export function initMusic(getController){
  const $=s=>document.querySelector(s);let frame,loading=null,version=0,cleanup=()=>{},brandedDoc,lastMusicState='';
  const status=text=>$('#music-status').textContent=text;
+ const welcome=$('.music-welcome');if(welcome)welcome.hidden=true;
  const queue=createPlaylistQueue({changed:state=>window.dispatchEvent(new CustomEvent('neon-playlist-state',{detail:state})),failed:error=>window.dispatchEvent(new CustomEvent('neon-playlist-error',{detail:error.message}))});
  let playlistLaunch=0;
  function playerDocument(){try{return frame?.element.contentDocument}catch{return null}}
@@ -54,9 +55,9 @@ export function initMusic(getController){
  }
  function page(name){const active=name==='music';document.body.classList.toggle('music-view',active);if(active){$('#music-dock').classList.remove('compact');$('#music-minimize').setAttribute('aria-expanded','true');open()}else{$('#music-dock').classList.add('compact');$('#music-minimize').setAttribute('aria-expanded','false')}}
  window.addEventListener('neon-page',e=>page(e.detail));
- $('#music-open').onclick=()=>open();$('#music-home').onclick=()=>open(true);
+ const openButton=$('#music-open');if(openButton)openButton.onclick=()=>open();$('#music-home').onclick=()=>open(true);
  $('#music-reload').onclick=()=>{if(frame){status('Reconnecting to music…');frame.reload()}else open()};
  $('#music-minimize').onclick=()=>{const compact=$('#music-dock').classList.toggle('compact');$('#music-minimize').setAttribute('aria-expanded',String(!compact));$('#music-minimize').textContent=compact?'＋':'−'};
- $('#music-stop').onclick=()=>{playlistLaunch++;queue.clear();version++;loading=null;cleanup();cleanup=()=>{};$('#music-frame').replaceChildren();frame=null;$('#music-dock').hidden=true;status('');updateMini();if(!$('#player').hidden)$('#close-game').focus();else if(location.hash==='#music')$('#music-open').focus();else document.querySelector('nav [data-page=music]').focus()};
+ $('#music-stop').onclick=()=>{playlistLaunch++;queue.clear();version++;loading=null;cleanup();cleanup=()=>{};$('#music-frame').replaceChildren();frame=null;const inMusic=location.hash==='#music';$('#music-dock').hidden=!inMusic;status(inMusic?'Music stopped. Select Reload to reconnect.':'');updateMini();if(!$('#player').hidden)$('#close-game').focus();else if(inMusic)$('#music-reload').focus();else document.querySelector('#shell-music').focus()};
  page(location.hash.slice(1));
 }

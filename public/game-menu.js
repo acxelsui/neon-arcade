@@ -1,12 +1,14 @@
 export function initGameMenu(){
  const player=document.querySelector('#player'),bar=player.querySelector('.player-bar');
+ const mac=!!document.querySelector('link[href="/mac-desktop.css"]');
+ const desktop=!mac&&!!document.querySelector('link[href="/windows-desktop.css"]');
  const menu=document.createElement('div');menu.id='game-menu';
  const toggle=document.createElement('button');toggle.id='game-menu-toggle';toggle.type='button';toggle.setAttribute('aria-label','Neon Arcade game menu');toggle.setAttribute('aria-expanded','false');toggle.setAttribute('aria-controls','game-menu-panel');
- const logo=document.createElement('img');logo.src='/game-toolbar-logo.svg';logo.alt='';toggle.append(logo);
+ const logo=document.createElement('img');logo.src=desktop?'/artwork/fluent/games.svg':'/game-toolbar-logo.svg';logo.alt='';toggle.append(logo);toggle.title='Neon game controls';if(desktop){toggle.setAttribute('aria-label','Focus game');toggle.title='Focus game';menu.classList.add('windows-game-menu')}
  const panel=document.createElement('div');panel.id='game-menu-panel';panel.hidden=true;panel.setAttribute('aria-label','Game controls');
  const left=document.createElement('div');left.className='game-menu-left';for(const selector of ['#retry-game','#blank-button','#game-fullscreen','#game-side-toggle'])left.append(document.querySelector(selector));
  const exit=document.querySelector('#close-game');exit.textContent='×';exit.classList.add('game-menu-exit');
- const name=bar.querySelector('#playing-name');name.hidden=true;panel.append(name,left,exit);bar.remove();menu.append(toggle,panel);player.append(menu);
+ const name=bar.querySelector('#playing-name');name.hidden=!desktop;panel.append(name,left,exit);bar.remove();menu.append(toggle,panel);player.append(menu);
  const icons={
   'retry-game':['M19 7a8 8 0 0 0-13-2L3 8','M3 3v5h5','M5 17a8 8 0 0 0 13 2l3-3','M21 21v-5h-5'],
   'blank-button':['M14 3h7v7','M21 3 11 13','M10 5H4v15h15v-6'],
@@ -31,15 +33,16 @@ export function initGameMenu(){
   musicButtons.like.setAttribute('aria-pressed',String(state.liked));musicIcon(musicButtons.toggle,state.playing?musicIcons.toggle:['M8 4l12 8-12 8z']);
  });
  let pinned=false;
- function show(value){panel.hidden=!value;toggle.setAttribute('aria-expanded',String(value));menu.classList.toggle('open',value)}
+ function show(value){value=desktop||value;panel.hidden=!value;toggle.setAttribute('aria-expanded',String(value));menu.classList.toggle('open',value)}
  function dismiss(){pinned=false;show(false)}
  menu.addEventListener('pointerenter',e=>{if(e.pointerType==='mouse')show(true)});
  menu.addEventListener('pointerleave',()=>{if(!pinned&&!panel.contains(document.activeElement))show(false)});
- toggle.onclick=()=>{pinned=!pinned;show(pinned)};
+ toggle.onclick=()=>{if(desktop){document.querySelector('#game-frame-wrap iframe')?.focus();return}pinned=!pinned;show(pinned)};
  toggle.onkeydown=e=>{if(e.key==='ArrowDown'){e.preventDefault();show(true);panel.querySelector('button').focus()}};
  menu.addEventListener('focusin',e=>{if(e.target!==toggle)show(true)});
  menu.addEventListener('focusout',e=>{if(!menu.contains(e.relatedTarget)&&!pinned)show(false)});
- menu.addEventListener('keydown',e=>{if(e.key==='Escape'&&!panel.hidden){e.preventDefault();e.stopPropagation();dismiss();toggle.focus()}});
+ menu.addEventListener('keydown',e=>{if(!desktop&&e.key==='Escape'&&!panel.hidden){e.preventDefault();e.stopPropagation();dismiss();toggle.focus()}});
  panel.addEventListener('click',e=>{if(e.target.closest('button')&&!e.target.closest('.game-menu-music')){const restore=panel.contains(document.activeElement);dismiss();if(restore&&!player.hidden)toggle.focus()}});
  document.addEventListener('pointerdown',e=>{if(!menu.contains(e.target))dismiss()});window.addEventListener('neon-game',dismiss);
+ show(desktop);
 }

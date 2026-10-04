@@ -1,9 +1,12 @@
 import { watchFrame } from './proxy-feedback.js';
 import { gameTransport, GAME_ORIGIN } from './game-transport.js';
+import {createGameLoadReport} from './game-load-report.js';
+import {prepareGameSave} from './game-save-runner.js';
 const status = document.querySelector('#status');
+const report=createGameLoadReport({gameId:new URLSearchParams(location.search).get('id')});
 let failed=false;
-function showFailure(message){failed=true;status.hidden=false;status.replaceChildren();const text=document.createElement('p');text.textContent=message;const retry=document.createElement('button');retry.textContent='Try again ↻';retry.onclick=()=>location.reload();status.append(text,retry)}
-const slow=setTimeout(()=>showFailure('This game is taking longer than expected. You can retry or return to Games.'),45000);
+function showFailure(message,outcome='failed',detail='start'){report(outcome,detail);failed=true;status.hidden=false;status.replaceChildren();const text=document.createElement('p');text.textContent=message;const retry=document.createElement('button');retry.textContent='Try again ↻';retry.onclick=()=>location.reload();status.append(text,retry)}
+let slow=setTimeout(()=>showFailure('This game is taking longer than expected. You can retry or return to Games.','slow','timeout'),45000);
 try {
   const response = await fetch('/catalog.json');
   if (!response.ok) throw new Error('Could not load the game catalog.');
@@ -11,19 +14,13 @@ try {
   const game = catalog.games.find(game => game.id === new URLSearchParams(location.search).get('id'));
   if (!game || game.unavailable) throw new Error('This game is unavailable.');
   document.title = game.name + ' · Neon Arcade';
-  if (game.launch === 'direct' && game.url.startsWith('/games/') && !game.url.includes('..')) {
-    const frame = document.createElement('iframe');
-    frame.title = game.name;
-    frame.allow = 'autoplay; fullscreen; gamepad';
-    frame.allowFullscreen = true;
-    frame.setAttribute('sandbox', 'allow-scripts allow-same-origin allow-forms allow-pointer-lock allow-downloads allow-modals');
-    frame.addEventListener('load', () => { clearTimeout(slow); status.hidden = true; });
-    frame.src = game.url;
-    document.body.append(frame);
-  } else {
+  clearTimeout(slow);
+  const saveReady=await prepareGameSave(game.id,status);
+  if(saveReady!==false){
+  slow=setTimeout(()=>showFailure('This game is taking longer than expected. You can retry or return to Games.','slow','timeout'),45000);
   const controller = await initBootstrap(transport => gameTransport(transport, location.origin));
   const frame = controller.createFrame();
-  watchFrame(frame,message=>{clearTimeout(slow);showFailure(message)},()=>{clearTimeout(slow);failed=false;status.hidden=true});
+  watchFrame(frame,message=>{clearTimeout(slow);showFailure(message,'failed',message.includes('error (')?'http':'network')},()=>{clearTimeout(slow);failed=false;status.hidden=true;report('loaded')});
   frame.element.title = game.name;
   frame.element.allow = 'autoplay; fullscreen; gamepad';
   frame.element.allowFullscreen = true;

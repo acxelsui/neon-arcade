@@ -6,8 +6,8 @@
 /* Hover toolbar overlays the game without reserving frame space. */
 #player{padding-bottom:0!important}#player #game-side-panel{bottom:0}
 #game-menu{position:absolute;top:10px;left:50%;transform:translateX(-50%);z-index:5;display:grid;grid-template-columns:repeat(6,38px);align-items:center;gap:5px;padding:6px;border:1px solid transparent;border-radius:18px;background:transparent;pointer-events:none}
-#game-menu.open{background:linear-gradient(135deg,#124d9de8,#102e63e8);border-color:#b6dfff75;backdrop-filter:blur(18px);box-shadow:0 5px 22px #052c6660,inset 0 1px 0 #ffffff18;pointer-events:auto}
-#game-menu-toggle{grid-column:3;grid-row:1;pointer-events:auto;background:#164b91e8;display:grid;place-items:center;width:36px;height:36px;padding:4px;border:0;border-radius:11px;flex:none}
+#game-menu.open{background:linear-gradient(135deg,#25528155,#15294c55);border-color:#c4e7ff55;backdrop-filter:blur(18px) saturate(1.4);-webkit-backdrop-filter:blur(18px) saturate(1.4);box-shadow:0 5px 22px #06162933,inset 0 1px 0 #ffffff18;pointer-events:auto}
+#game-menu-toggle{grid-column:3;grid-row:1;pointer-events:auto;background:#1b579a66;display:grid;place-items:center;width:36px;height:36px;padding:4px;border:1px solid #b6dfff30;border-radius:11px;flex:none}
 #game-menu-toggle img{display:block;width:26px;height:26px}
 #game-menu-toggle:hover{background:#ffffff20}
 #game-menu-panel,.game-menu-left{display:contents}

@@ -7,7 +7,7 @@ export function watchFrame(frame, onFailure, onDocumentReady = () => {}) {
       const response = await original(request);
       if(documentRequest){
         if(response.status >= 400) onFailure('This page returned an error ('+response.status+'). Please try again later.');
-        else onDocumentReady();
+        else if(response.status>=200&&response.status<300)onDocumentReady();
       }
       return response;
     } catch(error) {
