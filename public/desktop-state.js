@@ -17,3 +17,8 @@ export function createWindowState() {
   visible(id){const item=windows.get(id);return !!item&&!item.minimized&&!desktop;}
  };
 }
+
+export function renderedWindows(state){
+ const covering=state.visible(state.active)&&state.windows.get(state.active)?.maximized;
+ return new Set([...state.windows.keys()].filter(id=>state.visible(id)&&(!covering||id===state.active)));
+}

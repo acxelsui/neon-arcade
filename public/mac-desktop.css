@@ -247,3 +247,6 @@ body.mac-ui{--mint:#a4d6ff;--mac-panel:#1b203bba;--mac-line:#ffffff25;font-famil
 
 .mac-ui #player #game-side-panel.is-floating{left:var(--side-x);top:var(--side-y);right:auto;bottom:auto;width:var(--side-width);height:var(--side-height)}
 .mac-ui #player.with-side-tab.floating-side-tab #game-frame-wrap{width:100%;height:100%!important;bottom:0}
+
+/* Always-visible window symbols with larger hit targets. */
+.mac-titlebar,.is-active .mac-titlebar{padding:0 12px 0 122px;justify-content:flex-start}.mac-window-controls{left:12px;gap:4px}.mac-window-controls button,.mac-window-controls:hover button,.mac-window-controls button:focus-visible{width:28px;height:28px;min-height:28px;border-radius:7px;border:1px solid #ffffff25;color:#f5f7fb;font:20px/1 system-ui;background:#ffffff08}.mac-window-controls .mac-close,.mac-window-controls .mac-minimize,.mac-window-controls .mac-maximize{background:#ffffff08;color:#f5f7fb;font-size:20px}.mac-window-controls .mac-maximize{font-size:18px}.mac-window-controls button:hover,.mac-window-controls .mac-minimize:hover,.mac-window-controls .mac-maximize:hover{background:#ffffff20;color:#fff}.mac-window-controls .mac-close:hover{background:#b53742;color:#fff}.mac-window-controls button:focus-visible{outline:2px solid #9edaff;outline-offset:2px}.mac-window-title{min-width:0}

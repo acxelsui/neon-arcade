@@ -1,5 +1,6 @@
 import { cp, mkdir, readFile, stat } from 'node:fs/promises';
 import path from 'node:path';
+import {bundleUI} from './bundle-ui.mjs';
 import { fileURLToPath } from 'node:url';
 
 const root = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..');
@@ -25,7 +26,7 @@ for (const game of catalog.games) {
   if (!game.url.startsWith('/') && new URL(game.url).protocol !== 'https:') throw new Error(`Invalid game address: ${game.name}`);
 }
 const required = [
-  'loading-sequence.js', 'wallpaper-preload.js', 'game-credits.js', 'icon-colors.js', 'mac-desktop.js', 'desktop-state.js', 'desktop-apps.js',
+  'loading-sequence.js', 'wallpaper-preload.js', 'wallpaper-idle.js', 'game-credits.js', 'icon-colors.js', 'mac-desktop.js', 'desktop-state.js', 'desktop-apps.js',
   'app.js', 'artwork/cartoon/README.md', 'artwork/cartoon/ai.svg', 'artwork/cartoon/browser.svg', 'artwork/cartoon/chat.svg', 'artwork/cartoon/cloud.svg', 'artwork/cartoon/friends.svg', 'artwork/cartoon/games.svg', 'artwork/cartoon/home.svg', 'artwork/cartoon/launchpad.svg', 'artwork/cartoon/movies.svg', 'artwork/cartoon/music.svg', 'artwork/cartoon/owner.svg', 'artwork/cartoon/playlists.svg', 'artwork/cartoon/profile.svg', 'artwork/cartoon/remote.svg', 'artwork/cartoon/settings.svg', 'artwork/cartoon/sports.svg', 'artwork/cartoon/weather.svg', 'artwork/fluent/games.svg', 'artwork/neon-desktop.svg', 'chat-context.js', 'chat-render.js', 'chat.css', 'chat.js', 'community-chat.css', 'community-chat.js', 'community-view.js', 'desktop-state.js', 'game-extras.css', 'game-load-report.js', 'game-menu.js', 'game-runner.js', 'game-save-adapters.js', 'game-save-bridge.js', 'game-save-model.js', 'game-save-runner.js', 'game-status-bridge.js', 'game-status-model.js', 'index.html', 'mac-desktop.css', 'mac-desktop.js', 'media-frames.css', 'members.js', 'music.js', 'neon-loading.css', 'online-state.js', 'owner-game-status.js', 'owner-toolkit.css', 'owner-toolkit.js', 'proxy-feedback.js', 'remote-viewer.js', 'shell.js', 'updates.js', 'youtube-search.js',
   'remote-access.js', 'remote-access.css', 'remote-viewer.js', 'shell-reveal.js', 'shell-reveal.css', 'activity-presence.js', 'media-frames.css', 'owner-toolkit.js', 'owner-toolkit.css', 'site-access.js',
   'avatar-decorations.js', 'avatar-decorations.css', 'cloud-transport.js', 'artwork/grand-theft-auto-v.jpg', 'artwork/roblox.jpg', 'artwork/tcg-card-shop.png', 'artwork/raft.png', 'artwork/only-up.png', 'artwork/ranch-simulator22.webp', 'artwork/cuphead.png', 'artwork/builder-simulator.jpg', 'artwork/euro-truck-simulator-2.webp', 'artwork/nba-2k23.jpg', 'artwork/madden-nfl-24-mobile.jpg', 'artwork/stumble-guys.jpg', 'artwork/clash-royale.jpg', 'artwork/fortnite.png', 'artwork/subnautica-zero.png', 'artwork/schedule-1.jpg',
@@ -41,3 +42,5 @@ for (const file of new Set(required)) {
   if (!(await stat(path.join(output, file))).isFile()) throw new Error(`Missing built asset: ${file}`);
 }
 console.log(`Built and verified ${catalog.games.length} game entries, ${catalog.wallpapers.length} wallpapers, and pinned Scramjet/libcurl assets.`);
+
+await bundleUI(root);

@@ -5,6 +5,7 @@ export function whenWallpaperVisible(timeout=200){return Promise.race([visible,n
 export function setWallpaperMedia(url,poster=''){
  if(currentUrl===url&&!video?.error){play();return;}
  const layer=document.querySelector('#wallpaper'),version=++epoch;currentUrl=url;wallpaperPreparation.select(url);
+ if(typeof window!=='undefined')window.dispatchEvent(new Event('neon-wallpaper-playback'));
  if(video){video.pause();video.removeAttribute('src');video.load();video.remove();video=null;}
  release.forEach(dispose=>dispose());release=[];
  let ready;visible=new Promise(resolve=>ready=resolve);
@@ -19,6 +20,7 @@ export function setWallpaperMedia(url,poster=''){
  media.setAttribute('aria-hidden','true');media.setAttribute('disablepictureinpicture','');media.setAttribute('muted','');media.setAttribute('playsinline','');
  if(poster)media.poster=poster;
  media.style.opacity='0';media.addEventListener('loadeddata',()=>{if(version===epoch){media.style.opacity='1';ready();}},{once:true});media.addEventListener('error',()=>{if(version!==epoch)return;if(media.src.startsWith('blob:')){media.src=url;media.load();play();}else ready();});
+ media.addEventListener('waiting',()=>{if(version===epoch&&typeof window!=='undefined')window.dispatchEvent(new Event('neon-wallpaper-playback'));});
  layer.append(media);
  function start(source){if(version!==epoch){source?.release();return;}if(source)release.push(source.release);media.src=source?.url||url;play();}
  // A slow or unavailable cache must never hold up ordinary playback.

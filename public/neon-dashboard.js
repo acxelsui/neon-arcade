@@ -10,7 +10,7 @@ export function initNeonDashboard({catalog,openGame,chooseCategory}) {
   picker.replaceChildren();
   featured.forEach((game,index)=>{
     const button=document.createElement('button');button.className='feature-thumb';button.setAttribute('aria-label','Feature '+game.name);button.setAttribute('aria-pressed','false');button.title=game.name;
-    const image=new Image();image.src=game.cover;image.alt='';const name=document.createElement('span');name.textContent=game.name;button.append(image,name);
+    const image=new Image();image.loading='lazy';image.decoding='async';image.src=game.cover;image.alt='';const name=document.createElement('span');name.textContent=game.name;button.append(image,name);
     const select=()=>{
       picker.querySelectorAll('button').forEach(el=>el.setAttribute('aria-pressed',String(el===button)));
       launch.replaceChildren(document.createTextNode('Play '+game.name));
@@ -33,7 +33,7 @@ export function initNeonDashboard({catalog,openGame,chooseCategory}) {
   const picks=document.querySelector('#home-picks');picks.replaceChildren();
   for(const game of ['173','182','272','34'].map(byId).filter(Boolean)){
     const button=document.createElement('button');button.className='neon-pick';button.setAttribute('aria-label','Play '+game.name);
-    const image=new Image();image.src=game.cover;image.alt='';image.loading='lazy';
+    const image=new Image();image.loading='lazy';image.decoding='async';image.src=game.cover;image.alt='';image.loading='lazy';
     const name=document.createElement('strong');name.textContent=game.name;const label=document.createElement('small');label.textContent=categoriesFor(game)[0];
     button.append(image,name,label);button.onclick=()=>openGame(game,button);picks.append(button);
   }
