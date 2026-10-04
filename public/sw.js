@@ -3,7 +3,7 @@ importScripts('/wallpaper-cache.js');
 self.addEventListener('install', () => self.skipWaiting());
 self.addEventListener('activate', event => event.waitUntil(self.clients.claim()));
 self.addEventListener('fetch', event => {
-  if (event.request.method==='GET'&&new URL(event.request.url).origin===self.location.origin&&/^\/wallpapers\/4k\/[a-zA-Z0-9._-]+\.mp4$/.test(new URL(event.request.url).pathname)) {
+  if (event.request.method==='GET'&&new URL(event.request.url).origin===self.location.origin&&/^\/wallpapers\/(?:4k|stream)\/[a-zA-Z0-9._-]+\.mp4$/.test(new URL(event.request.url).pathname)) {
     event.respondWith(neonWallpaperCache(event.request).then(saved=>saved||fetch(event.request)));return;
   }
   if ($scramjetController.shouldRoute(event)) {

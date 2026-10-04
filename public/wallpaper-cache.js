@@ -2,7 +2,7 @@
 // stream, including video byte ranges, without copying whole movies into blobs.
 globalThis.neonWallpaperCache=async function(request,storage=globalThis.caches){
  const url=new URL(request.url);
- if(request.method!=='GET'||!/^\/wallpapers\/4k\/[a-zA-Z0-9._-]+\.mp4$/.test(url.pathname)||url.search)return null;
+ if(request.method!=='GET'||!/^\/wallpapers\/(?:4k|stream)\/[a-zA-Z0-9._-]+\.mp4$/.test(url.pathname)||url.search)return null;
  try{
   const cache=await storage.open('neon-wallpapers-20261004-v2');
   const response=await cache.match(url.pathname);

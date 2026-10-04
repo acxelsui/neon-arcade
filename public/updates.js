@@ -1,5 +1,6 @@
 // Keep newest first. Dates describe when the change was added, not when a visitor opened Home.
 export const updates = [
+ {date:'2026-10-04',title:'Live wallpapers start lighter',text:'Every live wallpaper starts with a smaller HD playback copy, then switches to its existing 4K video when buffered. Stalled 4K playback falls back to HD, interrupted starts retry automatically, and background preparation includes the quicker copies. All 28 wallpapers remain available.'},
  {date:'2026-10-04',title:'BuildNow.gg joins the arcade',text:'BuildNow.gg opens as a game-only frame through the existing Neon proxy, with the Neon game menu for fullscreen, exit, reload, and side tabs.'},
  {date:'2026-10-04',title:'Quicker pictures and live wallpapers',text:'Game covers use smaller display copies, and packaged images can be reused between visits. Your chosen 4K wallpaper starts while the desktop loads and keeps playing through initialization. Previously prepared wallpapers stream directly from the local cache instead of waiting for a whole video copy.'},
  {date:'2026-10-04',title:'Clear window controls',text:'Window controls show visible close, minimize, and maximize or restore symbols instead of colored dots, with larger buttons for easier clicking.'},

@@ -21,3 +21,5 @@ test('bad ranges, missing cache and private or non-media requests preserve ordin
  for(const saved of [null,new Response('login',{status:401}),new Response('page',{headers:{'content-type':'text/html'}})])assert.equal(await neonWallpaperCache(new Request(url),{async open(){return{async match(){return saved;}};}}),null);
  assert.equal(await neonWallpaperCache(new Request(url),{async open(){throw Error('disabled');}}),null);
 });
+
+test('the smaller playback copy streams through the same range-aware cache',async()=>{const request=new Request('https://neon.example/wallpapers/stream/demo.mp4',{headers:{range:'bytes=2-6'}});const saved={async open(){return{async match(key){assert.equal(key,'/wallpapers/stream/demo.mp4');return new Response(bytes,{headers:{'content-type':'video/mp4','content-length':'20'}});}};}};const result=await neonWallpaperCache(request,saved);assert.equal(result.status,206);assert.deepEqual(new Uint8Array(await result.arrayBuffer()),bytes.slice(2,7));});

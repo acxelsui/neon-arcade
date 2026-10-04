@@ -13,3 +13,5 @@ test('images and failed videos do not prevent preparing the rest of the collecti
  assert.equal(canPrepareWallpapers(null),true);
  assert.equal(canPrepareWallpapers({error:{code:4}}),true);
 });
+
+test('background collection downloads cannot compete with an in-progress 4K upgrade',()=>{assert.equal(canPrepareWallpapers({dataset:{neonWallpaperPending4k:'true'},readyState:4,duration:10,buffered:{length:1,end:()=>10}}),false);});

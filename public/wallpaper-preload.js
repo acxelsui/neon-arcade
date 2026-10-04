@@ -2,11 +2,11 @@ import {wallpapers} from './wallpaper-options.js';
 // Only bundled, non-personal wallpaper files enter this cache.
 export function createWallpaperPreparation({items=wallpapers,storage=globalThis.caches,fetcher=globalThis.fetch,estimate=()=>globalThis.navigator?.storage?.estimate?.(),notify=()=>{},delay=ms=>new Promise(resolve=>setTimeout(resolve,ms))}={}){
  items=items.filter(item=>/^\/wallpapers\/4k\/[a-zA-Z0-9._-]+\.mp4$/.test(item.url)&&/^\/artwork\/wallpaper-posters\/[a-zA-Z0-9._-]+\.webp$/.test(item.preview));
- const videos=items.map(item=>item.url),posters=items.map(item=>item.poster||item.preview).filter(Boolean),known=new Set([...videos,...posters]);
+ const videos=items.map(item=>item.url),streams=items.map(item=>item.url.replace('/wallpapers/4k/','/wallpapers/stream/')),posters=items.map(item=>item.poster||item.preview).filter(Boolean),known=new Set([...videos,...streams,...posters]);
  let cachePromise,allowed=false,selected=null,running=null,request=null,blocked=false,state='paused';const done=new Set(),failed=new Set();
- function report(){notify({ready:videos.filter(url=>done.has(url)).length,total:videos.length,state});}
+ function report(){notify({ready:streams.filter(url=>done.has(url)).length,total:videos.length,state});}
  async function cache(){if(!storage)return null;return cachePromise??=storage.open('neon-wallpapers-20261004-v2').catch(()=>null);}
- function valid(response,url){return response?.status===200&&response.headers.get('content-type')?.toLowerCase().startsWith(videos.includes(url)?'video/mp4':'image/');}
+ function valid(response,url){return response?.status===200&&response.headers.get('content-type')?.toLowerCase().startsWith(videos.includes(url)||streams.includes(url)?'video/mp4':'image/');}
  async function source(url){
   if(!known.has(url))return null;
   try{const saved=await (await cache())?.match(url);if(!valid(saved,url))return null;const blob=await saved.blob();if(!blob.size)return null;
@@ -17,8 +17,9 @@ export function createWallpaperPreparation({items=wallpapers,storage=globalThis.
   const saved=await cache();if(!saved){state='unavailable';report();return;}
   if(!done.size){for(const url of known){const response=await saved.match(url);if(valid(response,url))done.add(url);}report();}
   while(allowed&&!blocked){
-   // Small posters first; then the selected video and the remaining collection.
-   const url=[...posters,selected,...videos].find(url=>known.has(url)&&!done.has(url)&&!failed.has(url));
+   // Prepare the smaller collection and only the selected 4K file.
+   // Do not saturate the connection downloading a gigabyte of unused 4K video.
+   const url=[selected?.replace('/wallpapers/4k/','/wallpapers/stream/'),...posters,...streams,selected].find(url=>known.has(url)&&!done.has(url)&&!failed.has(url));
    if(!url){state=failed.size?'partial':'ready';report();return;}
    request=new AbortController();const current=request;
    try{
@@ -35,6 +36,6 @@ export function createWallpaperPreparation({items=wallpapers,storage=globalThis.
  }
  function start(){if(allowed&&!blocked&&!running)running=run().catch(()=>{state='unavailable';report();}).finally(()=>{running=null;if(allowed&&!blocked&&!['ready','partial','unavailable'].includes(state))start();});return running;}
  function pause(){allowed=false;if(!['ready','storage','partial','unavailable'].includes(state))state='paused';request?.abort();report();}
- return {source,select(url){if(selected!==url){request?.abort();selected=known.has(url)?url:null;}},resume(){allowed=true;return start();},retry(){failed.clear();blocked=false;state='paused';return start();},pause,snapshot:()=>({ready:videos.filter(url=>done.has(url)).length,total:videos.length,state})};
+ return {source,select(url){if(selected!==url){request?.abort();selected=known.has(url)?url:null;}},resume(){allowed=true;return start();},retry(){failed.clear();blocked=false;state='paused';return start();},pause,snapshot:()=>({ready:streams.filter(url=>done.has(url)).length,total:videos.length,state})};
 }
 export const wallpaperPreparation=createWallpaperPreparation({notify:detail=>{if(typeof window!=='undefined')window.dispatchEvent(new CustomEvent('neon-wallpaper-preparation',{detail}));}});
