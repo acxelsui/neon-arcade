@@ -138,7 +138,9 @@ body.mac-ui{--mint:#a4d6ff;--mac-panel:#1b203bba;--mac-line:#ffffff25;font-famil
 /* Apps fill the workspace. The dock returns at the bottom edge or on keyboard focus. */
 .mac-ui>main{inset:30px 0 0;overflow:hidden}
 .mac-window.is-maximized{border-radius:0;border:0;box-shadow:none}
-.mac-window.is-maximized>.mac-titlebar{display:none}
+.mac-window.is-maximized>.mac-titlebar{display:flex}
+.mac-titlebar{touch-action:none}
+.mac-resize{width:24px;height:24px;z-index:2}
 #mac-taskbar{transition:transform .22s cubic-bezier(.2,.8,.2,1),opacity .18s}
 .mac-app-open #mac-taskbar{transform:translate(-50%,calc(100% + 28px));opacity:0}
 .mac-app-open:has(.mac-dock-edge:hover) #mac-taskbar,.mac-app-open #mac-taskbar:hover,.mac-app-open #mac-taskbar:focus-within{transform:translate(-50%,0);opacity:1}
@@ -240,3 +242,8 @@ body.mac-ui{--mint:#a4d6ff;--mac-panel:#1b203bba;--mac-line:#ffffff25;font-famil
 .mac-icon-transparent{display:flex;align-items:center;justify-content:space-between;gap:18px;max-width:280px;margin-top:15px;font-size:12px}
 .mac-ui .mac-icon-transparent button{min-width:52px;height:28px;padding:4px 12px;border:1px solid #ffffff35;border-radius:20px;background:#ffffff0d;color:white;font:600 11px system-ui}
 .mac-ui .mac-icon-transparent button[aria-checked=true]{background:#b5e2ff;color:#102a3d;border-color:#c8eaff}
+
+.mac-app-settings{padding:22px;margin:18px 0;scroll-margin-top:12px}.mac-app-settings h2{margin:0 0 8px}.mac-app-settings p{max-width:660px;color:var(--muted);line-height:1.6}.mac-app-choice{display:grid;grid-template-columns:minmax(120px,1fr) 80px 60px;align-items:center;gap:10px;min-height:44px;border-bottom:1px solid #ffffff12}.mac-app-choice>span:not(.mac-app-choice-name){text-align:center;font-size:12px}.mac-app-choice-name{display:flex;align-items:center;gap:12px}.mac-app-choice-name img{width:26px;height:26px}.mac-app-choice label{display:flex;align-items:center;justify-content:center;min-height:44px;cursor:pointer}.mac-app-choice input{width:18px;height:18px;accent-color:var(--accent,#74caff)}.mac-pins-reset{margin-top:18px;padding:9px 14px;border:1px solid #ffffff30;background:#ffffff0c;border-radius:8px;color:inherit}.mac-pins-reset:focus-visible,.mac-app-choice input:focus-visible{outline:2px solid #8cd7ff;outline-offset:3px}#mac-app-menu{position:fixed;inset:auto;width:230px;padding:9px;background:linear-gradient(135deg,#203043c9,#101827b8);backdrop-filter:blur(22px);-webkit-backdrop-filter:blur(22px);border:1px solid #ffffff35;border-radius:12px;z-index:90}#mac-app-menu strong{display:block;font-size:12px;padding:9px 10px;color:#b6c9df}.mac-app-menu-item{display:block;width:100%;padding:10px;text-align:left;color:#fff;border:0;background:transparent;border-radius:7px}.mac-app-menu-item:hover,.mac-app-menu-item:focus-visible{background:#ffffff1c;outline:1px solid #ffffff38}
+
+.mac-ui #player #game-side-panel.is-floating{left:var(--side-x);top:var(--side-y);right:auto;bottom:auto;width:var(--side-width);height:var(--side-height)}
+.mac-ui #player.with-side-tab.floating-side-tab #game-frame-wrap{width:100%;height:100%!important;bottom:0}
