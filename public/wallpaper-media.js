@@ -1,17 +1,30 @@
-let video;
+import {wallpaperPreparation} from './wallpaper-preload.js';
+let video,currentUrl,epoch=0,release=[],visible=Promise.resolve();
 function play(){if(video&&!document.hidden&&!document.fullscreenElement)video.play().catch(()=>{});}
+export function whenWallpaperVisible(timeout=1800){return Promise.race([visible,new Promise(resolve=>setTimeout(resolve,timeout))]);}
 export function setWallpaperMedia(url,poster=''){
- const layer=document.querySelector('#wallpaper');
- if(video?.getAttribute('src')===url){play();return;}
+ if(currentUrl===url){play();return;}
+ const layer=document.querySelector('#wallpaper'),version=++epoch;currentUrl=url;wallpaperPreparation.select(url);
  if(video){video.pause();video.removeAttribute('src');video.load();video.remove();video=null;}
+ release.forEach(dispose=>dispose());release=[];
+ let ready;visible=new Promise(resolve=>ready=resolve);
  layer.style.backgroundImage=`url(${JSON.stringify(poster||url)})`;
+ if(typeof Image!=='undefined'){
+  const image=new Image();image.fetchPriority='high';image.onload=()=>{if(version===epoch)ready();};image.onerror=()=>ready();image.src=poster||url;
+ }
+ if(poster)wallpaperPreparation.source(poster).then(source=>{if(!source)return;if(version!==epoch){source.release();return;}release.push(source.release);layer.style.backgroundImage=`url(${JSON.stringify(source.url)})`;});
  if(!/\.mp4(?:[?#]|$)/i.test(url))return;
  const media=document.createElement('video');video=media;
  media.className='wallpaper-video';media.muted=true;media.defaultMuted=true;media.loop=true;media.autoplay=true;media.playsInline=true;media.preload='auto';
  media.setAttribute('aria-hidden','true');media.setAttribute('disablepictureinpicture','');media.setAttribute('muted','');media.setAttribute('playsinline','');
  if(poster)media.poster=poster;
- media.style.opacity='0';media.addEventListener('loadeddata',()=>{media.style.opacity='1'},{once:true});
- media.src=url;layer.append(media);play();
+ media.style.opacity='0';media.addEventListener('loadeddata',()=>{if(version===epoch){media.style.opacity='1';ready();}},{once:true});media.addEventListener('error',()=>ready(),{once:true});
+ layer.append(media);
+ function start(source){if(version!==epoch){source?.release();return;}if(source)release.push(source.release);media.src=source?.url||url;play();}
+ // A slow or unavailable cache must never hold up ordinary playback.
+ if(!globalThis.caches){start(null);return;}
+ let started=false;const timer=setTimeout(()=>{started=true;start(null);},250);
+ wallpaperPreparation.source(url).then(source=>{if(started){source?.release();return;}started=true;clearTimeout(timer);start(source);});
 }
 document.addEventListener('visibilitychange',()=>{if(document.hidden)video?.pause();else play()});
 // Fullscreen media covers the wallpaper completely; avoid decoding a second

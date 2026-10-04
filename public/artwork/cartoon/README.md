@@ -1,1 +1,1 @@
-Original Neon Arcade cartoon app illustrations, created for this macOS-inspired desktop. Vector artwork; no third-party app trademarks.
+Original Neon Arcade glass app icons. Colored rear silhouettes, translucent fronts, and bevel highlights inspired by the user’s reference. SVG artwork created for Neon; no third-party icon pack or app trademarks.

@@ -14,6 +14,6 @@
 
 #youtube-search-options{display:flex;align-items:center;gap:7px;padding:9px 12px;margin-top:8px;border:1px solid #cbe6ff28;border-radius:12px;background:#18354a55;backdrop-filter:blur(16px);color:#dbeaff}
 #youtube-search-options p{flex:1;margin:0;font-size:11px;line-height:1.5}
-#youtube-search-options button{flex:none;padding:8px 10px;border:1px solid #d0e5ff38;border-radius:8px;background:#90cfff15;font-size:11px}
+#youtube-search-options button,#youtube-search-options a{flex:none;padding:8px 10px;border:1px solid #d0e5ff38;border-radius:8px;background:#90cfff15;font-size:11px;color:inherit;text-decoration:none}
 #youtube-search-options button:disabled{opacity:.45;cursor:default}
 @media(max-width:600px){#youtube-search-options{flex-wrap:wrap}#youtube-search-options p{flex-basis:100%}}

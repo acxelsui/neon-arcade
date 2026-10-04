@@ -19,11 +19,12 @@ export function youtubeVideo(value,base='https://www.youtube.com/',depth=0){
 // official embedded player and does not solve challenges or change account cookies.
 export function createYouTubeSearch({host,navigate,doc=document}){
  const bar=doc.createElement('div');bar.id='youtube-search-options';bar.hidden=true;
- const note=doc.createElement('p');const standard='Public videos may play signed out. YouTube can still require verification or restrict embedding.';note.textContent=standard;
+ const note=doc.createElement('p');const standard='YouTube may require verification, even in its player. If that happens, try Open on YouTube in your browser; signing in may still be required.';note.textContent=standard;
  const play=doc.createElement('button');play.type='button';play.textContent='YouTube player';
  const page=doc.createElement('button');page.type='button';page.textContent='Video page';
- bar.append(note,play,page);host.before(bar);let selected=null,cleanup=()=>{};
- function opened(url){note.textContent=standard;selected=youtubeVideo(url);bar.hidden=!selected;play.disabled=!!selected?.isPlayer;page.disabled=!!selected&&!play.disabled;}
+ const direct=doc.createElement('a');direct.textContent='Open on YouTube';direct.target='_blank';direct.rel='noopener noreferrer';
+ bar.append(note,play,page,direct);host.before(bar);let selected=null,cleanup=()=>{};
+ function opened(url){note.textContent=standard;selected=youtubeVideo(url);bar.hidden=!selected;direct.href=selected?.watch||'https://www.youtube.com/';play.disabled=!!selected?.isPlayer;page.disabled=!!selected&&!play.disabled;}
  play.onclick=()=>{if(selected)navigate(selected.player)};page.onclick=()=>{if(selected)navigate(selected.watch)};
  function connect(frame,controller){
   frame.element.allow='autoplay; fullscreen; encrypted-media; picture-in-picture';frame.element.referrerPolicy='strict-origin-when-cross-origin';

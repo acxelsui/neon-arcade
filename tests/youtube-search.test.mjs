@@ -16,7 +16,7 @@ test('untrusted hosts, credentials, scripts, missing videos and verification pag
 test('the player switch keeps the same frame and offers the original video page',()=>{
  const elements=[];function element(tag){const node={tag,hidden:false,children:[],append(...children){this.children.push(...children)}};elements.push(node);return node;}
  const doc={createElement:element},calls=[];let bar;const feature=createYouTubeSearch({host:{before:node=>bar=node},navigate:url=>calls.push(url),doc});
- feature.opened(`https://www.youtube.com/watch?v=${id}`);assert.equal(bar.hidden,false);const [note,play,page]=bar.children;assert.match(note.textContent,/verification/);assert.equal(play.disabled,false);play.onclick();assert.equal(calls[0],youtubeVideo(`https://youtu.be/${id}`).player);
+ feature.opened(`https://www.youtube.com/watch?v=${id}`);assert.equal(bar.hidden,false);const [note,play,page,direct]=bar.children;assert.match(note.textContent,/verification/);assert.equal(direct.href,`https://www.youtube.com/watch?v=${id}`);assert.equal(direct.target,'_blank');assert.equal(direct.rel,'noopener noreferrer');assert.equal(play.disabled,false);play.onclick();assert.equal(calls[0],youtubeVideo(`https://youtu.be/${id}`).player);
  feature.opened(calls[0]);assert.equal(play.disabled,true);assert.equal(page.disabled,false);page.onclick();assert.equal(calls[1],`https://www.youtube.com/watch?v=${id}`);
  feature.opened('https://www.google.com/sorry/index');assert.equal(bar.hidden,true);feature.hide();assert.equal(bar.hidden,true);
 });

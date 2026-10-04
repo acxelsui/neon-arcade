@@ -1,3 +1,4 @@
+import {createAccountLoading} from './loading-sequence.js';
 import {createChatPopout} from './chat-popout.js';
 import {createRemoteBridge} from './remote-bridge.js';
 import {initMessageNotifications} from './message-notifications.js';
@@ -14,6 +15,7 @@ const PROJECT='https://xfwjzxjeessduxuuqeop.supabase.co';
 const KEY='sb_publishable_5xjkSLY22XORDMqM1Qp4HQ_J8Ez86mX';
 const $=s=>document.querySelector(s),frame=$('#arcade');
 const contentOrigin=separateOrigin(location.hostname==='localhost'?'http://localhost:3001':'https://neongoatarcadd.vercel.app',location.origin);
+const accountLoading=createAccountLoading({overlay:$('#welcome'),status:$('#boot-status'),retry:$('#loading-retry'),frame,origin:contentOrigin});
 const client=createClient(PROJECT,KEY,{auth:{persistSession:true,autoRefreshToken:true,detectSessionInUrl:false,storageKey:'neon-member-session'}});
 const requestedPlaylist=readPlaylistToken(new URLSearchParams(location.search).get('playlist'));
 const tabId=crypto.randomUUID();let profile=null,mode='signup',game=null,busy=false,epoch=0,booting=true,avatarCache=new Map(),accessPass=null,deviceKey=null,activityTimer=null,syncQueued=false;
@@ -39,7 +41,7 @@ const handleSocial=initSocialBridge({rpc,send,getProfile:()=>profile,avatars:asy
 function send(type,extra={}){frame.contentWindow?.postMessage({channel:'neon-members-v1',type,...extra},contentOrigin)}
 function message(text){$('#auth-status').textContent=text}
 function selectMode(next){mode=next;const setup=next==='profile';$('#auth-tabs').hidden=setup;$('#password-label').hidden=setup;$('#password').required=!setup;$('#password').autocomplete=next==='login'?'current-password':'new-password';$('#signup-note').hidden=next==='login';$('#gate-title').textContent=setup?'Choose your player name.':next==='login'?'Welcome back.':'Welcome to Neon.';$('#gate-description').textContent=setup?'One last step before you enter the arcade.':next==='login'?'Your next adventure is waiting.':'Create your player profile and make yourself at home.';$('#submit-auth').textContent=setup?'Save username ↗':next==='login'?'Sign in ↗':'Create account ↗';$('#choose-signup').setAttribute('aria-pressed',String(next==='signup'));$('#choose-login').setAttribute('aria-pressed',String(next==='login'));$('#gate-signout').hidden=!setup;message('')}
-function gate(){screenPopout.close();epoch++;profile=null;game=null;accessPass=null;frame.hidden=true;frame.removeAttribute('src');$('#gate').hidden=false;$('#profile-dialog').close()}
+function gate(){accountLoading.finish();screenPopout.close();epoch++;profile=null;game=null;accessPass=null;frame.hidden=true;frame.removeAttribute('src');$('#gate').hidden=false;$('#profile-dialog').close()}
 async function rpc(name,args){const {data,error}=await client.rpc(name,args);if(error)throw error;return data}
 async function decorations(ids){try{const rows=await rpc('neon_decorations',{player_ids:ids});return new Map(rows.map(row=>[row.id,row.decoration]));}catch{return new Map();}}
 async function enter(){
@@ -50,7 +52,7 @@ async function enter(){
  const siteStatus=await checkSiteAccess();if(siteStatus?.banned)return;
  if(!accessPass)accessPass=await rpc('neon_issue_device_access',{device_key:getBrowserKey()});
  $('#gate').hidden=true;$('#profile-name').textContent=profile.username;$('#avatar-preview').textContent=profile.username[0].toUpperCase();
- if(!frame.getAttribute('src'))frame.src=contentOrigin+'/neon-access'+(/^[a-zA-Z0-9_-]{1,80}$/.test(new URLSearchParams(location.search).get('game')||'')?'#game='+new URLSearchParams(location.search).get('game'):'');frame.hidden=false;
+ if(!frame.getAttribute('src')){const requestedGame=new URLSearchParams(location.search).get('game')||'',gameOnly=/^[a-zA-Z0-9_-]{1,80}$/.test(requestedGame);if(gameOnly)accountLoading.finish();else accountLoading.start();frame.src=contentOrigin+'/neon-access'+(gameOnly?'#game='+requestedGame:'');}frame.hidden=false;
  await sync();
 }
 async function sync(){
@@ -110,6 +112,7 @@ $('#avatar-file').onchange=async event=>{
 };
 window.addEventListener('message',event=>{
  if(!allowedMessage(event,frame.contentWindow,contentOrigin)||!profile)return;
+ if(accountLoading.receive(event))return;
  if(event.data.type==='ai-popout-state'){screenPopout.update(event.data.state);return}
  if(event.data.type==='ai-popout-preview'){screenPopout.preview(event.data.url);return}
  if(event.data.type==='ai-popout-open'){screenPopout.open().catch(error=>send('ai-popout-error',{error:error.message}));return}
@@ -133,9 +136,9 @@ setInterval(()=>checkSiteAccess().catch(()=>{}),15000);
 window.addEventListener('focus',()=>checkSiteAccess().catch(()=>{}));
 document.addEventListener('visibilitychange',()=>{if(!document.hidden)checkSiteAccess().catch(()=>{});});
 async function boot(){
- try{await new Promise(resolve=>setTimeout(resolve,1100));const {data,error}=await client.auth.getSession();if(error)throw error;if(data.session)await enter();else gate()}
+  try{$('#boot-status').textContent='Restoring your arcade…';const {data,error}=await client.auth.getSession();if(error)throw error;if(data.session)await enter();else gate()}
  catch{gate();message('Could not restore your account. Sign in again or retry when your connection returns.')}
- finally{booting=false;$('#welcome').hidden=true}
+ finally{booting=false;if(!profile)accountLoading.finish()}
 }boot();
 
 let announcementsBusy=false;

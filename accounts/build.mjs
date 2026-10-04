@@ -12,3 +12,5 @@ await mkdir('dist/downloads',{recursive:true});
 await copyFile('downloads/NeonLauncher.exe','dist/downloads/NeonLauncher.exe');
 
 await copyFile('../public/neon-loading.css','dist/neon-loading.css');
+
+await copyFile('../public/loading-sequence.js','dist/loading-sequence.js');
