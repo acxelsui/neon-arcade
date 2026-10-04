@@ -4,7 +4,7 @@ import {wallpaperPreparation} from './wallpaper-preload.js';
 let saved;try{saved=JSON.parse(localStorage.getItem('neon-wallpaper'))}catch{}
 if(saved!=='custom'){
  const choice=wallpapers.find(w=>w.url===saved||w.legacyUrl===saved)||wallpapers.find(w=>w.url.includes('relaxing-fireplace'))||wallpapers[0];
- if(choice)setWallpaperMedia(choice.url,choice.preview);
+ if(choice)setWallpaperMedia(choice.url,choice.poster||choice.preview);
 }
 let page=location.hash.slice(1)||'home',music=false,game=false,timer;
 function update(){clearTimeout(timer);wallpaperPreparation.pause();if(!document.hidden&&!document.fullscreenElement&&!game&&!music&&['home','settings'].includes(page))timer=setTimeout(()=>wallpaperPreparation.resume(),2500);}

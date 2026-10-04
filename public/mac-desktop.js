@@ -3,10 +3,12 @@ import {createMemberRow} from './members.js';
 import {getOnlineSnapshot,getOnlineMembers} from './online-state.js';
 import {updates} from './updates.js';
 import {initGameSaveBridge} from './game-save-bridge.js';
+import {initGameCredits} from './game-credits.js';
+import {initIconColors} from './icon-colors.js';
 
 const apps={home:['Neon Home','home'],games:['Games','games'],search:['Browser','browser'],sports:['Sports','sports'],movies:['Movies','movies'],friends:['Friends','friends'],profile:['Your profile','profile'],playlists:['Playlists','playlists'],community:['Arcade Chat','chat'],ai:['Neon AI','ai'],music:['Music','music'],cloud:['Cloud gaming','cloud'],weather:['Weather','weather'],settings:['Settings','settings'],remote:['Remote access','remote'],owner:['Owner toolkit','owner']};
 const paths=Object.fromEntries([...Object.values(apps).map(([,name])=>[name,true]),['launchpad',true]]);
-function icon(name){const image=document.createElement('img');image.src='/artwork/cartoon/'+(paths[name]?name:'home')+'.svg';image.alt='';image.draggable=false;image.className='mac-cartoon-icon';return image;}
+function icon(name){const image=document.createElement('img');image.src='/artwork/cartoon/'+(document.body.classList.contains('mac-icons-transparent')?'transparent/':'')+(paths[name]?name:'home')+'.svg';image.alt='';image.draggable=false;image.className='mac-cartoon-icon';return image;}
 function button(label,fn,cls=''){const el=document.createElement('button');el.type='button';el.className=cls;el.title=label;el.setAttribute('aria-label',label);el.onclick=fn;return el;}
 function text(tag,copy,cls=''){const el=document.createElement(tag);el.textContent=copy;el.className=cls;return el;}
 function saved(key,fallback){try{return JSON.parse(localStorage.getItem('neon-desktop-'+key))??fallback;}catch{return fallback;}}
@@ -17,7 +19,10 @@ export function initMacDesktop({navigate,search,reload}) {
  const main=document.querySelector('main'),shell=document.querySelector('.app-shell'),state=createWindowState(),views=new Map();
  document.querySelector('#music').append(document.querySelector('#music-dock'));
  document.body.classList.add('mac-ui');
+ const iconColors=initIconColors();
+ const colorSettings=iconColors.mount(document.querySelector('#settings'));document.querySelector('#settings').prepend(colorSettings);
  initGameSaveBridge();
+ initGameCredits();
  for(const el of document.querySelectorAll('.home-launch[data-page]')){const symbol=apps[el.dataset.page]?.[1];if(symbol)el.querySelector('span')?.replaceChildren(icon(symbol));}
  const desktop=document.createElement('div');desktop.id='mac-desktop';desktop.setAttribute('aria-label','Neon desktop');
  const shortcuts=document.createElement('div');shortcuts.className='mac-shortcuts';desktop.append(shortcuts);document.body.insertBefore(desktop,main);
@@ -78,6 +83,7 @@ export function initMacDesktop({navigate,search,reload}) {
  const quick=panel('quick','Desktop settings');quick.append(text('h2','Quick settings'));
  const full=button('Fullscreen',()=>document.querySelector('#shell-fullscreen').click(),'mac-quick-action');full.append(icon('remote'),text('span','Fullscreen'));const settings=appButton('settings','mac-quick-action');quick.append(full,settings);
  const brightness=document.createElement('label');brightness.className='mac-brightness';brightness.append(text('span','Wallpaper brightness'));const range=document.createElement('input');range.type='range';range.min='30';range.max='120';range.value=document.querySelector('#background-brightness').value||100;range.setAttribute('aria-label','Wallpaper brightness');brightness.append(range);quick.append(brightness);range.oninput=()=>{const original=document.querySelector('#background-brightness');original.value=range.value;original.dispatchEvent(new Event('input',{bubbles:true}));desktop.style.setProperty('--desktop-brightness',range.value+'%');};
+ iconColors.mount(quick,{compact:true});
  quick.append(button('Reload Neon',reload,'mac-quick-reload'));
  const calendar=panel('calendar','Calendar and updates');let calendarDate=new Date();const calHead=document.createElement('div');calHead.className='mac-calendar-heading';const month=text('strong','');calHead.append(month,button('Previous month',()=>{calendarDate=new Date(calendarDate.getFullYear(),calendarDate.getMonth()-1,1);renderCalendar();},'mac-calendar-nav'),button('Next month',()=>{calendarDate=new Date(calendarDate.getFullYear(),calendarDate.getMonth()+1,1);renderCalendar();},'mac-calendar-nav'));calHead.children[1].textContent='‹';calHead.children[2].textContent='›';calendar.append(calHead);
  const days=document.createElement('div');days.className='mac-calendar-grid';calendar.append(days);

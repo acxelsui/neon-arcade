@@ -9,6 +9,23 @@ test('fullscreen media pauses only the covered wallpaper and resumes it without 
   document.fullscreenElement=null;handlers.fullscreenchange();assert.equal(media.plays,2);assert.equal(media.src,'/wallpapers/original-4k.mp4');assert.equal(media.loads,0);
  }finally{globalThis.document=previous;}
 });
+
+test('a failed cached video falls back to the bundled video and a failed selected video can retry',async()=>{
+ const {wallpaperPreparation}=await import('../public/wallpaper-preload.js');
+ const previous={document:globalThis.document,caches:globalThis.caches,source:wallpaperPreparation.source};
+ const media=[],layer={style:{},append(){}};let releases=0;
+ wallpaperPreparation.source=async()=>({url:'blob:cached-video',release(){releases++;}});globalThis.caches={};
+ globalThis.document={hidden:false,fullscreenElement:null,querySelector:()=>layer,addEventListener(){},createElement(){const node={style:{},handlers:{},loads:0,play:async()=>{},pause(){},load(){this.loads++;},remove(){},removeAttribute(){},setAttribute(){},addEventListener(type,fn){this.handlers[type]=fn;}};media.push(node);return node;}};
+ try{
+  const {setWallpaperMedia,whenWallpaperVisible}=await import('../public/wallpaper-media.js?cache-failure');
+  setWallpaperMedia('/wallpapers/4k/repair.mp4');await new Promise(resolve=>setImmediate(resolve));
+  assert.equal(media[0].src,'blob:cached-video');media[0].handlers.error();assert.equal(media[0].src,'/wallpapers/4k/repair.mp4');assert.equal(media[0].loads,1);
+  media[0].error={code:4};media[0].handlers.error();await whenWallpaperVisible(30);
+  setWallpaperMedia('/wallpapers/4k/repair.mp4');await new Promise(resolve=>setImmediate(resolve));
+  assert.equal(media.length,2,'selecting an errored wallpaper again must recreate the video');assert.equal(releases,1);
+  setWallpaperMedia('/custom/photo.jpg');
+ }finally{globalThis.document=previous.document;globalThis.caches=previous.caches;wallpaperPreparation.source=previous.source;}
+});
 test('late cached sources are released and cannot replace a newer wallpaper',async()=>{
  const {wallpaperPreparation}=await import('../public/wallpaper-preload.js');const previous={document:globalThis.document,caches:globalThis.caches,source:wallpaperPreparation.source};
  const pending=new Map(),media=[],layer={style:{},append(){}};let releases=0;

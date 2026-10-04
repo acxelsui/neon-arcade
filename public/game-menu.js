@@ -42,7 +42,7 @@ export function initGameMenu(){
  menu.addEventListener('focusin',e=>{if(e.target!==toggle)show(true)});
  menu.addEventListener('focusout',e=>{if(!menu.contains(e.relatedTarget)&&!pinned)show(false)});
  menu.addEventListener('keydown',e=>{if(!desktop&&e.key==='Escape'&&!panel.hidden){e.preventDefault();e.stopPropagation();dismiss();toggle.focus()}});
- panel.addEventListener('click',e=>{if(e.target.closest('button')&&!e.target.closest('.game-menu-music')){const restore=panel.contains(document.activeElement);dismiss();if(restore&&!player.hidden)toggle.focus()}});
+ panel.addEventListener('click',e=>{if(e.target.closest('button')&&!e.target.closest('.game-menu-music')&&!e.target.closest('.game-menu-hacks')){const restore=panel.contains(document.activeElement);dismiss();if(restore&&!player.hidden)toggle.focus()}});
  document.addEventListener('pointerdown',e=>{if(!menu.contains(e.target))dismiss()});window.addEventListener('neon-game',dismiss);
  show(desktop);
 }

@@ -131,7 +131,8 @@ body.mac-ui{--mint:#a4d6ff;--mac-panel:#1b203bba;--mac-line:#ffffff25;font-famil
 .mac-window,#mac-taskbar,#mac-menubar,.mac-panel,.mac-ui #owner-toolkit{isolation:isolate;backdrop-filter:none;-webkit-backdrop-filter:none;background:transparent}
 .mac-window::before,#mac-taskbar::before,#mac-menubar::before,.mac-panel::before,.mac-ui #owner-toolkit::before{content:'';position:absolute;inset:0;border-radius:inherit;z-index:-1;pointer-events:none;background:linear-gradient(135deg,#1d274cb5,#131f37c5);backdrop-filter:blur(32px) saturate(1.4);-webkit-backdrop-filter:blur(32px) saturate(1.4)}
 #mac-taskbar::before{background:linear-gradient(135deg,#ffffff36,#bccded24);backdrop-filter:blur(35px) saturate(1.8);-webkit-backdrop-filter:blur(35px) saturate(1.8)}
-#mac-menubar::before{background:#11182a65;backdrop-filter:blur(28px) saturate(1.7);-webkit-backdrop-filter:blur(28px) saturate(1.7)}
+#mac-menubar{border-bottom:0;box-shadow:none;text-shadow:0 1px 3px #000,0 0 8px #0008}
+#mac-menubar::before{background:transparent;backdrop-filter:none;-webkit-backdrop-filter:none}
 .mac-panel::before,.mac-ui #owner-toolkit::before{background:linear-gradient(140deg,#24334bd4,#1b2445df)}
 #mac-start{background:transparent}
 /* Apps fill the workspace. The dock returns at the bottom edge or on keyboard focus. */
@@ -208,3 +209,34 @@ body.mac-ui{--mint:#a4d6ff;--mac-panel:#1b203bba;--mac-line:#ffffff25;font-famil
 .mac-ui :is(.mac-window,#game-side-panel) #community .community-brand h1{font:600 18px system-ui;margin:0;letter-spacing:-.4px}
 .mac-ui :is(.mac-window,#game-side-panel) #community .community-room h2{font:600 17px system-ui;margin:0 0 5px}
 @media(max-width:700px){.mac-ui :is(.mac-window,#game-side-panel) #community .community-room h2{font-size:15px}}
+
+.wallpaper-choice small{display:block;padding:0 5px 7px;color:#d6dde5;font:10px system-ui;letter-spacing:.03em}
+/* Compact artwork keeps the original roomy click targets and labels. */
+.mac-ui .mac-task-button .mac-app-icon,.mac-ui .mac-start-button>.mac-cartoon-icon{width:40px;height:40px}
+.mac-ui .mac-shortcut .mac-app-icon,.mac-ui .mac-pinned-app .mac-app-icon{width:44px;height:44px}
+.mac-ui .mac-all-app .mac-app-icon{width:29px;height:29px}
+.mac-ui .mac-window .home-launch>span .mac-cartoon-icon{width:34px;height:34px}
+.mac-ui .mac-quick-action>.mac-cartoon-icon{width:25px;height:25px}
+@media(max-width:760px){.mac-ui .mac-task-button .mac-app-icon,.mac-ui .mac-start-button>.mac-cartoon-icon{width:35px;height:35px}}
+
+.mac-ui .mac-cartoon-icon{filter:var(--mac-icon-color-filter,none)}
+.mac-icon-color-filter{position:absolute;pointer-events:none;overflow:hidden}
+.mac-icon-colors{padding:22px;margin-bottom:20px;border-radius:13px}
+.mac-icon-colors h2{margin:0 0 8px;font-size:20px}
+.mac-icon-colors>p{max-width:580px;font-size:13px;line-height:1.5;color:#bdcadd}
+.mac-icon-color-preview{display:flex;gap:14px;margin:18px 0}
+.mac-ui .mac-icon-color-preview .mac-cartoon-icon{width:42px;height:42px}
+.mac-icon-color-palette{display:flex;flex-wrap:wrap;gap:10px;margin:16px 0}
+.mac-ui .mac-color-swatch{position:relative;width:32px;height:32px;padding:0;border:2px solid #ffffff45;border-radius:50%;background:var(--swatch);box-shadow:0 2px 8px #0003}
+.mac-ui .mac-color-swatch[aria-pressed=true]{outline:2px solid white;outline-offset:3px}
+.mac-ui .mac-color-swatch:hover{transform:scale(1.08)}
+.mac-icon-color-custom{display:flex;align-items:center;gap:14px;width:fit-content;font-size:13px}
+.mac-icon-color-custom input{width:46px;height:32px;padding:3px;border:1px solid #ffffff40;border-radius:7px;background:#ffffff10;cursor:pointer}
+.mac-icon-colors .mac-icon-color-status{font-size:11px;color:#b9c6d8;margin:10px 0 0}
+.mac-icon-colors.is-compact{grid-column:1/-1;padding:12px 0 0;margin:0;border-top:1px solid #ffffff20}
+.mac-icon-colors.is-compact h2{font-size:13px!important;margin-bottom:8px!important}
+.mac-icon-colors.is-compact .mac-icon-color-palette{gap:8px;margin:12px 3px}
+.mac-icon-colors.is-compact .mac-color-swatch{width:26px;height:26px}
+.mac-icon-transparent{display:flex;align-items:center;justify-content:space-between;gap:18px;max-width:280px;margin-top:15px;font-size:12px}
+.mac-ui .mac-icon-transparent button{min-width:52px;height:28px;padding:4px 12px;border:1px solid #ffffff35;border-radius:20px;background:#ffffff0d;color:white;font:600 11px system-ui}
+.mac-ui .mac-icon-transparent button[aria-checked=true]{background:#b5e2ff;color:#102a3d;border-color:#c8eaff}

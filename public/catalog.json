@@ -5917,7 +5917,9 @@
       "legacyUrl": "/wallpapers/black-bmw-car-in-rain-live-wallpaper.gif",
       "type": "video",
       "width": 3840,
-      "height": 2160
+      "height": 2160,
+      "quality": "4K",
+      "poster": "/artwork/wallpaper-posters/black-bmw-car-in-rain-live-wallpaper-full.webp"
     },
     {
       "name": "Deadpool Peeking Over Wall",
@@ -5926,7 +5928,9 @@
       "legacyUrl": "/wallpapers/deadpool-peeking-over-wall-live-wallpaper.gif",
       "type": "video",
       "width": 3840,
-      "height": 2160
+      "height": 2160,
+      "quality": "4K",
+      "poster": "/artwork/wallpaper-posters/deadpool-peeking-over-wall-live-wallpaper-full.webp"
     },
     {
       "name": "Luffys Summer Break",
@@ -5935,7 +5939,9 @@
       "legacyUrl": "/wallpapers/luffys-summer-break-live-wallpaper.gif",
       "type": "video",
       "width": 3840,
-      "height": 2160
+      "height": 2160,
+      "quality": "4K",
+      "poster": "/artwork/wallpaper-posters/luffys-summer-break-live-wallpaper-full.webp"
     },
     {
       "name": "Minecraft Relaxing Fireplace",
@@ -5944,7 +5950,9 @@
       "legacyUrl": "/wallpapers/minecraft-relaxing-fireplace-live-wallpaper.gif",
       "type": "video",
       "width": 3840,
-      "height": 2160
+      "height": 2160,
+      "quality": "4K",
+      "poster": "/artwork/wallpaper-posters/minecraft-relaxing-fireplace-live-wallpaper-full.webp"
     },
     {
       "name": "Minecraft Underwater Reef",
@@ -5952,8 +5960,12 @@
       "preview": "/artwork/wallpaper-posters/minecraft-underwater-reef-live-wallpaper.webp",
       "legacyUrl": "/wallpapers/minecraft-underwater-reef-live-wallpaper.gif",
       "type": "video",
-      "width": 1920,
-      "height": 1080
+      "width": 3840,
+      "height": 2160,
+      "quality": "4K upscaled",
+      "sourceWidth": 1920,
+      "sourceHeight": 1080,
+      "poster": "/artwork/wallpaper-posters/minecraft-underwater-reef-live-wallpaper-full.webp"
     },
     {
       "name": "Monochrome Spider Man",
@@ -5962,7 +5974,9 @@
       "legacyUrl": "/wallpapers/monochrome-spider-man-live-wallpaper.gif",
       "type": "video",
       "width": 3840,
-      "height": 2160
+      "height": 2160,
+      "quality": "4K",
+      "poster": "/artwork/wallpaper-posters/monochrome-spider-man-live-wallpaper-full.webp"
     },
     {
       "name": "Mustang Gt500",
@@ -5971,7 +5985,9 @@
       "legacyUrl": "/wallpapers/mustang-gt500-live-wallpaper.gif",
       "type": "video",
       "width": 3840,
-      "height": 2160
+      "height": 2160,
+      "quality": "4K",
+      "poster": "/artwork/wallpaper-posters/mustang-gt500-live-wallpaper-full.webp"
     },
     {
       "name": "Spider Verse Leap Of Faith",
@@ -5980,7 +5996,9 @@
       "legacyUrl": "/wallpapers/spider-verse-leap-of-faith-live-wallpaper.gif",
       "type": "video",
       "width": 4096,
-      "height": 2304
+      "height": 2304,
+      "quality": "4K",
+      "poster": "/artwork/wallpaper-posters/spider-verse-leap-of-faith-live-wallpaper-full.webp"
     },
     {
       "name": "We Bare Bears",
@@ -5989,7 +6007,9 @@
       "legacyUrl": "/wallpapers/we-bare-bears.gif",
       "type": "video",
       "width": 3840,
-      "height": 2160
+      "height": 2160,
+      "quality": "4K",
+      "poster": "/artwork/wallpaper-posters/we-bare-bears-full.webp"
     },
     {
       "name": "Nature in Minecraft",
@@ -5998,7 +6018,9 @@
       "legacyUrl": "/wallpapers/nature-in-minecraft.gif",
       "type": "video",
       "width": 3840,
-      "height": 2160
+      "height": 2160,
+      "quality": "4K",
+      "poster": "/artwork/wallpaper-posters/nature-in-minecraft-full.webp"
     },
     {
       "name": "Minecraft Falling Snow",
@@ -6007,7 +6029,9 @@
       "legacyUrl": "/wallpapers/minecraft-falling-snow.gif",
       "type": "video",
       "width": 3840,
-      "height": 2160
+      "height": 2160,
+      "quality": "4K",
+      "poster": "/artwork/wallpaper-posters/minecraft-falling-snow-full.webp"
     },
     {
       "name": "Minecraft Fishing",
@@ -6016,7 +6040,9 @@
       "legacyUrl": "/wallpapers/minecraft-fishing.gif",
       "type": "video",
       "width": 3840,
-      "height": 2160
+      "height": 2160,
+      "quality": "4K",
+      "poster": "/artwork/wallpaper-posters/minecraft-fishing-full.webp"
     },
     {
       "name": "Forgotten Man · Deltarune",
@@ -6025,7 +6051,9 @@
       "legacyUrl": "/wallpapers/forgotten-man-deltarune.gif",
       "type": "video",
       "width": 3840,
-      "height": 2160
+      "height": 2160,
+      "quality": "4K",
+      "poster": "/artwork/wallpaper-posters/forgotten-man-deltarune-full.webp"
     },
     {
       "name": "Dodge Charger in the Rain",
@@ -6034,7 +6062,9 @@
       "legacyUrl": "/wallpapers/dodge-charger-under-the-rain.gif",
       "type": "video",
       "width": 3840,
-      "height": 2160
+      "height": 2160,
+      "quality": "4K",
+      "poster": "/artwork/wallpaper-posters/dodge-charger-under-the-rain-full.webp"
     },
     {
       "name": "Rick and Morty Stargazing",
@@ -6043,7 +6073,9 @@
       "legacyUrl": "/wallpapers/rick-and-morty-stargazing.gif",
       "type": "video",
       "width": 3840,
-      "height": 2160
+      "height": 2160,
+      "quality": "4K",
+      "poster": "/artwork/wallpaper-posters/rick-and-morty-stargazing-full.webp"
     },
     {
       "name": "BMW M4 Running",
@@ -6052,7 +6084,9 @@
       "legacyUrl": "/wallpapers/bmw-m4-running.gif",
       "type": "video",
       "width": 3840,
-      "height": 2160
+      "height": 2160,
+      "quality": "4K",
+      "poster": "/artwork/wallpaper-posters/bmw-m4-running-full.webp"
     },
     {
       "name": "Astronaut vs Black Hole",
@@ -6061,7 +6095,9 @@
       "legacyUrl": "/wallpapers/astronaut-vs-black-hole-live-wallpaper.gif",
       "type": "video",
       "width": 3840,
-      "height": 2160
+      "height": 2160,
+      "quality": "4K",
+      "poster": "/artwork/wallpaper-posters/astronaut-vs-black-hole-live-wallpaper-full.webp"
     },
     {
       "name": "Blue Space Black Hole",
@@ -6070,7 +6106,9 @@
       "legacyUrl": "/wallpapers/blue-space-black-hole-live-wallpaper.gif",
       "type": "video",
       "width": 3840,
-      "height": 2160
+      "height": 2160,
+      "quality": "4K",
+      "poster": "/artwork/wallpaper-posters/blue-space-black-hole-live-wallpaper-full.webp"
     },
     {
       "name": "BMW M2 Night Drive",
@@ -6079,7 +6117,9 @@
       "legacyUrl": "/wallpapers/bmw-m2-3840x3840-live-4k-wallpaper.gif",
       "type": "video",
       "width": 3840,
-      "height": 3840
+      "height": 3840,
+      "quality": "4K",
+      "poster": "/artwork/wallpaper-posters/bmw-m2-3840x3840-live-4k-wallpaper-full.webp"
     },
     {
       "name": "Monochrome Luffy",
@@ -6088,7 +6128,9 @@
       "legacyUrl": "/wallpapers/monochrome-luffy-one-piece-live-wallpaper.gif",
       "type": "video",
       "width": 4096,
-      "height": 2304
+      "height": 2304,
+      "quality": "4K",
+      "poster": "/artwork/wallpaper-posters/monochrome-luffy-one-piece-live-wallpaper-full.webp"
     },
     {
       "name": "Dark Polygons",
@@ -6097,7 +6139,9 @@
       "legacyUrl": "/wallpapers/polygons-4k-live-wallpaper.gif",
       "type": "video",
       "width": 3840,
-      "height": 2160
+      "height": 2160,
+      "quality": "4K",
+      "poster": "/artwork/wallpaper-posters/polygons-4k-live-wallpaper-full.webp"
     },
     {
       "name": "RGB Moon",
@@ -6106,7 +6150,9 @@
       "legacyUrl": "/wallpapers/rgb-moon-live-wallpaper.gif",
       "type": "video",
       "width": 3840,
-      "height": 2160
+      "height": 2160,
+      "quality": "4K",
+      "poster": "/artwork/wallpaper-posters/rgb-moon-live-wallpaper-full.webp"
     },
     {
       "name": "Classic Spider-Man",
@@ -6115,7 +6161,9 @@
       "legacyUrl": "/wallpapers/spider-man-classic-live-wallpaper.gif",
       "type": "video",
       "width": 3840,
-      "height": 2160
+      "height": 2160,
+      "quality": "4K",
+      "poster": "/artwork/wallpaper-posters/spider-man-classic-live-wallpaper-full.webp"
     },
     {
       "name": "Spider-Man Venom Suit",
@@ -6124,7 +6172,9 @@
       "legacyUrl": "/wallpapers/spider-man-venom-suit-live-wallpaper.gif",
       "type": "video",
       "width": 3840,
-      "height": 2160
+      "height": 2160,
+      "quality": "4K",
+      "poster": "/artwork/wallpaper-posters/spider-man-venom-suit-live-wallpaper-full.webp"
     },
     {
       "name": "Synth Waves Kanagawa",
@@ -6133,7 +6183,9 @@
       "legacyUrl": "/wallpapers/synth-waves-kanagawa-4k-live-wallpaper.gif",
       "type": "video",
       "width": 3840,
-      "height": 2160
+      "height": 2160,
+      "quality": "4K",
+      "poster": "/artwork/wallpaper-posters/synth-waves-kanagawa-4k-live-wallpaper-full.webp"
     },
     {
       "name": "Edge of the Universe",
@@ -6141,7 +6193,9 @@
       "preview": "/artwork/wallpaper-posters/edge-of-the-universe.webp",
       "type": "video",
       "width": 3840,
-      "height": 2160
+      "height": 2160,
+      "quality": "4K",
+      "poster": "/artwork/wallpaper-posters/edge-of-the-universe-full.webp"
     },
     {
       "name": "Peter Parker Rooftop Sunset",
@@ -6149,7 +6203,9 @@
       "preview": "/artwork/wallpaper-posters/peter-parker-rooftop-sunset.webp",
       "type": "video",
       "width": 3840,
-      "height": 2160
+      "height": 2160,
+      "quality": "4K",
+      "poster": "/artwork/wallpaper-posters/peter-parker-rooftop-sunset-full.webp"
     },
     {
       "name": "Simpsons Audi Quattro",
@@ -6157,7 +6213,9 @@
       "preview": "/artwork/wallpaper-posters/simpsons-audi-quattro-live-wallpaper.webp",
       "type": "video",
       "width": 3840,
-      "height": 2160
+      "height": 2160,
+      "quality": "4K",
+      "poster": "/artwork/wallpaper-posters/simpsons-audi-quattro-live-wallpaper-full.webp"
     }
   ]
 }

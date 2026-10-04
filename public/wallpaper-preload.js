@@ -2,10 +2,10 @@ import {wallpapers} from './wallpaper-options.js';
 // Only bundled, non-personal wallpaper files enter this cache.
 export function createWallpaperPreparation({items=wallpapers,storage=globalThis.caches,fetcher=globalThis.fetch,estimate=()=>globalThis.navigator?.storage?.estimate?.(),notify=()=>{},delay=ms=>new Promise(resolve=>setTimeout(resolve,ms))}={}){
  items=items.filter(item=>/^\/wallpapers\/4k\/[a-zA-Z0-9._-]+\.mp4$/.test(item.url)&&/^\/artwork\/wallpaper-posters\/[a-zA-Z0-9._-]+\.webp$/.test(item.preview));
- const videos=items.map(item=>item.url),posters=items.map(item=>item.preview).filter(Boolean),known=new Set([...videos,...posters]);
+ const videos=items.map(item=>item.url),posters=items.map(item=>item.poster||item.preview).filter(Boolean),known=new Set([...videos,...posters]);
  let cachePromise,allowed=false,selected=null,running=null,request=null,blocked=false,state='paused';const done=new Set(),failed=new Set();
  function report(){notify({ready:videos.filter(url=>done.has(url)).length,total:videos.length,state});}
- async function cache(){if(!storage)return null;return cachePromise??=storage.open('neon-wallpapers-20261003-v1').catch(()=>null);}
+ async function cache(){if(!storage)return null;return cachePromise??=storage.open('neon-wallpapers-20261004-v2').catch(()=>null);}
  function valid(response,url){return response?.status===200&&response.headers.get('content-type')?.toLowerCase().startsWith(videos.includes(url)?'video/mp4':'image/');}
  async function source(url){
   if(!known.has(url))return null;

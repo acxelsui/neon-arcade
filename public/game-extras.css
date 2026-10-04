@@ -23,6 +23,13 @@
 #game-menu-panel .game-menu-music button{width:32px;height:32px;min-height:32px;padding:6px;flex:none}
 #game-menu-panel .game-menu-music svg{width:18px;height:18px}#game-menu-panel button:disabled{opacity:.4;cursor:default}#game-menu-panel button:disabled:hover{background:transparent;color:#fff;border-color:transparent}
 #game-menu-panel #game-music-like[aria-pressed=true] svg{fill:currentColor}
+#game-menu-panel .game-menu-hacks{grid-column:1/-1;grid-row:3;min-width:0;border-top:1px solid #ffffff28;padding-top:5px;color:#f8f8f8}
+#game-menu-panel #game-hacks-toggle{width:100%;height:30px;min-height:30px;display:flex;justify-content:center;gap:8px;font:600 11px system-ui;letter-spacing:.03em}
+#game-hacks-toggle::before{content:'＋';font-size:15px}#game-hacks-toggle[aria-expanded=true]::before{content:'−'}
+#game-hacks-form{padding:10px 5px 4px;text-align:left;font:12px/1.5 system-ui}#game-hacks-form strong{font-size:13px}#game-hacks-form p{font-size:11px;color:#dce0e5;margin:7px 0 10px}#game-hacks-form label{display:block;font-size:11px;margin-bottom:5px}
+#game-hacks-form input,#game-hacks-form select{box-sizing:border-box;width:100%;min-width:0;padding:9px 10px;border:1px solid #ffffff40;border-radius:9px;background:#080a0cdd;color:white;font:13px system-ui;margin-bottom:9px}
+#game-menu-panel .game-hacks-actions{display:flex;gap:5px;margin-top:9px}#game-menu-panel .game-hacks-actions button{width:auto;flex:1;height:auto;min-height:33px;font:600 10px system-ui;padding:7px;border:1px solid #ffffff35;background:#ffffff12}
+#game-hacks-form :focus-visible{outline:2px solid white;outline-offset:2px}#game-hacks-status:empty{display:none}#game-menu-panel #game-hacks-status{margin:9px 0 0;color:white}
 #message-notifications .notification-reply{display:flex;gap:6px;margin-top:10px}
 #message-notifications .notification-reply textarea{flex:1;min-width:0;min-height:32px;max-height:96px;resize:vertical;margin:0;padding:7px 9px;border:1px solid #b1dcff55;border-radius:8px;background:#07182755;color:#fff;font:12px/1.4 system-ui}
 #message-notifications .notification-reply textarea::placeholder{color:#bed5e5}#message-notifications .notification-reply button{position:static;align-self:flex-end;padding:7px 10px;border:1px solid #c9e7ff66;border-radius:8px;background:#2b65a877;color:#fff;font:12px system-ui;cursor:pointer}
