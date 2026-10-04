@@ -2,7 +2,7 @@ import {wallpapers} from './wallpaper-options.js';
 // Only bundled, non-personal wallpaper files enter this cache.
 export function createWallpaperPreparation({items=wallpapers,storage=globalThis.caches,fetcher=globalThis.fetch,estimate=()=>globalThis.navigator?.storage?.estimate?.(),notify=()=>{},delay=ms=>new Promise(resolve=>setTimeout(resolve,ms))}={}){
  items=items.filter(item=>/^\/wallpapers\/4k\/[a-zA-Z0-9._-]+\.mp4$/.test(item.url)&&/^\/artwork\/wallpaper-posters\/[a-zA-Z0-9._-]+\.webp$/.test(item.preview));
- const videos=items.map(item=>item.url),streams=items.map(item=>item.url.replace('/wallpapers/4k/','/wallpapers/stream/')),posters=items.map(item=>item.poster||item.preview).filter(Boolean),known=new Set([...videos,...streams,...posters]);
+ const videos=items.map(item=>item.url),streams=items.map(item=>item.url.replace('/wallpapers/4k/','/wallpapers/4k-start/')),posters=items.map(item=>item.poster||item.preview).filter(Boolean),known=new Set([...videos,...streams,...posters]);
  let cachePromise,allowed=false,selected=null,running=null,request=null,blocked=false,state='paused';const done=new Set(),failed=new Set();
  function report(){notify({ready:streams.filter(url=>done.has(url)).length,total:videos.length,state});}
  async function cache(){if(!storage)return null;return cachePromise??=storage.open('neon-wallpapers-20261004-v2').catch(()=>null);}
@@ -19,7 +19,7 @@ export function createWallpaperPreparation({items=wallpapers,storage=globalThis.
   while(allowed&&!blocked){
    // Prepare the smaller collection and only the selected 4K file.
    // Do not saturate the connection downloading a gigabyte of unused 4K video.
-   const url=[selected?.replace('/wallpapers/4k/','/wallpapers/stream/'),...posters,...streams,selected].find(url=>known.has(url)&&!done.has(url)&&!failed.has(url));
+   const url=[selected?.replace('/wallpapers/4k/','/wallpapers/4k-start/'),...posters,...streams,selected].find(url=>known.has(url)&&!done.has(url)&&!failed.has(url));
    if(!url){state=failed.size?'partial':'ready';report();return;}
    request=new AbortController();const current=request;
    try{

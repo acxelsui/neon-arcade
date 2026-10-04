@@ -36,7 +36,7 @@ const required = [
   'scram/scramjet.wasm', 'scram/scramjet-utils.js', 'controller/controller.api.js',
   'controller/controller.inject.js', 'controller/controller.sw.js', 'clients/index.js',
   ...catalog.games.flatMap(game => [game.url, game.cover].filter(url => url.startsWith('/')).map(url => url.slice(1))),
-  ...catalog.wallpapers.flatMap(wallpaper => [wallpaper.url, wallpaper.url.replace('/wallpapers/4k/','/wallpapers/stream/'), wallpaper.preview, wallpaper.poster].filter(Boolean).map(url => url.slice(1))),
+  ...catalog.wallpapers.flatMap(wallpaper => [wallpaper.url, wallpaper.url.replace('/wallpapers/4k/','/wallpapers/4k-start/'), wallpaper.preview, wallpaper.poster].filter(Boolean).map(url => url.slice(1))),
 ];
 for (const file of new Set(required)) {
   if (!(await stat(path.join(output, file))).isFile()) throw new Error(`Missing built asset: ${file}`);
