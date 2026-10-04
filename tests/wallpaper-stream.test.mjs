@@ -8,9 +8,9 @@ test('every bundled choice has a light source without rewriting custom videos or
  assert.equal(hasWallpaperBuffer({currentTime:4,duration:20,buffered:{length:1,start:()=>0,end:()=>10}}),true);
 });
 function fixture(){
- const nodes=[],events={},layer={style:{},querySelector(){return nodes.find(node=>!node.removed);},append(node){if(!nodes.includes(node))nodes.push(node);}};
- const doc={hidden:false,fullscreenElement:null,querySelector(selector){return selector==='#wallpaper'?layer:null;},addEventListener(event,fn){events[event]=fn;},createElement(){return{dataset:{},style:{},handlers:{},readyState:0,currentTime:0,duration:30,buffered:{length:1,start:()=>0,end:()=>30},plays:0,paused:false,play(){this.plays++;return Promise.resolve();},pause(){this.paused=true;},load(){},remove(){this.removed=true;},removeAttribute(){},setAttribute(){},addEventListener(name,fn){(this.handlers[name]??=[]).push(fn);},emit(name){for(const fn of this.handlers[name]||[])fn();}};}};
- return{doc,nodes,events};
+ const nodes=[],events={},created=[],layer={style:{},querySelector(){return nodes.find(node=>!node.removed);},append(node){if(!nodes.includes(node))nodes.push(node);}};
+ const doc={hidden:false,fullscreenElement:null,querySelector(selector){return selector==='#wallpaper'?layer:null;},addEventListener(event,fn){events[event]=fn;},createElement(){const node={dataset:{},style:{},handlers:{},readyState:0,currentTime:0,duration:30,buffered:{length:1,start:()=>0,end:()=>30},plays:0,paused:false,play(){this.plays++;return Promise.resolve();},pause(){this.paused=true;},load(){},remove(){this.removed=true;},removeAttribute(){},setAttribute(){},addEventListener(name,fn){(this.handlers[name]??=[]).push(fn);},emit(name){for(const fn of this.handlers[name]||[])fn();}};created.push(node);return node;}};
+ return{doc,nodes,events,created};
 }
 test('Falling Snow starts with original-quality 4K, promotes buffered 4K, and returns to a moving 4K opening loop on decode failure',async()=>{
  const previous=globalThis.document,f=fixture();globalThis.document=f.doc;
@@ -48,3 +48,23 @@ test('4K stalls recover to the 4K opening loop without refreshing the page',asyn
 test('only complete prepared originals can skip the opening download',async()=>{for(const [response,want] of [[new Response('movie',{headers:{'content-type':'video/mp4'}}),true],[new Response('part',{status:206,headers:{'content-type':'video/mp4'}}),false],[new Response('login',{headers:{'content-type':'text/html'}}),false],[null,false]]){const storage={async open(){return{async match(key){assert.equal(key,url);return response;}};}};assert.equal(Boolean(await cachedWallpaperFull(url,storage)),want);}assert.equal(await cachedWallpaperFull('/api/private.mp4',{open(){throw Error('must not open');}}),false);assert.equal(await cachedWallpaperFull(url,null),false);});
 
 test('a prepared original is used without constructing a second video or downloading the new clip',async()=>{const previous={document:globalThis.document,caches:globalThis.caches},f=fixture();globalThis.document=f.doc;globalThis.caches={async open(){return{async match(){return new Response('movie',{headers:{'content-type':'video/mp4'}});}};}};try{const {setWallpaperMedia}=await import('../public/wallpaper-media.js?prepared-original');setWallpaperMedia(url);await new Promise(resolve=>setImmediate(resolve));const media=f.nodes[0];assert.equal(media.src,url);assert.equal(media.dataset.neonWallpaperFull,'true');media.readyState=4;media.emit('loadeddata');assert.equal(f.nodes.length,1);setWallpaperMedia('/custom/still.jpg');}finally{globalThis.document=previous.document;globalThis.caches=previous.caches;}});
+
+
+test('switching keeps the old video moving until the next video plays, reuses the warm decoder and ignores cancelled switches',async t=>{
+ t.mock.timers.enable({apis:['setTimeout']});const previous=globalThis.document,f=fixture();globalThis.document=f.doc;
+ try{
+  const {setWallpaperMedia,warmWallpaperMedia}=await import('../public/wallpaper-media.js?switch-handoff');
+  const first='/custom/first.mp4',second='/custom/second.mp4',third='/custom/third.mp4';
+  setWallpaperMedia(first);const old=f.nodes[0];old.readyState=4;old.emit('loadeddata');
+  warmWallpaperMedia(second);assert.equal(f.created.length,2); // Detached decoder is loaded before selection.
+  setWallpaperMedia(second);assert.equal(f.created.length,2,'selection reuses the speculative decoder');const next=f.nodes[1];assert.equal(next.src,second);
+  assert.equal(old.removed,undefined);assert.equal(old.style.opacity,'1');assert.equal(next.style.opacity,'0');
+  next.readyState=4;next.emit('loadeddata');assert.equal(old.removed,undefined,'decoded frame alone must not stop the current live background');
+  next.emit('playing');assert.equal(old.removed,true);assert.equal(next.style.opacity,'1');
+  setWallpaperMedia(third);const cancelled=f.nodes[2];setWallpaperMedia('/custom/fourth.mp4');const fourth=f.nodes[3];
+  cancelled.readyState=4;cancelled.emit('playing');assert.equal(cancelled.removed,true);assert.equal(next.removed,undefined);
+  fourth.emit('error');assert.equal(fourth.removed,true);assert.equal(next.removed,undefined,'failed choice retains the current wallpaper');
+  setWallpaperMedia('/custom/timeout.mp4');const timed=f.nodes[4];t.mock.timers.tick(20000);assert.equal(timed.removed,true);assert.equal(next.removed,undefined);
+  setWallpaperMedia('/custom/still.jpg');assert.equal(next.removed,true);
+ }finally{globalThis.document=previous;}
+});

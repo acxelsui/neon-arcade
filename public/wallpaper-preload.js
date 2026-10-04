@@ -19,7 +19,7 @@ export function createWallpaperPreparation({items=wallpapers,storage=globalThis.
   while(allowed&&!blocked){
    // Prepare the smaller collection and only the selected 4K file.
    // Do not saturate the connection downloading a gigabyte of unused 4K video.
-   const url=[selected?.replace('/wallpapers/4k/','/wallpapers/4k-start/'),...posters,...streams,selected].find(url=>known.has(url)&&!done.has(url)&&!failed.has(url));
+   const url=[selected?.replace('/wallpapers/4k/','/wallpapers/4k-start/'),...streams,...posters,selected].find(url=>known.has(url)&&!done.has(url)&&!failed.has(url));
    if(!url){state=failed.size?'partial':'ready';report();return;}
    request=new AbortController();const current=request;
    try{

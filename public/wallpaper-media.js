@@ -1,8 +1,8 @@
 import {wallpaperPreparation} from './wallpaper-preload.js';
 import {wallpaperStreamUrl,createWallpaperVideo,hasWallpaperBuffer,cachedWallpaperFull} from './wallpaper-stream.js';
-let video,pending,currentUrl,epoch=0,release=[],timers=[],visible=Promise.resolve();
+let video,pending,currentUrl,epoch=0,warmed,switching,switchEpoch=0,release=[],timers=[],visible=Promise.resolve();
 function canPlay(){return !document.hidden&&!document.fullscreenElement;}
-function play(){if(video&&canPlay())video.play().catch(()=>{});}
+function play(){if(canPlay()){video?.play().catch(()=>{});switching?.media.play().catch(()=>{});}}
 function dispose(media){if(!media)return;media.pause();media.removeAttribute('src');media.load();media.remove();}
 function status(text){
  let el=document.querySelector('#wallpaper-playback-status');const preparation=document.querySelector('#wallpaper-preload-status');
@@ -11,7 +11,49 @@ function status(text){
 }
 function changed(){if(typeof window!=='undefined')window.dispatchEvent(new Event('neon-wallpaper-playback'));}
 export function whenWallpaperVisible(timeout=200){return Promise.race([visible,new Promise(resolve=>setTimeout(resolve,timeout))]);}
+// Keep only one speculative decoder: never start all 28 4K videos at once.
+export function warmWallpaperMedia(url,poster=''){
+ if(!/\.mp4(?:[?#]|$)/i.test(url)||url===currentUrl||switching)return;
+ if(warmed?.dataset.neonWallpaperUrl===url&&!warmed.error)return;
+ dispose(warmed);const media=createWallpaperVideo(document,url,poster);warmed=media;
+ media.autoplay=false;media.style.opacity='0';
+ media.addEventListener('loadeddata',()=>{if(warmed===media&&!switching)media.pause();},{once:true});
+ media.addEventListener('error',()=>{if(warmed===media){dispose(media);warmed=null;}},{once:true});
+ cachedWallpaperFull(url).then(saved=>{
+  if(saved&&warmed===media&&media.readyState<2){media.dataset.neonWallpaperFull='true';media.src=url;media.load();}
+ });
+ media.load();
+}
+function cancelSwitch(){
+ ++switchEpoch;if(switching){clearTimeout(switching.timeout);dispose(switching.media);switching=null;}
+}
 export function setWallpaperMedia(url,poster=''){
+ if(switching?.url===url)return;
+ cancelSwitch();
+ if(currentUrl===url&&!video?.error&&video?.dataset?.neonWallpaper4kFailed!=='true'){play();return;}
+ if(!video||video.error||video.style.opacity!=='1'||!/\.mp4(?:[?#]|$)/i.test(url)){
+  dispose(warmed);warmed=null;activateWallpaperMedia(url,poster);return;
+ }
+ // Leave the current wallpaper moving until the replacement actually plays.
+ const media=warmed?.dataset.neonWallpaperUrl===url&&!warmed.error?warmed:createWallpaperVideo(document,url,poster);
+ if(warmed!==media)dispose(warmed);warmed=null;
+ const token=switchEpoch;switching={url,media};media.style.opacity='0';
+ document.querySelector('#wallpaper').append(media);
+ wallpaperPreparation.pause();status('Preparing your next 4K wallpaper…');
+ function commit(){
+  if(token!==switchEpoch||switching?.media!==media)return;
+  clearTimeout(switching.timeout);switching=null;
+  activateWallpaperMedia(url,poster,media);
+ }
+ function fail(){
+  if(token!==switchEpoch||switching?.media!==media)return;
+  cancelSwitch();status('Could not load that wallpaper. Your current wallpaper is still playing; select it to retry.');changed();
+ }
+ media.addEventListener('playing',commit,{once:true});media.addEventListener('error',fail,{once:true});
+ switching.timeout=setTimeout(fail,20000);
+ if(canPlay())media.play().catch(fail);
+}
+function activateWallpaperMedia(url,poster='',prepared){
  if(currentUrl===url&&!video?.error&&video?.dataset?.neonWallpaper4kFailed!=='true'){play();return;}
  const layer=document.querySelector('#wallpaper'),version=++epoch;currentUrl=url;wallpaperPreparation.select(url);
  timers.forEach(clearTimeout);timers=[];dispose(video);dispose(pending);video=pending=null;release.forEach(fn=>fn());release=[];
@@ -20,7 +62,7 @@ export function setWallpaperMedia(url,poster=''){
  if(typeof Image!=='undefined'){const image=new Image();image.fetchPriority='high';image.onload=()=>{if(version===epoch)ready();};image.onerror=()=>ready();image.src=poster||url;}
  if(poster)wallpaperPreparation.source(poster).then(source=>{if(!source)return;if(version!==epoch){source.release();return;}release.push(source.release);layer.style.backgroundImage=`url(${JSON.stringify(source.url)})`;});
  if(!/\.mp4(?:[?#]|$)/i.test(url)){changed();return;}
- const stream=wallpaperStreamUrl(url),early=layer.querySelector?.('video[data-neon-wallpaper-url]');
+ const stream=wallpaperStreamUrl(url),early=prepared||layer.querySelector?.('video[data-neon-wallpaper-url]');
  if(early&&(early.dataset.neonWallpaperUrl!==url||early.error))dispose(early);
  const media=early?.dataset.neonWallpaperUrl===url&&!early.error?early:createWallpaperVideo(document,url,poster);
  video=media;if(media!==early)layer.append(media);media.style.opacity=media.readyState>=2?'1':'0';
@@ -77,6 +119,6 @@ export function setWallpaperMedia(url,poster=''){
  if(media.readyState>=2)live();
  changed();play();
 }
-document.addEventListener('visibilitychange',()=>{if(document.hidden)video?.pause();else play();});
-document.addEventListener('fullscreenchange',()=>{if(document.fullscreenElement)video?.pause();else play();});
+document.addEventListener('visibilitychange',()=>{if(document.hidden){video?.pause();switching?.media.pause();dispose(warmed);warmed=null;}else play();});
+document.addEventListener('fullscreenchange',()=>{if(document.fullscreenElement){video?.pause();switching?.media.pause();dispose(warmed);warmed=null;}else play();});
 document.addEventListener('pointerdown',play,{passive:true});

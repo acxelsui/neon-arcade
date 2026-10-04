@@ -7,14 +7,14 @@ function response(url,status=200){return new Response('asset',{status,headers:{'
 const tick=()=>new Promise(resolve=>setImmediate(resolve));
 test('prepares every short 4K opening clip and only the selected 4K video sequentially, prioritizes selection, and reuses saved copies on another visit',async()=>{
  const f=fixture(),calls=[];let concurrent=0,max=0;const options={items,storage:f.storage,delay:async()=>{},fetcher:async url=>{calls.push(url);concurrent++;max=Math.max(max,concurrent);await tick();concurrent--;return response(url);}};
- const first=createWallpaperPreparation(options);first.select(items[2].url);await first.resume();assert.equal(max,1);assert.deepEqual(calls,[items[2].url.replace('/4k/','/4k-start/'),...items.map(i=>i.preview),...items.slice(0,2).map(i=>i.url.replace('/4k/','/4k-start/')),items[2].url]);assert.deepEqual(first.snapshot(),{ready:3,total:3,state:'ready'});
+ const first=createWallpaperPreparation(options);first.select(items[2].url);await first.resume();assert.equal(max,1);assert.deepEqual(calls,[items[2].url.replace('/4k/','/4k-start/'),...items.slice(0,2).map(i=>i.url.replace('/4k/','/4k-start/')),...items.map(i=>i.preview),items[2].url]);assert.deepEqual(first.snapshot(),{ready:3,total:3,state:'ready'});
  calls.length=0;const second=createWallpaperPreparation(options);await second.resume();assert.equal(calls.length,0);assert.equal(second.snapshot().ready,3);
  const source=await second.source(items[0].url.replace('/4k/','/4k-start/'));assert.match(source.url,/^blob:/);source.release();assert.equal(await second.source('/api/private-data'),null);
 });
 test('pausing aborts an unfinished download; resuming retries it without caching a partial response',async()=>{
  const f=fixture(),calls=[];let first=true,aborted=false;
  const cache=createWallpaperPreparation({items:items.slice(0,1),storage:f.storage,delay:async()=>{},fetcher:(url,{signal})=>{calls.push(url);if(!first)return Promise.resolve(response(url));first=false;return new Promise((resolve,reject)=>signal.addEventListener('abort',()=>{aborted=true;reject(new DOMException('paused','AbortError'));},{once:true}));}});
- const running=cache.resume();await tick();cache.pause();await running;assert.equal(aborted,true);assert.equal(f.entries.size,0);assert.equal(cache.snapshot().state,'paused');await cache.resume();assert.equal(cache.snapshot().ready,1);assert.equal(calls.filter(url=>url===items[0].preview).length,2);
+ const running=cache.resume();await tick();cache.pause();await running;assert.equal(aborted,true);assert.equal(f.entries.size,0);assert.equal(cache.snapshot().state,'paused');await cache.resume();assert.equal(cache.snapshot().ready,1);assert.equal(calls.filter(url=>url===items[0].url.replace('/4k/','/4k-start/')).length,2);
 });
 test('changing the selected wallpaper aborts the old preparation and puts the new video next',async()=>{
  const f=fixture();for(const item of items){f.entries.set(item.preview,response(item.preview));f.entries.set(item.url.replace('/4k/','/4k-start/'),response(item.url));}let started,aborted=false;const blocked=new Promise(resolve=>started=resolve),calls=[];
@@ -33,5 +33,5 @@ test('low quota and unsupported cache leave normal playback available without en
 });
 test('only bundled wallpaper paths can enter the preparation queue and failed estimates do not prevent caching',async()=>{
  const f=fixture(),calls=[];const cache=createWallpaperPreparation({items:[items[0],{url:'/api/profile.mp4',preview:items[1].preview},{url:'https://external.example/video.mp4',preview:items[2].preview}],storage:f.storage,delay:async()=>{},estimate:async()=>{throw new Error('unsupported');},fetcher:async url=>{calls.push(url);return response(url);}});
- await cache.resume();assert.deepEqual(calls,[items[0].preview,items[0].url.replace('/4k/','/4k-start/')]);assert.equal(cache.snapshot().total,1);
+ await cache.resume();assert.deepEqual(calls,[items[0].url.replace('/4k/','/4k-start/'),items[0].preview]);assert.equal(cache.snapshot().total,1);
 });
