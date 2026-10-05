@@ -9,7 +9,7 @@ export function gameTransport(transport, origin, fetchLocal = fetch) {
     }
     const response = await fetchLocal(new URL(remote.pathname + remote.search, origin).href, {
       method, body, signal, redirect: 'manual', credentials: 'same-origin',
-      headers: headers.filter(([name]) => ['range', 'accept', 'content-type'].includes(name.toLowerCase())),
+      headers: headers.filter(([name]) => ['range', 'accept', 'content-type', 'cache-control', 'pragma'].includes(name.toLowerCase())),
     });
     return { body: response.body, headers: [...response.headers], status: response.status, statusText: response.statusText };
   };
