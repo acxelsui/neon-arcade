@@ -1,7 +1,8 @@
 import {wallpapers} from './wallpaper-options.js';
+import {wallpaperPreparation} from './wallpaper-preload.js';
 const bundled=new Set(wallpapers.map(item=>item.url));
 export function wallpaperStreamUrl(url){return bundled.has(url)?url.replace('/wallpapers/4k/','/wallpapers/4k-start/'):url;}
-export function createWallpaperVideo(doc,url,poster,source=wallpaperStreamUrl(url)){
+export function createWallpaperVideo(doc,url,poster,source=wallpaperPreparation.isPrepared(url)?url:wallpaperStreamUrl(url)){
  const media=doc.createElement('video');media.className='wallpaper-video';media.dataset??={};media.dataset.neonWallpaperUrl=url;if(source===url)media.dataset.neonWallpaperFull='true';
  media.muted=true;media.defaultMuted=true;media.loop=true;media.autoplay=true;media.playsInline=true;media.preload='auto';
  media.setAttribute('aria-hidden','true');media.setAttribute('disablepictureinpicture','');media.setAttribute('muted','');media.setAttribute('playsinline','');

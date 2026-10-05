@@ -4,7 +4,8 @@ export function createWallpaperPreparation({items=wallpapers,storage=globalThis.
  items=items.filter(item=>/^\/wallpapers\/4k\/[a-zA-Z0-9._-]+\.mp4$/.test(item.url)&&/^\/artwork\/wallpaper-posters\/[a-zA-Z0-9._-]+\.webp$/.test(item.preview));
  const videos=items.map(item=>item.url),streams=items.map(item=>item.url.replace('/wallpapers/4k/','/wallpapers/4k-start/')),posters=items.map(item=>item.poster||item.preview).filter(Boolean),known=new Set([...videos,...streams,...posters]);
  let cachePromise,allowed=false,selected=null,running=null,request=null,blocked=false,state='paused';const done=new Set(),failed=new Set();
- function report(){notify({ready:streams.filter(url=>done.has(url)).length,total:videos.length,state});}
+ function snapshot(){return {ready:videos.filter(url=>done.has(url)).length,startsReady:streams.filter(url=>done.has(url)).length,total:videos.length,state,prepared:videos.filter(url=>done.has(url))};}
+ function report(){notify(snapshot());}
  async function cache(){if(!storage)return null;return cachePromise??=storage.open('neon-wallpapers-20261004-v2').catch(()=>null);}
  function valid(response,url){return response?.status===200&&response.headers.get('content-type')?.toLowerCase().startsWith(videos.includes(url)||streams.includes(url)?'video/mp4':'image/');}
  async function source(url){
@@ -17,9 +18,9 @@ export function createWallpaperPreparation({items=wallpapers,storage=globalThis.
   const saved=await cache();if(!saved){state='unavailable';report();return;}
   if(!done.size){for(const url of known){const response=await saved.match(url);if(valid(response,url))done.add(url);}report();}
   while(allowed&&!blocked){
-   // Prepare the smaller collection and only the selected 4K file.
-   // Do not saturate the connection downloading a gigabyte of unused 4K video.
-   const url=[selected?.replace('/wallpapers/4k/','/wallpapers/4k-start/'),...streams,...posters,selected].find(url=>known.has(url)&&!done.has(url)&&!failed.has(url));
+   // Opening clips become available first; then save every complete 4K loop.
+   // A single low-priority download pauses for gameplay, music and app loading.
+   const url=[selected?.replace('/wallpapers/4k/','/wallpapers/4k-start/'),...streams,...posters,selected,...videos].find(url=>known.has(url)&&!done.has(url)&&!failed.has(url));
    if(!url){state=failed.size?'partial':'ready';report();return;}
    request=new AbortController();const current=request;
    try{
@@ -36,6 +37,6 @@ export function createWallpaperPreparation({items=wallpapers,storage=globalThis.
  }
  function start(){if(allowed&&!blocked&&!running)running=run().catch(()=>{state='unavailable';report();}).finally(()=>{running=null;if(allowed&&!blocked&&!['ready','partial','unavailable'].includes(state))start();});return running;}
  function pause(){allowed=false;if(!['ready','storage','partial','unavailable'].includes(state))state='paused';request?.abort();report();}
- return {source,select(url){if(selected!==url){request?.abort();selected=known.has(url)?url:null;}},resume(){allowed=true;return start();},retry(){failed.clear();blocked=false;state='paused';return start();},pause,snapshot:()=>({ready:streams.filter(url=>done.has(url)).length,total:videos.length,state})};
+ return {source,isPrepared:url=>videos.includes(url)&&done.has(url),select(url){if(selected!==url){request?.abort();selected=known.has(url)?url:null;}},resume(){allowed=true;return start();},retry(){failed.clear();blocked=false;state='paused';return start();},pause,snapshot};
 }
 export const wallpaperPreparation=createWallpaperPreparation({notify:detail=>{if(typeof window!=='undefined')window.dispatchEvent(new CustomEvent('neon-wallpaper-preparation',{detail}));}});
