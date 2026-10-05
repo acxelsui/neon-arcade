@@ -250,3 +250,36 @@ body.mac-ui{--mint:#a4d6ff;--mac-panel:#1b203bba;--mac-line:#ffffff25;font-famil
 
 /* Always-visible window symbols with larger hit targets. */
 .mac-titlebar,.is-active .mac-titlebar{padding:0 12px 0 122px;justify-content:flex-start}.mac-window-controls{left:12px;gap:4px}.mac-window-controls button,.mac-window-controls:hover button,.mac-window-controls button:focus-visible{width:28px;height:28px;min-height:28px;border-radius:7px;border:1px solid #ffffff25;color:#f5f7fb;font:20px/1 system-ui;background:#ffffff08}.mac-window-controls .mac-close,.mac-window-controls .mac-minimize,.mac-window-controls .mac-maximize{background:#ffffff08;color:#f5f7fb;font-size:20px}.mac-window-controls .mac-maximize{font-size:18px}.mac-window-controls button:hover,.mac-window-controls .mac-minimize:hover,.mac-window-controls .mac-maximize:hover{background:#ffffff20;color:#fff}.mac-window-controls .mac-close:hover{background:#b53742;color:#fff}.mac-window-controls button:focus-visible{outline:2px solid #9edaff;outline-offset:2px}.mac-window-title{min-width:0}
+
+/* Small translucent surfaces share existing app data, with no animated backdrop filters. */
+.desktop-widgets{position:absolute;inset:0;pointer-events:none;z-index:1}
+.desktop-widget{position:absolute;width:252px;min-height:180px;color:#f4f7fc;pointer-events:auto;border:1px solid #ffffff30;border-radius:20px;background:linear-gradient(135deg,#14202cd6,#2637448a);box-shadow:inset 0 1px #ffffff16,0 12px 32px #0003;font:13px/1.4 -apple-system,BlinkMacSystemFont,system-ui,sans-serif;overflow:hidden}
+.desktop-widget[hidden],.desktop-widgets[hidden]{display:none!important}
+.desktop-widget.is-moving{z-index:4;box-shadow:0 16px 38px #0006;cursor:grabbing}
+.widget-weather{background:linear-gradient(135deg,#253b50c9,#21384b85)}
+.widget-music{background:linear-gradient(135deg,#2c2540cb,#202a3e8c)}
+.widget-handle{display:flex;align-items:center;gap:8px;padding:12px 12px 6px;min-height:42px;cursor:grab;user-select:none;touch-action:none}
+.widget-handle h2{font:600 12px/1.4 system-ui;margin:0;flex:1;letter-spacing:.15px}
+.mac-ui .widget-handle>.mac-cartoon-icon{width:17px;height:17px;opacity:.85}
+.widget-handle button{width:23px;height:24px;padding:0;border-radius:6px;color:#d3deec;font-size:17px}
+.widget-handle button:hover{background:#ffffff20;color:white}
+.widget-body{padding:8px 16px 14px}
+.widget-body p{margin:6px 0 10px}.widget-muted{color:#d5dfeb;font-size:12px;line-height:1.5}
+.widget-body>button,.widget-music-controls>button:last-child{display:block;margin-top:10px;padding:6px 0;font-size:11px;font-weight:500;color:#e9f2ff;text-align:left}
+.widget-track{display:block;font-size:21px;font-weight:600;line-height:1.25;white-space:nowrap;text-overflow:ellipsis;overflow:hidden;letter-spacing:-.5px;margin:4px 0 9px}
+.widget-music-controls{display:flex;align-items:center;gap:6px;margin-top:16px}
+.widget-music-controls>button{width:29px;height:30px;border-radius:50%;font-size:22px;background:#ffffff10;padding:0}
+.widget-music-controls>.widget-play{background:#f1f6fd;color:#172338;font-size:16px;width:34px;height:34px}
+.widget-music-controls>button:disabled{opacity:.35;cursor:default}
+.widget-music-controls>button:last-child{margin:0 0 0 auto;width:auto;height:auto;background:transparent;font-size:11px}
+.widget-online-summary{display:flex;align-items:center;gap:8px}.widget-online-summary strong{font-size:20px;letter-spacing:-.4px}
+.widget-online-dot{width:7px;height:7px;border-radius:50%;background:#9aabbc}
+.widget-online-summary.is-connected .widget-online-dot{background:#73ebb0;box-shadow:0 0 9px #73ebb045}
+.widget-players{min-height:102px}.widget-players .member-row{padding:5px 0;border:0;gap:9px;min-height:34px;background:none}.widget-players .member-avatar{width:28px;height:28px;min-width:28px;font-size:11px}.widget-players .member-row strong{font-size:12px}.widget-players .member-row small{font-size:10px;white-space:nowrap;max-width:175px;overflow:hidden;text-overflow:ellipsis}.widget-players .member-row:hover{background:#fff1;border-radius:8px}
+.widget-game{display:flex;align-items:center;gap:10px;width:100%;padding:6px 0;text-align:left;font-size:12px;border-radius:8px}.widget-game:hover{background:#ffffff0d}.widget-game img{width:33px;height:33px;object-fit:cover;border-radius:8px;background:#152230}.widget-game span:nth-child(2){flex:1;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}.widget-game span:last-child{font-size:12px;color:#bdd1e8}.widget-recent-list{min-height:132px}
+.widget-weather-place{font-size:11px;font-weight:500;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}.widget-weather-main{display:flex;align-items:center;justify-content:space-between;height:58px}.widget-weather-main strong{font-size:42px;font-weight:500;letter-spacing:-2px}.widget-weather-main span{font-size:36px;filter:drop-shadow(0 3px 9px #0003)}
+.widget-settings{padding:22px;margin:18px 0;border:1px solid #ffffff20;border-radius:14px;background:#ffffff05}.widget-settings h2{margin:0 0 8px;font-size:20px}.widget-settings>p{max-width:660px}.widget-settings label{display:flex;justify-content:space-between;align-items:center;gap:14px;min-height:42px;border-bottom:1px solid #ffffff12;cursor:pointer;font-size:13px}.widget-settings input{width:18px;height:18px;accent-color:#89d0ff}.widget-settings>button{padding:9px 12px;margin-top:18px;border:1px solid #ffffff30;border-radius:8px;background:#ffffff0b;font-size:12px}.widget-settings.is-compact{margin:0;padding:0;background:none;border:0}.widget-settings.is-compact h2{font-size:16px;margin-top:0}
+#mac-widgets{top:38px;bottom:auto;left:180px;width:min(290px,calc(100vw - 20px));padding:18px;background:linear-gradient(135deg,#243242ed,#111c2ced);backdrop-filter:none;max-height:calc(100dvh - 50px)}
+.mac-ui .mac-shortcuts{z-index:2}
+@media(max-width:699px){.desktop-widgets{inset:12px 108px 100px 12px;display:grid;grid-template-columns:repeat(2,minmax(0,252px));align-content:start;gap:14px;overflow:auto;pointer-events:auto;padding:4px 0}.desktop-widget{position:relative;top:auto!important;left:auto!important;width:100%;min-width:0;align-self:start}.widget-handle{cursor:default}.widget-handle h2{font-size:11px}.widget-body{padding:8px 12px 12px}.mac-ui .mac-shortcuts{left:auto;right:8px;width:90px;bottom:100px;flex-wrap:nowrap;overflow-y:auto;align-content:initial;pointer-events:auto}#mac-widgets{left:10px}}
+@media(max-width:439px){.desktop-widgets{grid-template-columns:minmax(0,252px)}.widget-track{font-size:19px}}

@@ -1,5 +1,6 @@
 // Keep newest first. Dates describe when the change was added, not when a visitor opened Home.
 export const updates = [
+ {date:'2026-10-04',title:'Your desktop, at a glance',text:'Transparent desktop widgets show your music, online players, weather, and recent games. Move them by dragging their headings or using arrow keys, remove any widget, and restore it from Widgets or Settings. Choices and positions stay saved on this browser.'},
  {date:'2026-10-04',title:'Smooth 4K wallpaper switching',text:'Wallpaper choices prepare when hovered or focused, and the current live background keeps moving until the next 4K video is ready. Background preparation now downloads live clips before extra poster images.'},
  {date:'2026-10-04',title:'Use prepared 4K wallpapers immediately',text:'Choosing a wallpaper uses its already-prepared original 4K video directly when available, instead of downloading a new opening clip. Startup and recovery remain in original 4K quality.'},
  {date:'2026-10-04',title:'Original 4K from the first frame',text:'Wallpapers start with short clips copied directly from their original 4K footage, then continue with the full video when ready. There is no HD downgrade or extra compression. The opening clips are prepared for faster repeat visits, and all 28 full wallpapers remain available.'},
