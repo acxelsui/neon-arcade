@@ -1,6 +1,7 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import {initCloud,cloudGames} from '../public/cloud.js';
+import {achromaGames,achromaLauncher} from '../public/cloud-sources.js';
 
 function fixture(getController,response={status:200}){
  const previous=Object.getOwnPropertyDescriptor(globalThis,'document'),nodes=new Map(),routes=[],frames=[];
@@ -72,4 +73,22 @@ test('launcher connection errors expose reload recovery outside the game frame',
  }finally{f.restore();}
  const failed=fixture(()=>Promise.reject(Error('Relay unavailable')));
  try{await failed.tiles[1].onclick();assert.match(failed.nodes.get('#cloud-status').textContent,/Stumble Guys.*Relay unavailable/);assert.ok(failed.tiles.every(tile=>!tile.disabled));}finally{failed.restore();}
+});
+
+test('Achroma selection launches only matching game embeds through the existing controller and retains Original servers',async()=>{
+ const f=fixture();try{
+  const source=f.nodes.get('#cloud-source'),server=f.nodes.get('#cloud-server');
+  server.value='2';await server.onchange();
+  source.value='achroma';await source.onchange();assert.equal(f.routes.length,0);assert.equal(f.nodes.get('#cloud-server-choice').hidden,true);
+  let frame;
+  for(const id of Object.keys(achromaGames)){
+   await f.tiles.find(tile=>tile.dataset.cloudGame===id).onclick();frame ||= f.controller.frames[0];assert.equal(f.controller.frames[0],frame);assert.equal(f.controller.frames.length,1);
+   assert.equal(f.routes.at(-1),achromaLauncher(id));assert.match(frame.element.title,/Achroma cloud launcher/);
+  }
+  source.value='original';await source.onchange();assert.equal(f.routes.at(-1),cloudGames.gtav.url);
+  await f.tiles[0].onclick();assert.equal(server.value,'2');assert.match(frame.element.title,/Server 2/);
+  source.value='not-a-provider';await source.onchange();assert.equal(source.value,'original');
+  source.value='achroma';await source.onchange();await f.tiles.find(tile=>tile.dataset.cloudGame==='madden').onclick();assert.equal(source.value,'original');assert.equal(f.routes.at(-1),cloudGames.madden.url);assert.equal(f.nodes.get('#cloud-source-achroma').disabled,true);assert.match(f.nodes.get('#cloud-source-note').textContent,/does not list Madden NFL 24/);
+  source.value='achroma';await source.onchange();assert.equal(source.value,'original');
+ }finally{f.restore();}
 });
