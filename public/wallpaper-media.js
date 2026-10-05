@@ -20,7 +20,7 @@ export function warmWallpaperMedia(url,poster=''){
  media.addEventListener('loadeddata',()=>{if(warmed===media&&!switching)media.pause();},{once:true});
  media.addEventListener('error',()=>{if(warmed===media){dispose(media);warmed=null;}},{once:true});
  cachedWallpaperFull(url).then(saved=>{
-  if(saved&&warmed===media&&media.readyState<2){media.dataset.neonWallpaperFull='true';media.src=url;media.load();}
+  if(saved&&warmed===media&&media.dataset.neonWallpaperFull!=='true'&&media.readyState<2){media.dataset.neonWallpaperFull='true';media.src=url;media.load();}
  });
  media.load();
 }
@@ -115,7 +115,7 @@ function activateWallpaperMedia(url,poster='',prepared){
  let lightStall;
  media.addEventListener('waiting',()=>{clearTimeout(lightStall);lightStall=setTimeout(retry,6000);timers.push(lightStall);});
  media.addEventListener('playing',()=>clearTimeout(lightStall));
- cachedWallpaperFull(url).then(saved=>{if(!saved||upgrading||version!==epoch||video!==media||media.readyState>=2)return;media.dataset.neonWallpaperFull='true';media.src=url;play();});
+ cachedWallpaperFull(url).then(saved=>{if(!saved||upgrading||version!==epoch||video!==media||media.dataset.neonWallpaperFull==='true'||media.readyState>=2)return;media.dataset.neonWallpaperFull='true';media.src=url;play();});
  if(media.readyState>=2)live();
  changed();play();
 }
