@@ -2,6 +2,28 @@ import test from 'node:test';
 import assert from 'node:assert/strict';
 import { gameTransport } from '../public/game-transport.js';
 
+test('split game probes keep the proxy route and cancel a one-byte GET instead of broken HEAD',async()=>{
+ let captured,cancelled=false;const signal=new AbortController().signal;
+ const transport={request:async(...args)=>{captured=args;return {status:206,statusText:'Partial Content',headers:[['content-range','bytes 0-0/20866662'],['content-length','1'],['content-type','application/octet-stream']],body:{cancel:async()=>{cancelled=true;}}};}};
+ gameTransport(transport,'https://arcade.example');
+ const remote=new URL('https://cdn.jsdelivr.net/gh/example/game@main/Build/game.wasm.part1');
+ const response=await transport.request(remote,'HEAD',null,[['Accept','*/*'],['Range','bytes=5-10']],signal);
+ assert.deepEqual(captured,[remote,'GET',null,[['Accept','*/*'],['Range','bytes=0-0']],signal]);
+ assert.equal(cancelled,true);assert.equal(response.status,200);assert.equal(response.body,null);
+ assert.deepEqual(response.headers,[['content-type','application/octet-stream'],['content-length','20866662']]);
+});
+
+test('missing split files remain errors, while ordinary HEAD and downloads retain their original method',async()=>{
+ const calls=[];const transport={request:async(...args)=>{calls.push(args);return {status:404,headers:[],body:null};}};
+ gameTransport(transport,'https://arcade.example');
+ const chunk=new URL('https://cdn.jsdelivr.net/gh/example/game@main/game.data.part4');
+ assert.equal((await transport.request(chunk,'HEAD',null,[],undefined)).status,404);
+ await transport.request(chunk,'GET',null,[],undefined);
+ await transport.request(new URL('https://private.example/game.data.part4'),'HEAD',null,[],undefined);
+ await transport.request(new URL('https://cdn.jsdelivr.net/gh/example/game@main/loader.js'),'HEAD',null,[],undefined);
+ assert.deepEqual(calls.map(args=>args[1]),['GET','GET','HEAD','HEAD']);
+});
+
 test('bundled games enter the rewriter while external assets use the relay', async () => {
   const requests = [];
   const transport = { request: async (...args) => { requests.push(args); return 'relayed'; }, connect() {} };
