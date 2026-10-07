@@ -8,7 +8,7 @@ function fixture(top = true) {
   const events = {}, handlers = {}, navigations = [];
   const doc = {querySelector: () => null, addEventListener: (type, callback) => events[type] = callback};
   const client = {get url() {return current;}, set url(value) {current = new URL(value);navigations.push(value);}, unrewriteUrl: value => value.replace('https://neon.test/proxy/', ''), Proxy: (name, handler) => handlers[name] = handler};
-  const frame = {element: {setAttribute(name, value) {assert.equal(name,'sandbox');sandbox = value;}}, hooks: {init: {post: {}},fetch:{request:{}}}};
+  const frame = {go(value){current=new URL(value);navigations.push(value);},element: {setAttribute(name, value) {assert.equal(name,'sandbox');sandbox = value;}}, hooks: {init: {post: {}},fetch:{request:{}}}};
   protectMoviesFrame(frame, (boundary, callback) => {if(boundary===frame.hooks.fetch.request)fetchHook=callback;else{assert.equal(boundary, frame.hooks.init.post);hook = callback;}}, {BareResponse:{fromNativeResponse:value=>value}});
   hook({client, window: {document: doc}, isTopLevel: top});
   return {events, handlers, navigations, sandbox, fetchHook};

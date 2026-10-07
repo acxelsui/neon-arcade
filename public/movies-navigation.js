@@ -26,7 +26,7 @@ export function protectMoviesFrame(frame, tap, runtime = globalThis.$scramjet) {
     const decode = value => client.unrewriteUrl(value);
     const navigate = value => {
       const url = isTopLevel && moviePage(value, client.url.href, decode);
-      if (url) client.url = url;
+      if (url) frame.go(url);
       return url;
     };
     client.Proxy('window.open', {apply(context) {
