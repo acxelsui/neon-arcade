@@ -31,3 +31,9 @@ test('only the CrazyGames duplicate is removed; original BuildNow identity, save
  assert.match(html,/window.gameInstance = unityInstance/);assert.doesNotMatch(html,/alert\(message\)/);
  const runner=await readFile(new URL('../public/game-runner.js',import.meta.url),'utf8');assert.match(runner,/allowFullscreen = true/);assert.match(runner,/prepareGameSave\(game.id/);
 });
+
+ test('an incomplete upstream game is unavailable instead of being counted as a working game',async()=>{
+ const catalog=JSON.parse(await readFile(new URL('../public/catalog.json',import.meta.url),'utf8'));
+ assert.equal(catalog.games.find(game=>game.id==='838').unavailable,true);
+ const status=await readFile(new URL('../math-tutors-main/math-tutors-main/838.html',import.meta.url),'utf8');assert.match(status,/missing its engine and data files/);
+ });

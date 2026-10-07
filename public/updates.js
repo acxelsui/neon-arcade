@@ -1,6 +1,6 @@
 // Keep newest first. Dates describe when the change was added, not when a visitor opened Home.
 export const updates = [
- {date:'2026-10-07',title:'Game loading repairs',text:'Removed the CrazyGames BuildNow.gg duplicate and repaired the original game’s split engine download. Interrupted downloads retry with a clear loading message. Fixed broken scripts in Territorial.io and Sandstone, stale helper links and Roulette Hero’s layout. Vena now explains that its source files are missing. Existing game IDs, saves, fullscreen and Neon controls stay in place.'},
+ {date:'2026-10-07',title:'Game loading repairs',text:'Removed the CrazyGames BuildNow.gg duplicate and repaired the original game’s split engine download. Interrupted downloads retry with a clear loading message. Fixed broken scripts in Territorial.io and Sandstone, stale helper links and Roulette Hero’s layout. Vena is marked unavailable because its source files are missing. Existing game IDs, saves, fullscreen and Neon controls stay in place.'},
 
  {date:'2026-10-07',title:'Movie navigation and Reload',text:'Movie links use the existing Movies frame, keeping their playback address available to the Reload control.'},
  {date:'2026-10-07',title:'Movies stay in Neon',text:'Movies blocks extra pop-up tabs from embedded players. Movie catalog and playback links stay in the Movies window, with Reload and fullscreen controls still available.'},
