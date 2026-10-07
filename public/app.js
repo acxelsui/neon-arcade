@@ -17,6 +17,7 @@ import {initShell} from './shell.js';
 import {initMusic} from './music.js';
 import './chat.js';
 import { watchFrame } from './proxy-feedback.js';
+import {protectMoviesFrame} from './movies-navigation.js';
 import { filterLibrary, bookmarkUrl } from './library-tools.js';
 import { initAppearance } from './appearance.js';
 const $=s=>document.querySelector(s);
@@ -115,9 +116,10 @@ async function openMovies(reset=false){
     const controller=await getController();
     if(!moviesFrame){
       moviesFrame=controller.createFrame();
+      protectMoviesFrame(moviesFrame,window.$scramjet.Tap.tap);
       moviesFrame.element.title='Movies — Gaiaflix';
       watchFrame(moviesFrame,message=>{status.textContent=message+' Use Reload above to retry.'},()=>{status.textContent=''});
-      moviesFrame.element.allow='autoplay; fullscreen; picture-in-picture';
+      moviesFrame.element.allow='autoplay; encrypted-media; fullscreen; picture-in-picture';
       moviesFrame.element.allowFullscreen=true;
       moviesFrame.element.addEventListener('load',()=>{if(status.textContent==='Connecting to movies…')status.textContent='' });
       $('#movies-frames').append(moviesFrame.element);
