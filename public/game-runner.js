@@ -2,6 +2,7 @@ import { watchFrame } from './proxy-feedback.js';
 import { gameTransport, GAME_ORIGIN } from './game-transport.js';
 import {createGameLoadReport} from './game-load-report.js';
 import {prepareGameSave} from './game-save-runner.js';
+import {prepareLolMod} from './lol-mod-runner.js';
 const status = document.querySelector('#status');
 const report=createGameLoadReport({gameId:new URLSearchParams(location.search).get('id')});
 let failed=false;
@@ -18,6 +19,7 @@ try {
   const saveReady=await prepareGameSave(game.id,status);
   if(saveReady!==false){
   slow=setTimeout(()=>showFailure('This game is taking longer than expected. You can retry or return to Games.','slow','timeout'),45000);
+  const mod=game.id==='58'?await prepareLolMod():null;
   const controller = await initBootstrap(transport => gameTransport(transport, location.origin));
   const frame = controller.createFrame();
   watchFrame(frame,message=>{clearTimeout(slow);showFailure(message,'failed',message.includes('error (')?'http':'network')},()=>{clearTimeout(slow);failed=false;status.hidden=true;report('loaded')});
@@ -27,6 +29,7 @@ try {
   frame.element.setAttribute('sandbox', 'allow-scripts allow-same-origin allow-forms allow-pointer-lock allow-downloads allow-modals');
   frame.element.addEventListener('load', () => { if(!failed && frame.element.src) {clearTimeout(slow);status.hidden = true;} });
   document.body.append(frame.element);
+  mod?.attach(frame);
   frame.go(new URL(game.url, GAME_ORIGIN).href);
   }
 } catch (error) {

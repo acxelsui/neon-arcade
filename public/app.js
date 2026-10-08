@@ -3,6 +3,7 @@ import {createYouTubeSearch} from './youtube-search.js';
 import {initRemoteAccess} from './remote-access.js';
 import {initMessageToasts} from './message-notifications.js';
 import {initGameSidePanel} from './game-side-panel.js';
+import {initLolModMenu} from './lol-mod-menu.js';
 import {setWallpaperMedia,whenWallpaperVisible} from './wallpaper-media.js';
 import {initAnnouncementBanner} from './announcements.js';
 import {initCommunityChat} from './community-chat.js';
@@ -175,3 +176,4 @@ initMembers();
 initCommunityChat();
 
 initAnnouncementBanner();initMessageToasts();initGameSidePanel({showPage});
+initLolModMenu({check:()=>remoteAccess.verify(),isAllowed:()=>remoteAccess.isAllowed()});

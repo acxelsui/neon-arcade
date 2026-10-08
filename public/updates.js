@@ -1,5 +1,6 @@
 // Keep newest first. Dates describe when the change was added, not when a visitor opened Home.
 export const updates = [
+ {date:'2026-10-07',title:'Owner-only 1v1.LOL script controls',text:'The supplied script has a transparent Hacks panel in 1v1.LOL’s Neon menu for verified owner accounts. ESP highlights, wireframe and experimental aiming start off, with All off and Refresh controls. The advertising redirect is removed; incompatible shaders retain their original rendering. The script does not include silent aim, hitbox changes or hit-chance control.'},
  {date:'2026-10-07',title:'Game loading repairs',text:'Removed the CrazyGames BuildNow.gg duplicate and repaired the original game’s split engine download. Interrupted downloads retry with a clear loading message. Fixed broken scripts in Territorial.io and Sandstone, stale helper links and Roulette Hero’s layout. Vena is marked unavailable because its source files are missing. Existing game IDs, saves, fullscreen and Neon controls stay in place.'},
 
  {date:'2026-10-07',title:'Movie navigation and Reload',text:'Movie links use the existing Movies frame, keeping their playback address available to the Reload control.'},
