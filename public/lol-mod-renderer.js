@@ -1,5 +1,6 @@
 // Adapted from GodlySpinxx's supplied 1v1.LOL userscript v0.6.
-// This changes rendering and attempts mouse aiming. It does not change shots,
+// This changes rendering only. Unverified screen shapes must never move the
+// camera; they are not player identities. It does not change shots,
 // hitboxes, game saves, accounts, or network traffic.
 export function installLolRenderer({win=window,notify=()=>{}}) {
  const doc=win.document,proto=win.WebGL2RenderingContext?.prototype;
@@ -110,10 +111,6 @@ export function installLolRenderer({win=window,notify=()=>{}}) {
     if(!selected)motion=createLolMotion();tracked=selected;
    }
    paintTracers(canvas);
-   if(state.aim&&tracked&&elapsed){
-    const delta=motion.step(tracked,elapsed,state.smoothing);
-    if(delta.x||delta.y){const move=new win.MouseEvent('mousemove',{bubbles:true});Object.defineProperties(move,{movementX:{value:delta.x},movementY:{value:delta.y}});canvas.dispatchEvent(move);}
-   }
    break;
   }
   if(!active)clearTracking();
@@ -124,7 +121,7 @@ export function installLolRenderer({win=window,notify=()=>{}}) {
  });
  notify('installed');
  return {
-  settings(next){if(!permitted)return;reset();for(const key of ['aim','esp','wireframe','tracers'])state[key]=next?.[key]===true;state.smoothing=Number.isFinite(next?.smoothing)?Math.min(100,Math.max(1,next.smoothing)):70;},
+  settings(next){if(!permitted)return;reset();for(const key of ['esp','wireframe','tracers'])state[key]=next?.[key]===true;state.smoothing=Number.isFinite(next?.smoothing)?Math.min(100,Math.max(1,next.smoothing)):70;},
   revoke(){if(!permitted)return;permitted=false;reset();overlay?.remove();overlay=null;patches.reverse().forEach(restore=>restore());notify('revoked');}
  };
 }

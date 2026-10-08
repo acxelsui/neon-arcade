@@ -3,6 +3,41 @@ import assert from 'node:assert/strict';
 import {attachLolMod,prepareLolMod} from '../public/lol-mod-runner.js';
 import {installLolRenderer,detectLolTargets,selectLolTarget,createLolMotion} from '../public/lol-mod-renderer.js';
 import {validLolModRequest,initLolModMenu} from '../public/lol-mod-menu.js';
+import {getLolModGame} from '../public/lol-mod-games.js';
+
+test('owner effects are limited to the two exact local game documents',()=>{
+ assert.equal(getLolModGame('58').path,'/games/58.html');assert.equal(getLolModGame('581').path,'/games/581-f.html');
+ for(const id of ['581-f','582','__proto__','constructor',null])assert.equal(getLolModGame(id),null);
+ let callback;const hooked=[],mod={allowed:true,gameId:'581'};
+ attachLolMod({hooks:{init:{post:{}}}},mod,{Tap:{tap(_,fn){callback=fn;}},install({win}){hooked.push(win);return {revoke(){}};}});
+ for(const [url,isTopLevel] of [['https://games.neon-arcade.invalid/games/58.html',true],['https://games.neon-arcade.invalid/games/581.html',true],['https://external.example/games/581-f.html',true],['https://games.neon-arcade.invalid/games/581-f.html',false]])callback({client:{url:new URL(url)},isTopLevel,window:{}});
+ assert.equal(hooked.length,0);const win={};callback({client:{url:new URL('https://games.neon-arcade.invalid/games/581-f.html')},isTopLevel:true,window:win});assert.deepEqual(hooked,[win]);
+});
+
+test('BuildNow authorization and renderer commands cannot be replayed from the 1v1 game',async()=>{
+ const handlers=new Set(),messages=[];const parent={location:{origin:'https://arcade.example'},postMessage:data=>messages.push(data)};
+ const win={parent,addEventListener:(_,fn)=>handlers.add(fn),removeEventListener:(_,fn)=>handlers.delete(fn)};
+ const pending=prepareLolMod({gameId:'581',win,origin:parent.location.origin,setTimer:()=>1,clearTimer(){}}),request=messages[0];
+ assert.equal(request.gameId,'581');const reply={...request,action:'authorization',allowed:true};
+ for(const fn of [...handlers])fn({source:parent,origin:parent.location.origin,data:{...reply,gameId:'58'}});assert.equal(handlers.size,1);
+ for(const fn of [...handlers])fn({source:parent,origin:parent.location.origin,data:reply});const mod=await pending;assert.equal(mod.gameId,'581');
+ const settings=[];let revoked=0;mod.renderer={settings:next=>settings.push(next),revoke:()=>revoked++};
+ for(const fn of handlers)fn({source:parent,origin:parent.location.origin,data:{channel:request.channel,gameId:'58',action:'settings',settings:{esp:true}}});assert.equal(settings.length,0);
+ for(const fn of handlers)fn({source:parent,origin:parent.location.origin,data:{channel:request.channel,gameId:'581',action:'settings',settings:{esp:true}}});assert.deepEqual(settings,[{esp:true}]);
+ for(const fn of handlers)fn({source:parent,origin:parent.location.origin,data:{channel:request.channel,gameId:'581',action:'revoke'}});assert.equal(revoked,1);assert.equal(mod.allowed,false);
+ assert.equal(await prepareLolMod({gameId:'582',win,origin:parent.location.origin}),null);
+});
+
+test('BuildNow gets its own owner title, visual readiness and a disabled drift-prone aim control',async()=>{
+ const f=menuFixture(),walk=el=>[el,...(el.children||[]).flatMap(walk)];f.events['neon-game']({detail:{id:'581'}});
+ const find=predicate=>walk(f.section).find(predicate);assert.equal(f.section.hidden,false);assert.equal(find(el=>el.className==='lol-mod-subtitle').textContent,'BuildNow.gg · Owner workspace');
+ const report=(gameId,status)=>f.events.message({source:f.source,origin:f.win.location.origin,data:{channel:'neon-lol-mod-v1',gameId,action:'status',status}});
+ await report('58','supported');const tracer=find(el=>el.attrs?.['aria-label']==='Tracers');assert.equal(tracer.disabled,true);
+ await report('581','supported');assert.equal(tracer.disabled,false);assert.equal(find(el=>el.attrs?.['aria-label']==='Aimbot · unavailable').disabled,true);
+ tracer.checked=true;tracer.onchange();assert.equal(f.sent.at(-1).gameId,'581');assert.equal(f.sent.at(-1).settings.aim,false);
+ const request={source:f.source,origin:f.win.location.origin,data:{channel:'neon-lol-mod-v1',gameId:'581',action:'authorize',requestId:crypto.randomUUID()}};
+ const authorizing=f.events.message(request);f.events['neon-game']({detail:{id:'58'}});f.finish(true);await authorizing;assert.equal(f.sent.filter(data=>data.action==='authorization').length,0,'a late authorization does not reach another game');
+});
 
 test('only the verified top-level 1v1 frame receives hooks; game responses, proxy URLs and saves are untouched',()=>{
  let callback,installed=0;const mod={allowed:true},frame={hooks:{init:{post:{}}}};
@@ -48,7 +83,8 @@ test('verified owners get controls, role loss disables effects and late authoriz
  const event={source:f.source,origin:f.win.location.origin,data:{channel:'neon-lol-mod-v1',gameId:'58',action:'authorize',requestId:crypto.randomUUID()}};
  const pending=f.events.message(event);f.setAllowed(false);f.events['neon-owner-access']({detail:false});assert.equal(f.section.hidden,true);assert.equal(f.sent.at(-1).action,'revoke');f.finish(true);await pending;assert.equal(f.sent.at(-1).allowed,false);
  f.setAllowed(true);f.events['neon-owner-access']({detail:true});assert.equal(f.section.hidden,false);
- f.events['neon-game']({detail:{id:'581'}});assert.equal(f.section.hidden,true);
+ f.events['neon-game']({detail:{id:'581'}});assert.equal(f.section.hidden,false);
+ f.events['neon-game']({detail:{id:'582'}});assert.equal(f.section.hidden,true);
 });
 test('control sections support keyboard navigation, and All off clears switches across hidden sections',()=>{
  const f=menuFixture();f.events['neon-game']({detail:{id:'58'}});
@@ -58,9 +94,10 @@ test('control sections support keyboard navigation, and All off clears switches 
  let prevented=false;aim.onkeydown({key:'ArrowRight',preventDefault(){prevented=true;}});assert.equal(prevented,true);assert.equal(visuals.focused,true);assert.equal(aimPage.hidden,true);assert.equal(visualPage.hidden,false);assert.equal(aim.attrs.tabindex,'-1');
  visuals.onkeydown({key:'Home',preventDefault(){}});assert.equal(aimPage.hidden,false);assert.equal(visualPage.hidden,true);
  const report=status=>f.events.message({source:f.source,origin:f.win.location.origin,data:{channel:'neon-lol-mod-v1',gameId:'58',action:'status',status}});
- report('supported');const tracer=find(el=>el.attrs?.['aria-label']==='Tracers'),aimInput=find(el=>el.attrs?.['aria-label']==='Aimbot · experimental'),count=find(el=>el.className==='lol-mod-count');
- tracer.checked=true;tracer.onchange();aimInput.checked=true;aimInput.onchange();assert.equal(count.textContent,'2 enabled');assert.equal(f.sent.at(-1).settings.tracers,true);
- find(el=>el.textContent==='All off').click();assert.equal(count.textContent,'0 enabled');assert.equal(tracer.checked,false);assert.equal(aimInput.checked,false);assert.equal(f.sent.at(-1).settings.aim,false);assert.equal(f.sent.at(-1).settings.tracers,false);
+ report('supported');const tracer=find(el=>el.attrs?.['aria-label']==='Tracers'),esp=find(el=>el.attrs?.['aria-label']==='ESP highlights'),aimInput=find(el=>el.attrs?.['aria-label']==='Aimbot · unavailable'),count=find(el=>el.className==='lol-mod-count');
+ assert.equal(aimInput.disabled,true);assert.equal(find(el=>el.attrs?.['aria-label']==='Aim smoothness').disabled,true);
+ tracer.checked=true;tracer.onchange();esp.checked=true;esp.onchange();assert.equal(count.textContent,'2 enabled');assert.equal(f.sent.at(-1).settings.tracers,true);
+ find(el=>el.textContent==='All off').click();assert.equal(count.textContent,'0 enabled');assert.equal(tracer.checked,false);assert.equal(esp.checked,false);assert.equal(aimInput.checked,false);assert.equal(f.sent.at(-1).settings.aim,false);assert.equal(f.sent.at(-1).settings.tracers,false);
  f.section.children[0].click();assert.equal(f.section.children[1].hidden,false);find(el=>el.attrs?.['aria-label']==='Collapse owner controls').click();assert.equal(f.section.children[1].hidden,true);assert.equal(f.section.children[0].focused,true);
 });
 test('renderer leaves ordinary draw calls untouched when off, recovers bad shaders and restores hooks on revocation',()=>{
@@ -135,7 +172,7 @@ test('tracers are visual only, GPU scans are throttled, and focus loss or revoca
  gl.shaderSource(vertex,'#version 300 es\nvoid main(){gl_Position=vec4(1.0);}');gl.shaderSource(fragment,'#version 300 es\nout vec4 SV_Target0;void main(){SV_Target0=vec4(1.0);}');gl.linkProgram({shaders:[vertex,fragment]});
  const tick=now=>{win.requestAnimationFrame(()=>{});raf(now);};
  renderer.settings({tracers:true});tick(0);tick(16);tick(32);assert.equal(reads,1);assert.equal(moves,0);assert.ok(lines>0);assert.equal(overlays.length,1);assert.equal(overlays[0].hidden,false);
- tick(48);assert.equal(reads,2);renderer.settings({aim:true,tracers:true});tick(64);tick(80);assert.ok(moves>0);
+ tick(48);assert.equal(reads,2);renderer.settings({aim:true,tracers:true});tick(64);tick(80);assert.equal(moves,0,'unverified shapes never move the camera, even if a stale client sends aim:true');
  doc.pointerLockElement=null;tick(96);assert.equal(overlays[0].hidden,true);const oldReads=reads;tick(112);assert.equal(reads,oldReads);
  doc.pointerLockElement=canvas;renderer.settings({});tick(128);assert.equal(reads,oldReads);
  renderer.revoke();assert.equal(overlays[0].removed,true);
