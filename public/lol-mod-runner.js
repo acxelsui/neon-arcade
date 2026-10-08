@@ -7,7 +7,7 @@ export function attachLolMod(frame,mod,{Tap=window.$scramjet.Tap,install=install
   if(!mod.allowed||!context.isTopLevel||context.client.url.origin!==GAME_ORIGIN||context.client.url.pathname!==game.path)return;
   // Use the controller's native initialization hook. The proxied game's
   // parent/top isolation, cookies, saves and transport are never relaxed.
-  mod.renderer?.revoke();mod.renderer=install({win:context.window,notify});
+  mod.renderer?.revoke();mod.renderer=install({win:context.window,notify,gameId:game.id});
  });
 }
 export async function prepareLolMod({gameId='58',win=window,origin=location.origin,setTimer=setTimeout,clearTimer=clearTimeout}={}){

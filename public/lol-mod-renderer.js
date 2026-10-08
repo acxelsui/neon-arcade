@@ -1,15 +1,25 @@
 // Adapted from GodlySpinxx's supplied 1v1.LOL userscript v0.6.
-// This changes rendering only. Unverified screen shapes must never move the
-// camera; they are not player identities. It does not change shots,
-// hitboxes, game saves, accounts, or network traffic.
-export function installLolRenderer({win=window,notify=()=>{}}) {
+// Camera assistance uses separate native character adapters for each game.
+// Unknown geometry must never move the camera. Visual/camera adapters do
+// not edit hitboxes, game saves, accounts, or network traffic. The separate verified
+// shot hook redirects only local shot rays when owners enable it.
+import {createLolActorMatcher,createBuildNowActorMatcher} from './lol-actor-signatures.js';
+import {createLolNativeCamera} from './lol-native-camera.js';
+import {createBuildNowNativeCamera} from './buildnow-native-camera.js';
+import {installLolSilentShot} from './lol-silent-shot.js';
+import {createGameStretch} from './game-stretch.js';
+export function installLolRenderer({win=window,notify=()=>{},gameId=null,actorMatcher=gameId==='58'?createLolActorMatcher():gameId==='581'?createBuildNowActorMatcher():null}) {
  const doc=win.document,proto=win.WebGL2RenderingContext?.prototype;
- let permitted=true,state={aim:false,esp:false,wireframe:false,tracers:false,smoothing:70},supported=false;
- const patches=[],contexts=new Map(),shaders=new WeakMap(),locations=new WeakMap(),programs=new WeakMap();
- if(!proto){notify('unsupported');return;}
+ let permitted=true,state={stretch:false,stretchAmount:125,aim:false,silent:false,silentChance:90,esp:false,wireframe:false,tracers:false,smoothing:70,fovEnabled:false,fov:75,range:30},supported=false;
+ const shots=['58','581'].includes(gameId)?installLolSilentShot(win,{notify,gameId}):null;
+ const camera=gameId==='58'?createLolNativeCamera(win,{notify,shots}):gameId==='581'?createBuildNowNativeCamera(win,{notify,shots}):null;
+ const stretch=createGameStretch(doc,{gameId,getModule:()=>win.gameInstance?.Module});
+ const patches=[],contexts=new Map(),shaders=new WeakMap(),locations=new WeakMap(),programs=new WeakMap(),buffers=new WeakMap();
+ let actorReady=false,actorSeenThisFrame=false,lastProcessedFrame=null,cameraFailed=false;
+ if(!proto){shots?.revoke();notify('unsupported');return;}
  const native={};for(const name of ['shaderSource','compileShader','linkProgram','getUniformLocation','uniform4fv','drawElements','useProgram','uniform1i','uniform1f'])native[name]=proto[name];
  const vertexCode='\nneonModDepth=gl_Position.z; if(neonModEnabled && neonModDepth>neonModThreshold){gl_Position.z=1.0;}\n';
- const fragmentCode='\nif(neonModEnabled && neonModDepth>neonModThreshold){SV_Target0=vec4(1.0,0.0,0.0,1.0);}\n';
+ const fragmentCode=actorMatcher?'\nif(neonModEnabled && neonModDepth>neonModThreshold){SV_Target0=vec4(1.0,0.0,1.0,1.0);}\n':'\nif(neonModEnabled && neonModDepth>neonModThreshold){SV_Target0=vec4(1.0,0.0,0.0,1.0);}\n';
  function rewrite(source,vertex){
   if(!/^\s*#version\s+300\s+es\b/.test(source)||(!vertex&&!source.includes('SV_Target0')))return null;
   const match=/void\s+main\s*\([^)]*\)\s*\{/.exec(source);if(!match)return null;
@@ -22,6 +32,33 @@ export function installLolRenderer({win=window,notify=()=>{}}) {
   return source.slice(0,match.index)+declarations+source.slice(match.index,start)+body+code+source.slice(end-1);
  }
  function patch(object,key,handler){const original=object[key];const wrapped=new Proxy(original,{apply:handler});object[key]=wrapped;patches.push(()=>{if(object[key]===wrapped)object[key]=original;});}
+ function bytesOf(source,start=0,length){
+  if(ArrayBuffer.isView(source)){const size=source.BYTES_PER_ELEMENT||1,offset=start*size;return new Uint8Array(source.buffer,source.byteOffset+offset,(length===undefined?source.byteLength-offset:length*size));}
+  if(source instanceof ArrayBuffer)return new Uint8Array(source);return null;
+ }
+ if(actorMatcher&&typeof proto.bufferData==='function'&&typeof proto.bufferSubData==='function'){
+  patch(proto,'bufferData',(target,gl,args)=>{
+   const result=Reflect.apply(target,gl,args);if(args[0]!==gl.ELEMENT_ARRAY_BUFFER)return result;
+   const buffer=gl.getParameter(gl.ELEMENT_ARRAY_BUFFER_BINDING);if(!buffer)return result;
+   const bytes=bytesOf(args[1],args[3],args[4]),size=bytes?.byteLength??(typeof args[1]==='number'?args[1]:0);
+   if(size>0&&size<=4*1024*1024)buffers.set(buffer,{bytes:bytes?new Uint8Array(bytes):new Uint8Array(size),cache:new Map()});else buffers.delete(buffer);
+   return result;
+  });
+  patch(proto,'bufferSubData',(target,gl,args)=>{
+   const result=Reflect.apply(target,gl,args);if(args[0]!==gl.ELEMENT_ARRAY_BUFFER)return result;
+   const record=buffers.get(gl.getParameter(gl.ELEMENT_ARRAY_BUFFER_BINDING)),bytes=bytesOf(args[2],args[3],args[4]);
+   if(record&&bytes&&args[1]>=0&&args[1]+bytes.byteLength<=record.bytes.length){record.bytes.set(bytes,args[1]);record.cache.clear();}
+   return result;
+  });
+ }
+ function isActor(gl,args){
+  if(!actorMatcher)return false;
+  const size=args[2]===gl.UNSIGNED_SHORT?2:args[2]===gl.UNSIGNED_INT?4:0,length=args[1]*size,offset=args[3];
+  if(!size||!actorMatcher.acceptsLength(length))return false;
+  const record=buffers.get(gl.getParameter(gl.ELEMENT_ARRAY_BUFFER_BINDING));if(!record||offset<0||offset+length>record.bytes.length)return false;
+  const key=offset+':'+length;if(!record.cache.has(key))record.cache.set(key,actorMatcher.matches(record.bytes.subarray(offset,offset+length)));
+  return record.cache.get(key);
+ }
  patch(proto,'shaderSource',(target,gl,args)=>{
   const [shader,source]=args;const vertex=gl.getShaderParameter(shader,gl.SHADER_TYPE)===gl.VERTEX_SHADER;
   const modified=permitted?rewrite(source,vertex):null;
@@ -55,7 +92,7 @@ export function installLolRenderer({win=window,notify=()=>{}}) {
   return Reflect.apply(target,gl,args);
  });
  function reset(){
-  state={aim:false,esp:false,wireframe:false,tracers:false,smoothing:70};
+  state={stretch:false,stretchAmount:125,aim:false,silent:false,silentChance:90,esp:false,wireframe:false,tracers:false,smoothing:70,fovEnabled:false,fov:75,range:30};camera?.reset();stretch.reset();
   targets=[];tracked=null;motion=createLolMotion();lastScan=-Infinity;lastFrame=null;
   if(overlay)overlay.hidden=true;
   for(const [gl,list] of contexts){if(gl.isContextLost())continue;const current=gl.getParameter(gl.CURRENT_PROGRAM);
@@ -64,17 +101,18 @@ export function installLolRenderer({win=window,notify=()=>{}}) {
   }
  }
  patch(proto,'drawElements',(target,gl,args)=>{
-  if(!permitted||(!state.aim&&!state.esp&&!state.wireframe&&!state.tracers))return Reflect.apply(target,gl,args);
+  if(!permitted||(!state.esp&&!state.wireframe&&(!state.tracers||camera)))return Reflect.apply(target,gl,args);
   const program=gl.getParameter(gl.CURRENT_PROGRAM),info=program&&programs.get(program);
   if(info){
-   const candidate=args[1]>4000&&!info.ui;
-   if(info.enabled!==null)native.uniform1i.call(gl,info.enabled,Number((state.esp||state.aim||state.tracers)&&candidate));
+   const verified=actorMatcher&&isActor(gl,args),candidate=actorMatcher?verified:args[1]>4000&&!info.ui;
+   if(verified&&info.enabled!==null){actorSeenThisFrame=true;if(!actorReady){actorReady=true;notify('actor-ready');}}
+   if(info.enabled!==null)native.uniform1i.call(gl,info.enabled,Number((state.esp||(!camera&&state.tracers))&&candidate));
    if(info.threshold!==null)native.uniform1f.call(gl,info.threshold,4.5);
    if(state.wireframe&&!info.ui&&args[1]>6)args=[gl.LINES,...args.slice(1)];
   }return Reflect.apply(target,gl,args);
  });
- // One small GPU read at most 25 times/second, rather than the supplied script's
- // 300x300 allocation and GPU read for every potential-player draw call.
+ // One reusable GPU read at most 25 times/second, rather than allocating and
+ // reading pixels again for every potential-player draw call.
  let lastScan=-Infinity,lastFrame=null,pixels=null,targets=[],tracked=null,motion=createLolMotion(),overlay=null;
  function clearTracking(){if(targets.length||tracked)motion=createLolMotion();targets=[];tracked=null;if(overlay)overlay.hidden=true;}
  function paintTracers(canvas){
@@ -93,13 +131,20 @@ export function installLolRenderer({win=window,notify=()=>{}}) {
  }
  function glSize(canvas,axis){return Math.max(1,axis==='width'?canvas.width:canvas.height);}
  function aim(now){
+  if(now===lastProcessedFrame)return;lastProcessedFrame=now;
   const elapsed=lastFrame===null?0:Math.max(0,Math.min(50,now-lastFrame));lastFrame=now;
-  if(!permitted||(!state.aim&&!state.tracers)||!supported||doc.hidden){clearTracking();return;}
+  if(camera&&permitted){
+   if(cameraFailed){clearTracking();return;}
+   const canvas=[...contexts.keys()].map(gl=>gl.canvas).find(canvas=>canvas.isConnected);stretch.step(canvas);
+   targets=camera.step({now,elapsed,aim:state.aim,tracers:state.tracers,silent:state.silent,silentChance:state.silentChance,smoothing:state.smoothing,range:state.range,fov:state.fovEnabled?state.fov:null,canvas});
+   if(canvas)paintTracers(canvas);actorSeenThisFrame=false;return;
+  }
+  if(!permitted||(!state.aim&&!state.tracers)||!supported||doc.hidden||(doc.hasFocus&& !doc.hasFocus())){actorSeenThisFrame=false;clearTracking();return;}
   let active=false;
   for(const [gl] of contexts){
    const canvas=gl.canvas;if(!canvas.isConnected||gl.isContextLost()||!(doc.pointerLockElement===canvas||canvas.style.cursor==='none'))continue;
    active=true;
-   const size=Math.min(144,gl.drawingBufferWidth,gl.drawingBufferHeight);if(size<1)continue;
+   const size=Math.min(actorMatcher?320:144,gl.drawingBufferWidth,gl.drawingBufferHeight);if(size<1)continue;
    if(now-lastScan>=40){
     lastScan=now;
     if(!pixels||pixels.length!==size*size*4)pixels=new Uint8Array(size*size*4);
@@ -107,30 +152,31 @@ export function installLolRenderer({win=window,notify=()=>{}}) {
     if(gl.getParameter(gl.FRAMEBUFFER_BINDING)!==null){clearTracking();break;}
     const pack=gl.getParameter(gl.PIXEL_PACK_BUFFER_BINDING);if(pack)gl.bindBuffer(gl.PIXEL_PACK_BUFFER,null);
     try{gl.readPixels(x,y,size,size,gl.RGBA,gl.UNSIGNED_BYTE,pixels);}finally{if(pack)gl.bindBuffer(gl.PIXEL_PACK_BUFFER,pack);}
-    targets=detectLolTargets(pixels,size);const selected=selectLolTarget(targets,tracked);
+    targets=actorMatcher&&!actorSeenThisFrame?[]:detectLolTargets(pixels,size,actorMatcher?'magenta':'red');const selected=selectLolTarget(targets,tracked);
     if(!selected)motion=createLolMotion();tracked=selected;
    }
    paintTracers(canvas);
    break;
   }
+  actorSeenThisFrame=false;
   if(!active)clearTracking();
  }
  patch(win,'requestAnimationFrame',(target,receiver,args)=>{
   const callback=args[0];if(typeof callback!=='function')return Reflect.apply(target,receiver,args);
-  return Reflect.apply(target,receiver,[function(now){const result=callback.call(this,now);try{aim(now);}catch{state.aim=false;state.tracers=false;clearTracking();notify('aim-error');}return result;}]);
+  return Reflect.apply(target,receiver,[function(now){const result=callback.call(this,now);try{aim(now);}catch(error){cameraFailed=true;win.console?.warn('Neon camera controls paused:',error);state.aim=false;state.tracers=false;state.fovEnabled=false;camera?.reset();clearTracking();notify('aim-error');}return result;}]);
  });
  notify('installed');
  return {
-  settings(next){if(!permitted)return;reset();for(const key of ['esp','wireframe','tracers'])state[key]=next?.[key]===true;state.smoothing=Number.isFinite(next?.smoothing)?Math.min(100,Math.max(1,next.smoothing)):70;},
-  revoke(){if(!permitted)return;permitted=false;reset();overlay?.remove();overlay=null;patches.reverse().forEach(restore=>restore());notify('revoked');}
+  settings(next){if(!permitted)return;stretch.settings(next);for(const key of ['esp','wireframe','tracers'])state[key]=next?.[key]===true;state.aim=!!camera&&next?.aim===true;state.silent=!!shots&&next?.silent===true;state.silentChance=Number.isFinite(next?.silentChance)?Math.min(100,Math.max(1,Math.round(next.silentChance))):90;if(state.silent)state.aim=false;else shots?.clear();state.range=Number.isFinite(next?.range)?Math.max(5,Math.min(60,next.range)):30;state.fovEnabled=!!camera&&next?.fovEnabled===true;state.fov=Number.isFinite(next?.fov)?Math.max(40,Math.min(110,next.fov)):75;state.smoothing=Number.isFinite(next?.smoothing)?Math.min(100,Math.max(1,next.smoothing)):70;if(!state.aim&&!state.tracers)clearTracking();},
+  revoke(){if(!permitted)return;permitted=false;reset();camera?.revoke();shots?.revoke();stretch.revoke();overlay?.remove();overlay=null;patches.reverse().forEach(restore=>restore());notify('revoked');}
  };
 }
 
 // Conservative screen-space components, not game entities. These bounds reject
 // tiny pixels and broad surfaces but cannot prove that a shape is a character.
-export function detectLolTargets(pixels,size){
+export function detectLolTargets(pixels,size,marker='red'){
  const seen=new Uint8Array(size*size),queue=new Int32Array(size*size),targets=[];
- const marked=p=>pixels[p*4]===255&&pixels[p*4+1]===0&&pixels[p*4+2]===0&&pixels[p*4+3]===255;
+ const marked=p=>pixels[p*4]===255&&pixels[p*4+1]===0&&pixels[p*4+2]===(marker==='magenta'?255:0)&&pixels[p*4+3]===255;
  for(let p=0;p<seen.length;p++){
   if(seen[p]||!marked(p))continue;
   let head=0,tail=1,count=0,sx=0,sy=0,minX=size,minY=size,maxX=0,maxY=0;queue[0]=p;seen[p]=1;
@@ -140,7 +186,7 @@ export function detectLolTargets(pixels,size){
   }
   const width=maxX-minX+1,height=maxY-minY+1;
   if(count<8||count>size*size*.3||width>size*.55||height<4||width>height*1.8||minX===0||maxX===size-1||minY===0||maxY===size-1)continue;
-  targets.push({x:sx/count-size/2,y:size/2-sy/count,count});
+  targets.push({x:sx/count-size/2,y:marker==='magenta'?size/2-(maxY-Math.max(1,height*.22)):size/2-sy/count,count});
  }
  return targets.sort((a,b)=>Math.hypot(a.x,a.y)-Math.hypot(b.x,b.y));
 }
@@ -153,8 +199,8 @@ export function createLolMotion(){
  let vx=0,vy=0;
  return {step(target,elapsed,smoothing=70){
   if(!target||Math.hypot(target.x,target.y)<=2){vx=vy=0;return {x:0,y:0};}
-  const dt=Math.max(0,Math.min(50,elapsed))/1000,tau=.025+Math.min(100,Math.max(1,smoothing))*.0015,alpha=1-Math.exp(-dt/tau);
-  const cap=Math.min(1,180/Math.max(1,Math.hypot(target.x,target.y)*3.75)),tx=target.x*3.75*cap,ty=target.y*3.75*cap;
+  const dt=Math.max(0,Math.min(50,elapsed))/1000,tau=.015+Math.min(100,Math.max(1,smoothing))*.0009,alpha=1-Math.exp(-dt/tau);
+  const cap=Math.min(1,720/Math.max(1,Math.hypot(target.x,target.y)*7.5)),tx=target.x*7.5*cap,ty=target.y*7.5*cap;
   const delta={x:tx*dt+(vx-tx)*tau*alpha,y:ty*dt+(vy-ty)*tau*alpha};vx+=(tx-vx)*alpha;vy+=(ty-vy)*alpha;return delta;
  }};
 }

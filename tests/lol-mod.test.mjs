@@ -4,6 +4,36 @@ import {attachLolMod,prepareLolMod} from '../public/lol-mod-runner.js';
 import {installLolRenderer,detectLolTargets,selectLolTarget,createLolMotion} from '../public/lol-mod-renderer.js';
 import {validLolModRequest,initLolModMenu} from '../public/lol-mod-menu.js';
 import {getLolModGame} from '../public/lol-mod-games.js';
+import {createLolActorMatcher} from '../public/lol-actor-signatures.js';
+import {readFileSync} from 'node:fs';
+
+test('character fingerprints recognize the original zombie index buffer and reject modified geometry',()=>{
+ const bytes=new Uint8Array(readFileSync(new URL('./fixtures/lol-zombie-indices.bin',import.meta.url))),matcher=createLolActorMatcher();
+ assert.equal(matcher.matches(bytes),true);assert.equal(matcher.acceptsLength(bytes.length),true);
+ const changed=bytes.slice();changed[350]^=1;assert.equal(matcher.matches(changed),false);
+ assert.equal(matcher.matches(new Uint8Array(bytes.length)),false);assert.equal(matcher.matches(bytes.subarray(2)),false);
+});
+
+test('character highlights never synthesize mouse movement when the native camera is unavailable',()=>{
+ let raf,reads=0;const moves=[],reports=[],buffer={},indices=new Uint8Array(readFileSync(new URL('./fixtures/lol-zombie-indices.bin',import.meta.url)));
+ const canvas={isConnected:true,width:144,height:144,style:{},getBoundingClientRect:()=>({left:0,top:0,width:288,height:288}),dispatchEvent:event=>moves.push(event)};
+ const doc={pointerLockElement:canvas,hidden:false,hasFocus:()=>true};
+ class GL{
+  constructor(){Object.assign(this,{SHADER_TYPE:1,VERTEX_SHADER:2,COMPILE_STATUS:3,CURRENT_PROGRAM:4,FRAMEBUFFER_BINDING:5,PIXEL_PACK_BUFFER_BINDING:6,ELEMENT_ARRAY_BUFFER:7,ELEMENT_ARRAY_BUFFER_BINDING:8,UNSIGNED_SHORT:9,UNSIGNED_INT:10,TRIANGLES:11,drawingBufferWidth:144,drawingBufferHeight:144,canvas});}
+  shaderSource(){}compileShader(){}getShaderParameter(shader,key){return key===1?shader.type:true;}linkProgram(){}getAttachedShaders(p){return p.shaders;}getProgramParameter(){return true;}
+  getUniformLocation(program,name){return {program,name};}uniform4fv(){}drawElements(){}useProgram(p){this.current=p;}uniform1i(){}uniform1f(){}bufferData(){}bufferSubData(){}
+  getParameter(key){return key===4?this.current:key===8?buffer:null;}isContextLost(){return false;}isProgram(){return true;}
+  readPixels(x,y,w,h,format,type,pixels){reads++;pixels.fill(0);for(let y=80;y<100;y++)for(let x=86;x<96;x++)pixels.set([255,0,255,255],(y*144+x)*4);}
+ }
+ const win={document:doc,WebGL2RenderingContext:GL,requestAnimationFrame(fn){raf=fn;},MouseEvent:class{constructor(type,init){this.type=type;Object.assign(this,init);}}};
+ const renderer=installLolRenderer({win,gameId:'58',notify:s=>reports.push(s)}),gl=new GL(),vertex={type:2},fragment={type:0};
+ gl.shaderSource(vertex,'#version 300 es\nvoid main(){gl_Position=vec4(1.0);}');gl.shaderSource(fragment,'#version 300 es\nout vec4 SV_Target0;void main(){SV_Target0=vec4(1.0);}');const program={shaders:[vertex,fragment]};gl.linkProgram(program);gl.useProgram(program);
+ const tick=now=>{win.requestAnimationFrame(()=>gl.drawElements(gl.TRIANGLES,indices.length/2,gl.UNSIGNED_SHORT,0));raf(now);};
+ renderer.settings({aim:true});gl.bufferData(gl.ELEMENT_ARRAY_BUFFER,new Uint8Array(indices.length),0);tick(0);tick(40);assert.equal(moves.length,0,'large unknown geometry never steers');
+ gl.bufferData(gl.ELEMENT_ARRAY_BUFFER,indices,0);renderer.settings({aim:true,esp:true});tick(80);tick(96);assert.equal(moves.length,0);assert.equal(reports.includes('actor-ready'),true);assert.equal(reads,0,'native lock does not stall the GPU for pixel targeting');
+ Object.defineProperty(win,'gameInstance',{get(){throw new Error('engine disappeared');}});tick(120);tick(140);tick(160);assert.equal(reports.filter(s=>s==='aim-error').length,1,'a broken camera pauses once rather than retrying every frame');
+ renderer.revoke();tick(280);assert.equal(moves.length,0);
+});
 
 test('owner effects are limited to the two exact local game documents',()=>{
  assert.equal(getLolModGame('58').path,'/games/58.html');assert.equal(getLolModGame('581').path,'/games/581-f.html');
@@ -28,12 +58,14 @@ test('BuildNow authorization and renderer commands cannot be replayed from the 1
  assert.equal(await prepareLolMod({gameId:'582',win,origin:parent.location.origin}),null);
 });
 
-test('BuildNow gets its own owner title, visual readiness and a disabled drift-prone aim control',async()=>{
+test('BuildNow enables character lock only after its own camera readiness, with isolated settings',async()=>{
  const f=menuFixture(),walk=el=>[el,...(el.children||[]).flatMap(walk)];f.events['neon-game']({detail:{id:'581'}});
  const find=predicate=>walk(f.section).find(predicate);assert.equal(f.section.hidden,false);assert.equal(find(el=>el.className==='lol-mod-subtitle').textContent,'BuildNow.gg · Owner workspace');
  const report=(gameId,status)=>f.events.message({source:f.source,origin:f.win.location.origin,data:{channel:'neon-lol-mod-v1',gameId,action:'status',status}});
  await report('58','supported');const tracer=find(el=>el.attrs?.['aria-label']==='Tracers');assert.equal(tracer.disabled,true);
- await report('581','supported');assert.equal(tracer.disabled,false);assert.equal(find(el=>el.attrs?.['aria-label']==='Aimbot · unavailable').disabled,true);
+ await report('581','supported');assert.equal(tracer.disabled,false);const aim=find(el=>el.attrs?.['aria-label']==='Aimbot · character lock');assert.equal(aim.disabled,true);
+ await report('58','camera-ready');assert.equal(aim.disabled,true);await report('581','camera-ready');assert.equal(aim.disabled,false);
+ aim.checked=true;aim.onchange();assert.equal(f.sent.at(-1).settings.aim,true);aim.checked=false;aim.onchange();
  tracer.checked=true;tracer.onchange();assert.equal(f.sent.at(-1).gameId,'581');assert.equal(f.sent.at(-1).settings.aim,false);
  const request={source:f.source,origin:f.win.location.origin,data:{channel:'neon-lol-mod-v1',gameId:'581',action:'authorize',requestId:crypto.randomUUID()}};
  const authorizing=f.events.message(request);f.events['neon-game']({detail:{id:'58'}});f.finish(true);await authorizing;assert.equal(f.sent.filter(data=>data.action==='authorization').length,0,'a late authorization does not reach another game');
@@ -78,6 +110,17 @@ function menuFixture(){
  initLolModMenu({doc,win,isAllowed:()=>permitted,check:()=>new Promise(resolve=>finish=resolve)});
  return {events,sent,source,panel,section:panel.children[0],setAllowed:value=>permitted=value,finish:value=>finish(value),win};
 }
+
+test('silent aim requires the real shot-ready message, keeps camera lock off, isolates readiness between games and blocks a revoked owner',()=>{
+ const f=menuFixture(),walk=el=>[el,...(el.children||[]).flatMap(walk)],nodes=walk(f.section),field=name=>nodes.find(el=>el.attrs?.['aria-label']===name);
+ const report=(status,source=f.source)=>f.events.message({source,origin:f.win.location.origin,data:{channel:'neon-lol-mod-v1',gameId:'58',action:'status',status}});
+ f.events['neon-game']({detail:{id:'58'}});report('supported');report('camera-ready');const silent=field('Silent aim'),aim=field('Aimbot · character lock'),slider=field('Silent aim redirection chance');assert.equal(silent.disabled,true);report('shot-ready',{});assert.equal(silent.disabled,true);report('shot-ready');assert.equal(silent.disabled,false);assert.equal(slider.disabled,false);
+ aim.checked=true;aim.onchange();silent.checked=true;silent.onchange();assert.equal(aim.checked,false);assert.equal(f.sent.at(-1).settings.aim,false);assert.equal(f.sent.at(-1).settings.silent,true);slider.value='100';slider.oninput();assert.equal(f.sent.at(-1).settings.silentChance,100);
+ aim.checked=true;aim.onchange();assert.equal(silent.checked,false);assert.equal(f.sent.at(-1).settings.silent,false);
+ f.events['neon-game']({detail:{id:'581'}});report('shot-ready');assert.equal(silent.disabled,true);assert.equal(slider.disabled,true);
+ f.events.message({source:f.source,origin:f.win.location.origin,data:{channel:'neon-lol-mod-v1',gameId:'581',action:'status',status:'installed'}});f.events.message({source:f.source,origin:f.win.location.origin,data:{channel:'neon-lol-mod-v1',gameId:'581',action:'status',status:'shot-ready'}});assert.equal(silent.disabled,false);assert.equal(slider.disabled,false);silent.checked=true;silent.onchange();assert.equal(f.sent.at(-1).settings.silent,true);assert.equal(f.sent.at(-1).gameId,'581');
+ f.setAllowed(false);f.events['neon-owner-access']({detail:false});assert.equal(f.sent.at(-1).action,'revoke');
+});
 test('verified owners get controls, role loss disables effects and late authorization cannot reactivate them',async()=>{
  const f=menuFixture();f.events['neon-game']({detail:{id:'58'}});assert.equal(f.section.hidden,false);
  const event={source:f.source,origin:f.win.location.origin,data:{channel:'neon-lol-mod-v1',gameId:'58',action:'authorize',requestId:crypto.randomUUID()}};
@@ -93,12 +136,24 @@ test('control sections support keyboard navigation, and All off clears switches 
  assert.equal(aim.attrs['aria-selected'],'true');assert.equal(visualPage.hidden,true);
  let prevented=false;aim.onkeydown({key:'ArrowRight',preventDefault(){prevented=true;}});assert.equal(prevented,true);assert.equal(visuals.focused,true);assert.equal(aimPage.hidden,true);assert.equal(visualPage.hidden,false);assert.equal(aim.attrs.tabindex,'-1');
  visuals.onkeydown({key:'Home',preventDefault(){}});assert.equal(aimPage.hidden,false);assert.equal(visualPage.hidden,true);
+ const stretchTab=find(el=>el.id==='lol-tab-stretch'),stretchPage=find(el=>el.id==='lol-page-stretch');
+ aim.onkeydown({key:'ArrowUp',preventDefault(){}});assert.equal(stretchTab.focused,true);assert.equal(stretchPage.hidden,false);assert.equal(aimPage.hidden,true);
+ stretchTab.onkeydown({key:'ArrowDown',preventDefault(){}});assert.equal(aimPage.hidden,false);assert.equal(stretchPage.hidden,true);
  const report=status=>f.events.message({source:f.source,origin:f.win.location.origin,data:{channel:'neon-lol-mod-v1',gameId:'58',action:'status',status}});
- report('supported');const tracer=find(el=>el.attrs?.['aria-label']==='Tracers'),esp=find(el=>el.attrs?.['aria-label']==='ESP highlights'),aimInput=find(el=>el.attrs?.['aria-label']==='Aimbot · unavailable'),count=find(el=>el.className==='lol-mod-count');
- assert.equal(aimInput.disabled,true);assert.equal(find(el=>el.attrs?.['aria-label']==='Aim smoothness').disabled,true);
+ report('supported');const tracer=find(el=>el.attrs?.['aria-label']==='Tracers'),esp=find(el=>el.attrs?.['aria-label']==='ESP highlights'),aimInput=find(el=>el.attrs?.['aria-label']==='Aimbot · character lock'),count=find(el=>el.className==='lol-mod-count');
+ assert.equal(aimInput.disabled,true,'shader readiness alone cannot enable camera writes');report('camera-ready');assert.equal(aimInput.disabled,false);assert.equal(find(el=>el.attrs?.['aria-label']==='Aim smoothness').disabled,false);
  tracer.checked=true;tracer.onchange();esp.checked=true;esp.onchange();assert.equal(count.textContent,'2 enabled');assert.equal(f.sent.at(-1).settings.tracers,true);
  find(el=>el.textContent==='All off').click();assert.equal(count.textContent,'0 enabled');assert.equal(tracer.checked,false);assert.equal(esp.checked,false);assert.equal(aimInput.checked,false);assert.equal(f.sent.at(-1).settings.aim,false);assert.equal(f.sent.at(-1).settings.tracers,false);
  f.section.children[0].click();assert.equal(f.section.children[1].hidden,false);find(el=>el.attrs?.['aria-label']==='Collapse owner controls').click();assert.equal(f.section.children[1].hidden,true);assert.equal(f.section.children[0].focused,true);
+});
+test('stretch presets enable the shared setting, custom slider switches modes, and reset restores native',()=>{
+ const f=menuFixture(),walk=el=>[el,...(el.children||[]).flatMap(walk)],nodes=walk(f.section),find=label=>nodes.find(el=>el.attrs?.['aria-label']===label),preset=find('Stretch resolution preset'),slider=find('Horizontal stretch amount');
+ f.events['neon-game']({detail:{id:'581'}});preset.value='4:3';preset.onchange();assert.equal(f.sent.length,0);
+ f.events.message({source:f.source,origin:f.win.location.origin,data:{channel:'neon-lol-mod-v1',gameId:'581',action:'status',status:'installed'}});
+ assert.equal(preset.disabled,false);preset.onchange();assert.equal(f.sent.at(-1).settings.stretchPreset,'4:3');assert.equal(f.sent.at(-1).settings.stretch,true);
+ slider.value='140';slider.oninput();assert.equal(preset.value,'custom');assert.equal(f.sent.at(-1).settings.stretchAmount,140);
+ nodes.find(el=>el.textContent==='Reset resolution').click();assert.equal(preset.value,'native');assert.equal(f.sent.at(-1).settings.stretch,false);
+ f.setAllowed(false);f.events['neon-owner-access']({detail:false});const count=f.sent.length;preset.value='5:4';preset.onchange();slider.oninput();assert.equal(f.sent.length,count);
 });
 test('renderer leaves ordinary draw calls untouched when off, recovers bad shaders and restores hooks on revocation',()=>{
  const sent=[];let drawCalls=0,queries=0;
@@ -154,7 +209,7 @@ test('smooth movement is frame-rate independent, bounded and stops inside the de
  const simulate=(fps,smoothing)=>{const motion=createLolMotion();let x=0;for(let i=0;i<fps;i++)x+=motion.step({x:40,y:0},1000/fps,smoothing).x;return x;};
  assert.ok(Math.abs(simulate(60,70)-simulate(120,70))<.001);
  assert.ok(simulate(60,100)<simulate(60,1),'higher smoothness accelerates more gradually');
- const motion=createLolMotion();for(let i=0;i<100;i++){const d=motion.step({x:1000,y:1000},16,1);assert.ok(Math.hypot(d.x,d.y)<=180*.016+.001);}
+ const motion=createLolMotion();for(let i=0;i<100;i++){const d=motion.step({x:1000,y:1000},16,1);assert.ok(Math.hypot(d.x,d.y)<=720*.016+.001);}
  assert.deepEqual(motion.step({x:1,y:0},16),{x:0,y:0});assert.deepEqual(motion.step(null,16),{x:0,y:0});
 });
 test('tracers are visual only, GPU scans are throttled, and focus loss or revocation clears them',()=>{
