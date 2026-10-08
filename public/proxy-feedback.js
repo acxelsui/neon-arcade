@@ -2,7 +2,10 @@
 export function watchFrame(frame, onFailure, onDocumentReady = () => {}) {
   const original = frame.fetchHandler.handleFetch.bind(frame.fetchHandler);
   frame.fetchHandler.handleFetch = async request => {
-    const documentRequest = request.mode === 'navigate' || ['document','iframe'].includes(request.rawDestination);
+    // Scramjet marks nested frames with $iframe=1. Their failures must not
+    // replace the whole game/browser view or falsely report its page as loaded.
+    const nestedFrame = request.rawUrl?.searchParams?.get('$iframe') === '1';
+    const documentRequest = !nestedFrame && (request.mode === 'navigate' || ['document','iframe'].includes(request.rawDestination));
     try {
       const response = await original(request);
       if(documentRequest){
