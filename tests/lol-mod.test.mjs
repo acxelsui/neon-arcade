@@ -285,3 +285,23 @@ test('renderer retries round gaps without dropping tools, follows the drawing ca
  broken=false;overlays[0].isConnected=false;tick(300,second);assert.equal(last.canvas,nextCanvas);assert.equal(last.silent,true);assert.equal(last.tracers,true);assert.equal(overlays.length,2);assert.equal(overlays[1].hidden,false);
  renderer.revoke();const ended=steps;tick(600,second);assert.equal(steps,ended,'revocation prevents reconnecting');
 });
+
+test('native tracers restore after camera readiness even when round shaders are reused without a supported event',()=>{
+ const storage=preferenceStorage();storage.setItem('neon-owner-controls-v1:581',JSON.stringify({version:1,settings:{tracers:true,silent:true}}));const f=savedMenu(storage,'581');f.report('installed');f.report('camera-ready');f.report('shot-ready');assert.equal(f.sent.at(-1).settings.tracers,true);assert.equal(f.sent.at(-1).settings.silent,true);
+});
+
+test('Tab toggles owner controls from the desktop and authenticated game, preserving form navigation and revocation',()=>{
+ const f=savedMenu(preferenceStorage(),'581');f.report('installed');const nodes=[f.section,...function walk(el){return (el.children||[]).flatMap(child=>[child,...walk(child)]);}(f.section)],controls=nodes.find(el=>el.id==='lol-hacks-controls');let prevented=0;
+ f.events.keydown({key:'Tab',preventDefault(){prevented++;}});assert.equal(controls.hidden,false);assert.equal(prevented,1);
+ f.report('toggle-menu');assert.equal(controls.hidden,true);
+ f.events.keydown({key:'Tab',target:{closest:()=>true},preventDefault(){assert.fail('typing retains normal navigation');}});assert.equal(controls.hidden,true);
+ f.setAllowed(false);f.events['neon-owner-access']({detail:false});f.events.keydown({key:'Tab',preventDefault(){assert.fail('revoked role cannot use shortcut');}});assert.equal(controls.hidden,true);
+});
+
+test('renderer heartbeat survives engine animation scheduling changes and its Tab listener is removed on revocation',()=>{
+ const queue=[],listeners={},reports=[];let steps=0,exits=0,cancels=0;const doc={addEventListener:(type,fn)=>listeners[type]=fn,removeEventListener:(type,fn)=>{if(listeners[type]===fn)delete listeners[type];},exitPointerLock(){exits++;}};
+ class GL{shaderSource(){}compileShader(){}linkProgram(){}getUniformLocation(){}uniform4fv(){}drawElements(){}useProgram(){}uniform1i(){}uniform1f(){}}
+ const win={document:doc,WebGL2RenderingContext:GL,requestAnimationFrame(fn){queue.push(fn);return queue.length;},cancelAnimationFrame(){cancels++;}};
+ const r=installLolRenderer({win,gameId:'581',notify:s=>reports.push(s),cameraFactory:()=>({step(){steps++;return [];},reset(){},revoke(){}})});r.settings({tracers:true});queue.shift()(0);queue.shift()(16);assert.equal(steps,2,'updates continue without any engine RAF calls');let prevented=0;
+ listeners.keydown({code:'Tab',preventDefault(){prevented++;},stopImmediatePropagation(){}});assert.equal(prevented,1);assert.equal(exits,1);assert.equal(reports.at(-1),'toggle-menu');r.revoke();assert.equal(listeners.keydown,undefined);assert.equal(cancels,1);queue.shift()(32);assert.equal(steps,2);
+});

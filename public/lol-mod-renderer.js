@@ -15,7 +15,7 @@ export function installLolRenderer({win=window,notify=()=>{},gameId=null,actorMa
  const camera=cameraFactory?.(win,{notify,shots})??null;
  const stretch=createGameStretch(doc,{gameId,getModule:()=>win.gameInstance?.Module});
  const patches=[],contexts=new Map(),shaders=new WeakMap(),locations=new WeakMap(),programs=new WeakMap(),buffers=new WeakMap();
- let actorReady=false,actorSeenThisFrame=false,lastProcessedFrame=null,cameraRetryAt=0,cameraFailures=0,lastDrawContext=null;
+ let actorReady=false,actorSeenThisFrame=false,lastProcessedFrame=null,lastEngineFrame=-Infinity,cameraRetryAt=0,cameraFailures=0,lastDrawContext=null;
  if(!proto){shots?.revoke();notify('unsupported');return;}
  const native={};for(const name of ['shaderSource','compileShader','linkProgram','getUniformLocation','uniform4fv','drawElements','useProgram','uniform1i','uniform1f'])native[name]=proto[name];
  const vertexCode='\nneonModDepth=gl_Position.z; if(neonModEnabled && neonModDepth>neonModThreshold){gl_Position.z=1.0;}\n';
@@ -163,14 +163,23 @@ export function installLolRenderer({win=window,notify=()=>{},gameId=null,actorMa
   actorSeenThisFrame=false;
   if(!active)clearTracking();
  }
+ function runAim(now){try{aim(now);}catch(error){cameraFailures++;cameraRetryAt=now+Math.min(2000,250*2**Math.min(3,cameraFailures-1));if(cameraFailures===1){win.console?.warn('Neon camera reconnecting:',error);notify('aim-error');}try{camera?.reset();}catch{}clearTracking();}}
+ const schedule=win.requestAnimationFrame;
  patch(win,'requestAnimationFrame',(target,receiver,args)=>{
   const callback=args[0];if(typeof callback!=='function')return Reflect.apply(target,receiver,args);
-  return Reflect.apply(target,receiver,[function(now){const result=callback.call(this,now);try{aim(now);}catch(error){cameraFailures++;cameraRetryAt=now+Math.min(2000,250*2**Math.min(3,cameraFailures-1));if(cameraFailures===1){win.console?.warn('Neon camera reconnecting:',error);notify('aim-error');}try{camera?.reset();}catch{}clearTracking();}return result;}]);
+  return Reflect.apply(target,receiver,[function(now){try{return callback.call(this,now);}finally{lastEngineFrame=now;runAim(now);}}]);
  });
+ // Use the engine's completed frame normally; continue independently if its
+ // round transition replaces the animation callback with a cached scheduler.
+ const cancel=win.cancelAnimationFrame;let heartbeat;
+ function pulse(now){if(!permitted)return;if(now-lastEngineFrame>40)runAim(now);heartbeat=schedule.call(win,pulse);}
+ if(camera)heartbeat=schedule.call(win,pulse);
+ const shortcut=event=>{if(!permitted||event.repeat||event.ctrlKey||event.altKey||event.metaKey||!(event.code==='Tab'||event.key==='Tab')||event.target?.closest?.('input,textarea,select,button,[contenteditable=true]'))return;event.preventDefault();event.stopImmediatePropagation();doc.exitPointerLock?.();notify('toggle-menu');};
+ doc.addEventListener?.('keydown',shortcut,true);
  notify('installed');
  return {
   settings(next){if(!permitted)return;stretch.settings(next);for(const key of ['esp','wireframe','tracers'])state[key]=next?.[key]===true;state.aim=!!camera&&next?.aim===true;state.silent=!!shots&&next?.silent===true;state.silentChance=Number.isFinite(next?.silentChance)?Math.min(100,Math.max(1,Math.round(next.silentChance))):90;if(state.silent)state.aim=false;else shots?.clear();state.range=Number.isFinite(next?.range)?Math.max(5,Math.min(60,next.range)):30;state.fovEnabled=!!camera&&next?.fovEnabled===true;state.fov=Number.isFinite(next?.fov)?Math.max(40,Math.min(110,next.fov)):75;state.smoothing=Number.isFinite(next?.smoothing)?Math.min(100,Math.max(1,next.smoothing)):70;if(!state.aim&&!state.tracers)clearTracking();},
-  revoke(){if(!permitted)return;permitted=false;reset();camera?.revoke();shots?.revoke();stretch.revoke();overlay?.remove();overlay=null;patches.reverse().forEach(restore=>restore());notify('revoked');}
+  revoke(){if(!permitted)return;permitted=false;if(heartbeat!==undefined)cancel?.call(win,heartbeat);doc.removeEventListener?.('keydown',shortcut,true);reset();camera?.revoke();shots?.revoke();stretch.revoke();overlay?.remove();overlay=null;patches.reverse().forEach(restore=>restore());notify('revoked');}
  };
 }
 

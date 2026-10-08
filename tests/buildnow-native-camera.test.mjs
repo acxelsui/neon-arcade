@@ -12,7 +12,7 @@ function fixture(shots=null){
  positions.set(cameraTransform,[0,1,0]);positions.set(enemyHead,[1,2,10]);
  m._malloc=()=>32000;m._free=()=>freed++;
  m.dynCall_ii=(id)=>{assert.ok([20231,32388,29898].includes(id));return id===20231?game:id===32388?controller:assist;};
- m.dynCall_iii=(id,p)=>{if(id===105142){assert.equal(p,m.HEAPU32[local>>>2]+16);return type;}assert.equal(id,3579);return cameraTransform;};
+ m.dynCall_iii=(id,p)=>{if(id===8454)return 0;if(id===105142){assert.equal(p,m.HEAPU32[local>>>2]+16);return type;}assert.equal(id,3579);return cameraTransform;};
  m.dynCall_iiiii=(id,p,t)=>{assert.equal(id,67782);assert.equal(t,type);return parents.get(p)||0;};
  m.dynCall_viii=(id,t,out)=>{assert.equal(id,68260);m.HEAPF32.set(positions.get(t),out>>>2);};
  m.dynCall_viiiii=(id,c,pos,eye,out)=>{assert.equal(id,65969);assert.equal(eye,2);m.HEAPF32.set([510,290,10],out>>>2);};
@@ -105,4 +105,23 @@ test('BuildNow round replacement reconnects tracers and silent shots to the new 
  x.u(local+0x538,40000);x.u(enemy+0x538,41000);x.u(enemy+0x170,head);x.positions.set(head,[0,2,10]);x.u(local+0x544,system);x.u(system+0x50,weapon);x.u(system+0x80,local);x.u(weapon+0x8c,system);x.m.HEAPU8[weapon+0x9d]=1;x.u(x.game+0x3c,local);x.u(x.controller+0x10c,local);x.u(x.enemy+8,0);x.u(30000+12,1);x.u(31000+16,helper);
  const original=x.m.dynCall_iii;x.m.dynCall_iii=(id,...args)=>id===105142?27000:original(id,...args);x.m.dynCall_iiiii=()=>enemy;
  const points=x.step({now:116,aim:false,tracers:true,silent:true,silentChance:92});assert.equal(points[0].id,enemy);assert.equal(staged.at(-1).shooting,weapon);assert.equal(staged.at(-1).actor,enemy);assert.equal(staged.at(-1).chance,92);assert.equal(x.reports.filter(s=>s==='camera-ready').length,2);assert.ok(resets>=2);
+});
+
+
+test('Zone Wars resumes reused actors/camera and reconnects player detection while the built-in assist registry is empty',()=>{
+ const staged=[];let resets=0,scans=0;const x=fixture({clear(){},reset(){resets++;},update(m,state){staged.push(state);}}),system=x.object(52000,'WeaponsSystem'),weapon=x.object(53000,'RaycastWeapon'),array=60000;
+ x.u(x.local+0x544,system);x.u(system+0x50,weapon);x.u(system+0x80,x.local);x.u(weapon+0x8c,system);x.m.HEAPU8[weapon+0x9d]=1;
+ const step=now=>x.step({now,aim:false,tracers:true,silent:true});assert.equal(step(100)[0].id,x.enemy);
+ const canvas=x.doc.pointerLockElement;x.doc.pointerLockElement=null;canvas.style.cursor='default';assert.deepEqual(step(116),[]);const paused=resets;step(132);assert.equal(resets,paused,'reset only on transition, not every paused frame');
+ x.u(30000+12,0);x.u(x.enemy+0x4f0,x.helper);x.u(array+12,1);x.u(array+16,x.enemy);
+ const method=x.m.dynCall_iii;x.m.dynCall_iii=(id,p,...args)=>{if(id===8454){scans++;assert.equal(p,27000);return array;}return method(id,p,...args);};
+ x.doc.pointerLockElement=canvas;assert.equal(step(140)[0].id,x.enemy);assert.equal(staged.at(-1).actor,x.enemy);assert.equal(staged.at(-1).shooting,weapon);assert.equal(x.reports.filter(s=>s==='camera-ready').length,2);assert.equal(scans,1);
+});
+
+test('V Arena reacquires a replacement opponent without requiring the local character to respawn',()=>{
+ const x=fixture(),array=60000,enemy=x.object(62000,'BaseCharacterController'),helper=x.object(64000,'AimHelper'),head=x.object(66000,'Transform');
+ const step=now=>x.step({now,aim:false,tracers:true,silent:true});assert.equal(step(100)[0].id,x.enemy);
+ x.m.HEAPU8[x.enemy+0x533]=1;x.u(30000+12,0);x.u(array+12,0);const original=x.m.dynCall_iii;x.m.dynCall_iii=(id,...args)=>id===8454?array:original(id,...args);assert.deepEqual(step(200),[]);
+ x.u(enemy+0x538,41000);x.u(enemy+0x170,head);x.u(enemy+0x4f0,helper);x.positions.set(head,[0,2,10]);x.u(array+12,1);x.u(array+16,enemy);assert.equal(step(300)[0].id,enemy,'empty cached lists cannot stall new opponents for a second');
+ x.m.HEAPU8[helper+0x59]=1;assert.deepEqual(step(400),[],'team guard still applies to fallback actors');
 });

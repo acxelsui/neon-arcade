@@ -35,6 +35,7 @@ export function initGameMenu(){
  let pinned=false;
  function show(value){value=desktop||value;panel.hidden=!value;toggle.setAttribute('aria-expanded',String(value));menu.classList.toggle('open',value)}
  function dismiss(){pinned=false;show(false)}
+ window.addEventListener('neon-game-menu-show',event=>{pinned=event.detail===true;show(pinned)});
  menu.addEventListener('pointerenter',e=>{if(e.pointerType==='mouse')show(true)});
  menu.addEventListener('pointerleave',()=>{if(!pinned&&!panel.contains(document.activeElement))show(false)});
  toggle.onclick=()=>{if(desktop){document.querySelector('#game-frame-wrap iframe')?.focus();return}pinned=!pinned;show(pinned)};

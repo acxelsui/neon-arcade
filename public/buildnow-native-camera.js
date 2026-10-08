@@ -7,7 +7,7 @@ export function createBuildNowNativeCamera(win,{notify=()=>{},shots=null}={}){
  const tracker=createNativeTargetTracker();
  let practiceInfo={stage:'waiting',found:0,alive:0},lastPractice='';
  function practiceStatus(canvas,extra={}){const value=JSON.stringify({...practiceInfo,...extra});if(value!==lastPractice){lastPractice=value;canvas?.setAttribute?.('data-neon-training',value);}}
- let activeContext=null;
+ let activeContext=null,playing=false,resumePending=false,lastPlayerScan=-Infinity,scenePlayers=[];
  let disposed=false,module=null,scratch=0,ready=false,tracking=false,lastTarget=0,lastScan=-Infinity,candidates=[],originalFov=null,actorType=0,localClass=0,lastDummyScan=-Infinity,dummies=[],dummyReady=false;
  const trainingTypes=[{className:'AimTarget',typeName:'BattleLab.AimTarget, Assembly-CSharp',healthOffset:0x2c,kind:'dummy'}, {className:'TrainingBotAI',typeName:'BattleLab.AI.TrainingBotAI, Assembly-CSharp',healthOffset:0x40,kind:'training-bot'}, {className:'TargetTrainer',typeName:'BattleLab.TargetTrainer, Assembly-CSharp',healthOffset:0x1c,kind:'trainer'}];
  const typeCache=new Map();
@@ -32,10 +32,20 @@ export function createBuildNowNativeCamera(win,{notify=()=>{},shots=null}={}){
   if(module!==m){module=m;activeContext=null;ready=false;scratch=0;originalFov=null;lastTarget=0;candidates=[];dummies=[];actorType=localClass=0;typeCache.clear();lastDummyScan=-Infinity;tracker.clear();}
   if(!scratch)scratch=m._malloc(256);if(!valid(m,scratch,256))return null;
   const context=[game,local,camera,controller];if(!activeContext||context.some((id,i)=>id!==activeContext[i])){activeContext=context;ready=false;lastTarget=0;lastScan=-Infinity;candidates=[];lastDummyScan=-Infinity;dummies=[];dummyReady=false;tracker.clear();shots?.reset?.();}
-  if(!ready){ready=true;notify('camera-ready');}
+  if(!ready){restartRound();resumePending=false;ready=true;notify('camera-ready');}
   return {m,game,controller,local,camera};
  }
  function vector(m,transform){if(!valid(m,transform)||name(m,transform)!=='Transform'||!u(m,transform+8))return null;call(m,'viii',68260,transform,scratch,0);const v=Array.from(m.HEAPF32.subarray(scratch>>>2,(scratch>>>2)+3));return v.every(n=>Number.isFinite(n)&&Math.abs(n)<1e6)?v:null;}
+ function sceneActors(m,local,now){
+  if(now-lastPlayerScan<1000&&scenePlayers.some(p=>living(m,p.actor)&&u(m,p.helper+8)))return scenePlayers;lastPlayerScan=now;scenePlayers=[];
+  if(!valid(m,actorType)||name(m,actorType)!=='RuntimeType')return scenePlayers;
+  const array=call(m,'iii',8454,actorType,0),count=u(m,array+12);
+  if(!valid(m,array,16)||count>128||!valid(m,array,16+count*4))return scenePlayers;
+  for(let i=0;i<count;i++){const actor=u(m,array+16+4*i),helper=u(m,actor+0x4f0);
+   if(actor!==local&&living(m,actor)&&valid(m,helper,0x5a)&&name(m,helper)==='AimHelper'&&u(m,helper+8)&&!m.HEAPU8[helper+0x59])scenePlayers.push({actor,helper});
+  }return scenePlayers;
+ }
+ function restartRound(){playing=false;lastTarget=0;lastScan=lastDummyScan=lastPlayerScan=-Infinity;candidates=[];dummies=[];scenePlayers=[];tracker.clear();shots?.reset?.();}
  function actors({m,local}){
   const klass=u(m,local);if(localClass!==klass){localClass=klass;actorType=call(m,'iii',105142,klass+16,0);}
   if(!valid(m,actorType)||name(m,actorType)!=='RuntimeType')return [];
@@ -108,8 +118,9 @@ export function createBuildNowNativeCamera(win,{notify=()=>{},shots=null}={}){
     if(originalFov){const value=Math.max(40,Math.min(110,fov));m.HEAPF32[(controller+0xb0)>>>2]=value;call(m,'vifi',65864,camera,value,0);}
    }else restoreFov();
    if(!aim&&!tracers&&!silent){lastTarget=0;tracker.clear();status(false);return [];}
-   if(!canvas||win.document.hidden||(win.document.hasFocus&&!win.document.hasFocus())||!(win.document.pointerLockElement===canvas||canvas.style.cursor==='none')||!living(m,local)||u(m,controller+0x10c)!==local){lastTarget=0;tracker.clear();status(false);practiceStatus(canvas,{stage:'game paused'});return [];}
-   if(now-lastScan>=100){const seen=new Set();candidates=[...actors(r),...spawnedTrainingBots(m),...trainingTargets(m,now)].filter(p=>{if(seen.has(p.actor))return false;seen.add(p.actor);return true;});lastScan=now;}
+   if(!canvas||win.document.hidden||(win.document.hasFocus&&!win.document.hasFocus())||!(win.document.pointerLockElement===canvas||canvas.style.cursor==='none')||!living(m,local)||u(m,controller+0x10c)!==local){if(playing){restartRound();resumePending=true;}status(false);practiceStatus(canvas,{stage:'game paused'});return [];}
+   if(!playing){restartRound();playing=true;if(resumePending){resumePending=false;notify('camera-ready');}shots?.update(m);}
+   if(now-lastScan>=100){const seen=new Set();const registered=actors(r);candidates=[...registered,...(registered.length?[]:sceneActors(m,local,now)),...spawnedTrainingBots(m),...trainingTargets(m,now)].filter(p=>{if(seen.has(p.actor))return false;seen.add(p.actor);return true;});lastScan=now;}
    const origin=vector(m,call(m,'iii',3579,camera,0));if(!origin)return [];
    const yaw=m.HEAPF32[(controller+0x54)>>>2],pitch=m.HEAPF32[(controller+0x58)>>>2];if(!Number.isFinite(yaw)||!Number.isFinite(pitch))return [];
    const points=[];let positionsRead=0,nearestError=180;
@@ -132,7 +143,7 @@ export function createBuildNowNativeCamera(win,{notify=()=>{},shots=null}={}){
    if(aim&&selected){const desired=anglesToTarget(origin,tracker.predict(selected.id,selected.position,now,smoothing))||selected,next=smoothCameraAngles({yaw,pitch},desired,elapsed,smoothing),min=m.HEAPF32[(controller+0x5c)>>>2],max=m.HEAPF32[(controller+0x60)>>>2];if(Number.isFinite(min)&&Number.isFinite(max)&&min<=max){m.HEAPF32[(controller+0x54)>>>2]=next.yaw;m.HEAPF32[(controller+0x58)>>>2]=Math.max(min,Math.min(max,next.pitch));}}
    return points;
   },
-  reset(){shots?.reset?.();shots?.clear();ready=false;activeContext=null;lastTarget=0;lastScan=lastDummyScan=-Infinity;candidates=[];dummies=[];tracker.clear();status(false);restoreFov();},
+  reset(){restartRound();shots?.reset?.();shots?.clear();ready=false;activeContext=null;lastTarget=0;lastScan=lastDummyScan=-Infinity;candidates=[];dummies=[];tracker.clear();status(false);restoreFov();},
   revoke(){shots?.clear();disposed=true;tracker.clear();status(false);restoreFov();if(module&&scratch)try{module._free(scratch);}catch{}scratch=0;candidates=[];}
  };
 }
