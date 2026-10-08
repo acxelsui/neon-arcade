@@ -8,14 +8,14 @@ import {createLolNativeCamera} from './lol-native-camera.js';
 import {createBuildNowNativeCamera} from './buildnow-native-camera.js';
 import {installLolSilentShot} from './lol-silent-shot.js';
 import {createGameStretch} from './game-stretch.js';
-export function installLolRenderer({win=window,notify=()=>{},gameId=null,actorMatcher=gameId==='58'?createLolActorMatcher():gameId==='581'?createBuildNowActorMatcher():null}) {
+export function installLolRenderer({win=window,notify=()=>{},gameId=null,actorMatcher=gameId==='58'?createLolActorMatcher():gameId==='581'?createBuildNowActorMatcher():null,cameraFactory=gameId==='58'?createLolNativeCamera:gameId==='581'?createBuildNowNativeCamera:null}) {
  const doc=win.document,proto=win.WebGL2RenderingContext?.prototype;
  let permitted=true,state={stretch:false,stretchAmount:125,aim:false,silent:false,silentChance:90,esp:false,wireframe:false,tracers:false,smoothing:70,fovEnabled:false,fov:75,range:30},supported=false;
  const shots=['58','581'].includes(gameId)?installLolSilentShot(win,{notify,gameId}):null;
- const camera=gameId==='58'?createLolNativeCamera(win,{notify,shots}):gameId==='581'?createBuildNowNativeCamera(win,{notify,shots}):null;
+ const camera=cameraFactory?.(win,{notify,shots})??null;
  const stretch=createGameStretch(doc,{gameId,getModule:()=>win.gameInstance?.Module});
  const patches=[],contexts=new Map(),shaders=new WeakMap(),locations=new WeakMap(),programs=new WeakMap(),buffers=new WeakMap();
- let actorReady=false,actorSeenThisFrame=false,lastProcessedFrame=null,cameraFailed=false;
+ let actorReady=false,actorSeenThisFrame=false,lastProcessedFrame=null,cameraRetryAt=0,cameraFailures=0,lastDrawContext=null;
  if(!proto){shots?.revoke();notify('unsupported');return;}
  const native={};for(const name of ['shaderSource','compileShader','linkProgram','getUniformLocation','uniform4fv','drawElements','useProgram','uniform1i','uniform1f'])native[name]=proto[name];
  const vertexCode='\nneonModDepth=gl_Position.z; if(neonModEnabled && neonModDepth>neonModThreshold){gl_Position.z=1.0;}\n';
@@ -101,6 +101,7 @@ export function installLolRenderer({win=window,notify=()=>{},gameId=null,actorMa
   }
  }
  patch(proto,'drawElements',(target,gl,args)=>{
+  lastDrawContext=gl;
   if(!permitted||(!state.esp&&!state.wireframe&&(!state.tracers||camera)))return Reflect.apply(target,gl,args);
   const program=gl.getParameter(gl.CURRENT_PROGRAM),info=program&&programs.get(program);
   if(info){
@@ -117,7 +118,7 @@ export function installLolRenderer({win=window,notify=()=>{},gameId=null,actorMa
  function clearTracking(){if(targets.length||tracked)motion=createLolMotion();targets=[];tracked=null;if(overlay)overlay.hidden=true;}
  function paintTracers(canvas){
   if(!state.tracers||!targets.length){if(overlay)overlay.hidden=true;return;}
-  if(!overlay){overlay=doc.createElement('canvas');overlay.setAttribute('aria-hidden','true');overlay.style.cssText='position:fixed;pointer-events:none;z-index:2147483646;';doc.body.append(overlay);}
+  if(!overlay||overlay.isConnected===false){overlay?.remove();overlay=doc.createElement('canvas');overlay.setAttribute('aria-hidden','true');overlay.style.cssText='position:fixed;pointer-events:none;z-index:2147483646;';doc.body.append(overlay);}
   const rect=canvas.getBoundingClientRect();if(rect.width<1||rect.height<1){overlay.hidden=true;return;}
   const width=Math.round(rect.width),height=Math.round(rect.height);
   if(overlay.width!==width)overlay.width=width;if(overlay.height!==height)overlay.height=height;
@@ -134,10 +135,11 @@ export function installLolRenderer({win=window,notify=()=>{},gameId=null,actorMa
   if(now===lastProcessedFrame)return;lastProcessedFrame=now;
   const elapsed=lastFrame===null?0:Math.max(0,Math.min(50,now-lastFrame));lastFrame=now;
   if(camera&&permitted){
-   if(cameraFailed){clearTracking();return;}
-   const canvas=[...contexts.keys()].map(gl=>gl.canvas).find(canvas=>canvas.isConnected);stretch.step(canvas);
+   if(now<cameraRetryAt){clearTracking();return;}
+   const available=gl=>gl?.canvas?.isConnected&&!gl.isContextLost();
+   const gl=available(lastDrawContext)?lastDrawContext:[...contexts.keys()].reverse().find(available),canvas=gl?.canvas;stretch.step(canvas);
    targets=camera.step({now,elapsed,aim:state.aim,tracers:state.tracers,silent:state.silent,silentChance:state.silentChance,smoothing:state.smoothing,range:state.range,fov:state.fovEnabled?state.fov:null,canvas});
-   if(canvas)paintTracers(canvas);actorSeenThisFrame=false;return;
+   cameraRetryAt=0;cameraFailures=0;if(canvas)paintTracers(canvas);actorSeenThisFrame=false;return;
   }
   if(!permitted||(!state.aim&&!state.tracers)||!supported||doc.hidden||(doc.hasFocus&& !doc.hasFocus())){actorSeenThisFrame=false;clearTracking();return;}
   let active=false;
@@ -163,7 +165,7 @@ export function installLolRenderer({win=window,notify=()=>{},gameId=null,actorMa
  }
  patch(win,'requestAnimationFrame',(target,receiver,args)=>{
   const callback=args[0];if(typeof callback!=='function')return Reflect.apply(target,receiver,args);
-  return Reflect.apply(target,receiver,[function(now){const result=callback.call(this,now);try{aim(now);}catch(error){cameraFailed=true;win.console?.warn('Neon camera controls paused:',error);state.aim=false;state.tracers=false;state.fovEnabled=false;camera?.reset();clearTracking();notify('aim-error');}return result;}]);
+  return Reflect.apply(target,receiver,[function(now){const result=callback.call(this,now);try{aim(now);}catch(error){cameraFailures++;cameraRetryAt=now+Math.min(2000,250*2**Math.min(3,cameraFailures-1));if(cameraFailures===1){win.console?.warn('Neon camera reconnecting:',error);notify('aim-error');}try{camera?.reset();}catch{}clearTracking();}return result;}]);
  });
  notify('installed');
  return {

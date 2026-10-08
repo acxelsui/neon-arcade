@@ -10,7 +10,7 @@ test('world coordinates produce upward camera pitch and shortest yaw turns',()=>
  for(const fps of [30,60,120]){let current={yaw:179,pitch:0};for(let i=0;i<fps;i++)current=smoothCameraAngles(current,{yaw:-170,pitch:-20},1000/fps,70);assert.ok(Math.abs(current.pitch+20)<.05);assert.ok(Math.abs(angleDelta(current.yaw,-170))<.05);}
  const limited=smoothCameraAngles({yaw:0,pitch:0},{yaw:180,pitch:90},50,1);assert.ok(Math.hypot(limited.yaw,limited.pitch)<=12.001);
 });
-function fixture(){
+function fixture(shots=null){
  const buffer=new ArrayBuffer(8*1024*1024),m={HEAPU8:new Uint8Array(buffer),HEAPU32:new Uint32Array(buffer),HEAP32:new Int32Array(buffer),HEAPF32:new Float32Array(buffer)},reports=[],positions=new Map();let address=6_000_000,freed=0,fov=60;
  const u=(p,v)=>m.HEAPU32[p>>>2]=v,f=(p,v)=>m.HEAPF32[p>>>2]=v;
  const klass=name=>{const p=address;address+=128;const str=address;address+=128;u(p+8,str);m.HEAPU8.set(new TextEncoder().encode(name),str);return p;};
@@ -27,9 +27,9 @@ function fixture(){
  m.dynCall_viiiii=(id,camera,pos,eye,out)=>{assert.equal(id,1024);assert.equal(eye,2);m.HEAPF32.set([510,290,10],out>>>2);};
  m.dynCall_fii=()=>fov;m.dynCall_vifi=(id,camera,value)=>{assert.equal(id,243);fov=value;};
  const canvas={width:1000,height:600,style:{cursor:'none'}},doc={hidden:false,hasFocus:()=>true,pointerLockElement:canvas};
- const win={gameInstance:{Module:m},document:doc},bridge=createLolNativeCamera(win,{notify:s=>reports.push(s)});
+ const win={gameInstance:{Module:m},document:doc},bridge=createLolNativeCamera(win,{notify:s=>reports.push(s),shots});
  const step=(extra={})=>bridge.step({now:100,elapsed:16,aim:true,canvas,...extra});
- return {bridge,step,m,reports,u,f,game,third,local,enemy,team,dead,enemyHead,positions,canvas,doc,statics,get fov(){return fov;},get freed(){return freed;}};
+ return {bridge,step,m,reports,u,f,object,game,third,local,enemy,team,dead,enemyHead,positions,canvas,doc,statics,get fov(){return fov;},get freed(){return freed;}};
 }
 test('native lock selects living enemy heads without synthetic input and recovers after death',()=>{
  const x=fixture(),before=x.m.HEAPU8.slice(),points=x.step();assert.equal(points.length,1);assert.equal(points[0].id,x.enemy);assert.ok(x.m.HEAPF32[(x.third+0x98)>>>2]<0,'target above camera moves upward');assert.ok(x.m.HEAPF32[(x.third+0x9c)>>>2]>0);assert.deepEqual(x.reports,['camera-ready','tracking-active']);
@@ -61,4 +61,12 @@ test('target lock remains stable when another character crosses, then switches a
  // A closer competitor must not drag the existing lock toward a different head.
  assert.ok(x.m.HEAPF32[(x.third+0x9c)>>>2]>0);
  x.m.HEAPU8[chosen+0x18]=1;points=x.step({now:300});assert.equal(points.length,1);assert.equal(points[0].id,x.team);
+});
+test('a new 1v1 round reacquires the replacement local character, enemies and shot component without toggles',()=>{
+ const staged=[];let resets=0;const x=fixture({clear(){},reset(){resets++;},update(m,state){staged.push(state);}});
+ const oldWeapon=x.object(45000,'PlayerShooting');x.u(x.local+0x20,oldWeapon);assert.equal(x.step({aim:false,tracers:true,silent:true}).length,1);assert.equal(staged.at(-1).shooting,oldWeapon);
+ x.u(x.game+0x48,0);assert.deepEqual(x.step({now:108,aim:false,tracers:true,silent:true}),[]);
+ const local=x.object(46000,'PlayerController'),enemy=x.object(47000,'PlayerController'),head=x.object(48000,'Transform'),weapon=x.object(49000,'PlayerShooting');x.u(local+0x20,weapon);x.u(enemy+0xa0,head);x.m.HEAP32[(enemy+0x64)>>>2]=100;x.positions.set(head,[0,2,10]);x.u(x.game+0x48,local);x.u(x.enemy+8,0);
+ const dictionary=x.m.HEAPU32[(x.game+0x70)>>>2],entries=x.m.HEAPU32[(dictionary+12)>>>2];x.u(entries+16+12,enemy);
+ const points=x.step({now:116,aim:false,tracers:true,silent:true,silentChance:93});assert.equal(points[0].id,enemy);assert.equal(staged.at(-1).shooting,weapon);assert.equal(staged.at(-1).actor,enemy);assert.equal(staged.at(-1).chance,93);assert.equal(x.reports.filter(s=>s==='camera-ready').length,2);assert.ok(resets>=2);
 });

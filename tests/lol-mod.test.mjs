@@ -266,3 +266,22 @@ test('All off and reset resolution replace saved choices rather than rearming on
  f.button('Reset resolution').click();const reset=savedMenu(storage);reset.report('installed');assert.equal(reset.find('Stretch resolution preset').value,'native');assert.equal(reset.sent.at(-1).settings.stretch,false);
  f.button('All off').click();const next=savedMenu(storage);next.report('supported');next.report('camera-ready');next.report('shot-ready');for(const key of ['aim','silent','stretch','esp','tracers','wireframe','fovEnabled'])assert.equal(next.sent.at(-1).settings[key],false);
 });
+test('temporary round-camera errors keep selected tools and reapply them as the new camera and shot hook reconnect',()=>{
+ const storage=preferenceStorage(),f=savedMenu(storage,'581');f.report('supported');f.report('camera-ready');f.report('shot-ready');for(const label of ['Tracers','Silent aim']){const field=f.find(label);field.checked=true;field.onchange();}
+ const saved=storage.getItem('neon-owner-controls-v1:581');f.report('aim-error');assert.equal(f.find('Tracers').checked,true);assert.equal(f.find('Silent aim').checked,true);assert.equal(f.sent.at(-1).settings.tracers,false);assert.equal(f.sent.at(-1).settings.silent,false);assert.equal(storage.getItem('neon-owner-controls-v1:581'),saved);
+ f.report('camera-ready');assert.equal(f.sent.at(-1).settings.tracers,true);assert.equal(f.sent.at(-1).settings.silent,false);f.report('shot-ready');assert.equal(f.sent.at(-1).settings.tracers,true);assert.equal(f.sent.at(-1).settings.silent,true);
+ f.button('All off').click();f.report('camera-ready');f.report('shot-ready');assert.equal(f.sent.at(-1).settings.silent,false);assert.equal(f.sent.at(-1).settings.tracers,false);
+});
+test('renderer retries round gaps without dropping tools, follows the drawing canvas and restores detached tracer overlays',()=>{
+ let raf,broken=false,resets=0,steps=0,last,lines=0;const reports=[],overlays=[];
+ const canvas=()=>({isConnected:true,width:400,height:300,style:{},getBoundingClientRect:()=>({left:0,top:0,width:400,height:300})}),oldCanvas=canvas(),nextCanvas=canvas();
+ const doc={body:{append(el){el.isConnected=true;overlays.push(el);}},createElement(){return {style:{},setAttribute(){},remove(){this.isConnected=false;},getContext:()=>({clearRect(){},beginPath(){},moveTo(){},lineTo(){lines++;},stroke(){},arc(){}})};}};
+ class GL{constructor(c){this.canvas=c;Object.assign(this,{SHADER_TYPE:1,VERTEX_SHADER:2,COMPILE_STATUS:3});}shaderSource(){}compileShader(){}getShaderParameter(s,k){return k===1?s.type:true;}linkProgram(){}getAttachedShaders(p){return p.shaders;}getProgramParameter(){return true;}getUniformLocation(){return null;}uniform4fv(){}drawElements(){}useProgram(){}uniform1i(){}uniform1f(){}getParameter(){return null;}isContextLost(){return false;}isProgram(){return true;}}
+ const win={document:doc,WebGL2RenderingContext:GL,WebAssembly:{instantiate:async()=>({}),validate:()=>false},crypto,requestAnimationFrame(fn){raf=fn;}};
+ const renderer=installLolRenderer({win,gameId:'581',notify:s=>reports.push(s),cameraFactory:()=>({step(options){steps++;last=options;if(broken)throw Error('round scene unloading');return [{x:10,y:10}];},reset(){resets++;},revoke(){}})});
+ const gl=new GL(oldCanvas),second=new GL(nextCanvas);for(const c of [gl,second]){const v={type:2},f={type:0};c.shaderSource(v,'#version 300 es\nvoid main(){}');c.shaderSource(f,'#version 300 es\nout vec4 SV_Target0;void main(){}');c.linkProgram({shaders:[v,f]});}
+ const tick=(now,c=gl)=>{win.requestAnimationFrame(()=>c.drawElements(4,100,1,0));raf(now);};renderer.settings({silent:true,tracers:true});tick(0);assert.equal(last.canvas,oldCanvas);assert.equal(last.silent,true);assert.equal(last.tracers,true);assert.ok(lines>0);
+ broken=true;tick(16);assert.equal(resets,1);const paused=steps;tick(32);tick(160);assert.equal(steps,paused,'no per-frame retry while the scene unloads');assert.equal(reports.filter(s=>s==='aim-error').length,1);
+ broken=false;overlays[0].isConnected=false;tick(300,second);assert.equal(last.canvas,nextCanvas);assert.equal(last.silent,true);assert.equal(last.tracers,true);assert.equal(overlays.length,2);assert.equal(overlays[1].hidden,false);
+ renderer.revoke();const ended=steps;tick(600,second);assert.equal(steps,ended,'revocation prevents reconnecting');
+});

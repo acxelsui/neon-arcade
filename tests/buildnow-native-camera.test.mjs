@@ -97,3 +97,12 @@ test('BuildNow stages local silent shots independently from camera lock and clea
  x.doc.hidden=true;x.step({aim:false,silent:true,now:200});assert.equal(staged.at(-1),undefined);x.doc.hidden=false;x.m.HEAPU8[x.local+0x533]=1;x.step({aim:false,silent:true,now:300});assert.equal(staged.at(-1),undefined);x.m.HEAPU8[x.local+0x533]=0;
  x.m.HEAPU8[weapon+0x9d]=0;x.step({aim:false,silent:true,now:400});assert.equal(staged.at(-1),undefined);x.m.HEAPU8[weapon+0x9d]=1;x.step({aim:false,silent:true,now:500});assert.equal(staged.at(-1).actor,x.enemy);x.bridge.revoke();assert.ok(clears>=6);
 });
+test('BuildNow round replacement reconnects tracers and silent shots to the new local actor and weapon',()=>{
+ const staged=[];let resets=0;const x=fixture({clear(){},reset(){resets++;},update(m,state){staged.push(state);}}),oldSystem=x.object(52000,'WeaponsSystem'),oldWeapon=x.object(53000,'RaycastWeapon');
+ x.u(x.local+0x544,oldSystem);x.u(oldSystem+0x50,oldWeapon);x.u(oldSystem+0x80,x.local);x.u(oldWeapon+0x8c,oldSystem);x.m.HEAPU8[oldWeapon+0x9d]=1;x.step({aim:false,tracers:true,silent:true});assert.equal(staged.at(-1).shooting,oldWeapon);
+ x.u(x.game+0x3c,0);assert.deepEqual(x.step({now:108,aim:false,tracers:true,silent:true}),[]);
+ const local=x.object(60000,'BaseCharacterController'),enemy=x.object(62000,'BaseCharacterController'),helper=x.object(64000,'AimHelper'),head=x.object(66000,'Transform'),system=x.object(68000,'WeaponsSystem'),weapon=x.object(70000,'RaycastWeapon');
+ x.u(local+0x538,40000);x.u(enemy+0x538,41000);x.u(enemy+0x170,head);x.positions.set(head,[0,2,10]);x.u(local+0x544,system);x.u(system+0x50,weapon);x.u(system+0x80,local);x.u(weapon+0x8c,system);x.m.HEAPU8[weapon+0x9d]=1;x.u(x.game+0x3c,local);x.u(x.controller+0x10c,local);x.u(x.enemy+8,0);x.u(30000+12,1);x.u(31000+16,helper);
+ const original=x.m.dynCall_iii;x.m.dynCall_iii=(id,...args)=>id===105142?27000:original(id,...args);x.m.dynCall_iiiii=()=>enemy;
+ const points=x.step({now:116,aim:false,tracers:true,silent:true,silentChance:92});assert.equal(points[0].id,enemy);assert.equal(staged.at(-1).shooting,weapon);assert.equal(staged.at(-1).actor,enemy);assert.equal(staged.at(-1).chance,92);assert.equal(x.reports.filter(s=>s==='camera-ready').length,2);assert.ok(resets>=2);
+});

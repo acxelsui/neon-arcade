@@ -4,6 +4,7 @@
 import {createNativeTargetTracker} from './native-target-tracking.js';
 export function createLolNativeCamera(win,{notify=()=>{},shots=null}={}){
  const tracker=createNativeTargetTracker();
+ let activeContext=null;
  let disposed=false,scratch=0,module=null,ready=false,lastTarget=0,lastScan=-Infinity,candidates=[],originalFov=null,tracking=false;
  const trackingStatus=value=>{if(tracking===value)return;tracking=value;notify(value?'tracking-active':'tracking-idle');};
  const readString=(m,p)=>{if(!p||p>=m.HEAPU8.length)return '';let s='';for(let i=0;i<80&&p+i<m.HEAPU8.length;i++){const b=m.HEAPU8[p+i];if(!b)return s;s+=String.fromCharCode(b);}return '';};
@@ -13,13 +14,14 @@ export function createLolNativeCamera(win,{notify=()=>{},shots=null}={}){
  function runtime(){
   const m=win.gameInstance?.Module;if(!m?.HEAPU32||!m.HEAPF32||!m.dynCall_ii||!m.dynCall_viii||!m._malloc)return null;
   const klass=u(m,5793604);if(!valid(m,klass,96)||readString(m,u(m,klass+8))!=='GameManager')return null;
-  const statics=u(m,klass+0x5c),game=u(m,statics);if(!valid(m,game,0xac)||className(m,game)!=='GameManager')return null;
+  const statics=u(m,klass+0x5c),game=u(m,statics);if(!valid(m,game,0xac)||className(m,game)!=='GameManager'||!u(m,game+8))return null;
   const third=m.dynCall_ii(1473,0),manager=m.dynCall_ii(1506,0);
-  if(!valid(m,third,0xcc)||!valid(m,manager,0x3c)||className(m,third)!=='vThirdPersonCamera'||className(m,manager)!=='CameraManager')return null;
+  if(!valid(m,third,0xcc)||!valid(m,manager,0x3c)||className(m,third)!=='vThirdPersonCamera'||className(m,manager)!=='CameraManager'||!u(m,third+8)||!u(m,manager+8))return null;
   const camera=u(m,manager+0x10),local=u(m,game+0x48);
-  if(!valid(m,camera)||className(m,camera)!=='Camera'||!valid(m,local,0x118)||className(m,local)!=='PlayerController')return null;
-  if(module!==m){module=m;scratch=0;originalFov=null;candidates=[];lastTarget=0;tracker.clear();}
+  if(!valid(m,camera)||className(m,camera)!=='Camera'||!valid(m,local,0x118)||className(m,local)!=='PlayerController'||!u(m,camera+8)||!u(m,local+8))return null;
+  if(module!==m){module=m;activeContext=null;ready=false;scratch=0;originalFov=null;candidates=[];lastTarget=0;tracker.clear();}
   if(!scratch)scratch=m._malloc(48);if(!valid(m,scratch,48))return null;
+  const context=[game,local,camera,third];if(!activeContext||context.some((id,i)=>id!==activeContext[i])){activeContext=context;ready=false;lastTarget=0;lastScan=-Infinity;candidates=[];tracker.clear();shots?.reset?.();}
   if(!ready){ready=true;notify('camera-ready');}
   return {m,game,third,camera,local,statics};
  }
@@ -39,10 +41,10 @@ export function createLolNativeCamera(win,{notify=()=>{},shots=null}={}){
    }
   }return [...result];
  }
- function restoreFov(){if(originalFov&&module){const {camera,value}=originalFov;try{if(valid(module,camera)&&className(module,camera)==='Camera')module.dynCall_vifi(243,camera,value,0);}catch{}}originalFov=null;}
+ function restoreFov(){if(originalFov&&module){const {camera,value}=originalFov;try{if(valid(module,camera)&&className(module,camera)==='Camera'&&u(module,camera+8))module.dynCall_vifi(243,camera,value,0);}catch{}}originalFov=null;}
  return {
   step({now,elapsed,aim=false,tracers=false,silent=false,silentChance=90,smoothing=70,range=30,fov=null,canvas}){
-   shots?.clear();if(disposed)return [];const r=runtime();if(!r){lastTarget=0;candidates=[];trackingStatus(false);return [];}
+   shots?.clear();if(disposed)return [];const r=runtime();if(!r){if(ready)shots?.reset?.();ready=false;activeContext=null;lastTarget=0;lastScan=-Infinity;candidates=[];tracker.clear();trackingStatus(false);return [];}
    const {m,third,camera,game,local,statics}=r;const shooting=u(m,local+0x20);shots?.update(m);
    if(Number.isFinite(fov)){
     if(!originalFov||originalFov.camera!==camera){restoreFov();const value=m.dynCall_fii(340,camera,0);if(Number.isFinite(value)&&value>1&&value<179)originalFov={camera,value};}
@@ -74,7 +76,7 @@ export function createLolNativeCamera(win,{notify=()=>{},shots=null}={}){
    if(aim&&selected){const desired=anglesToTarget(origin,tracker.predict(selected.id,selected.position,now,smoothing))||selected,next=smoothCameraAngles({yaw,pitch},desired,elapsed,smoothing);m.HEAPF32[(third+0x98)>>>2]=Math.max(m.HEAPF32[(third+0x34)>>>2],Math.min(m.HEAPF32[(third+0x38)>>>2],next.pitch));m.HEAPF32[(third+0x9c)>>>2]=next.yaw;}
    return points;
   },
-  reset(){shots?.clear();lastTarget=0;candidates=[];lastScan=-Infinity;tracker.clear();trackingStatus(false);restoreFov();},
+  reset(){shots?.reset?.();shots?.clear();ready=false;activeContext=null;lastTarget=0;candidates=[];lastScan=-Infinity;tracker.clear();trackingStatus(false);restoreFov();},
   revoke(){shots?.clear();disposed=true;tracker.clear();trackingStatus(false);restoreFov();if(module&&scratch)try{module._free(scratch);}catch{}scratch=0;candidates=[];}
  };
 }

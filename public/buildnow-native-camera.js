@@ -7,6 +7,7 @@ export function createBuildNowNativeCamera(win,{notify=()=>{},shots=null}={}){
  const tracker=createNativeTargetTracker();
  let practiceInfo={stage:'waiting',found:0,alive:0},lastPractice='';
  function practiceStatus(canvas,extra={}){const value=JSON.stringify({...practiceInfo,...extra});if(value!==lastPractice){lastPractice=value;canvas?.setAttribute?.('data-neon-training',value);}}
+ let activeContext=null;
  let disposed=false,module=null,scratch=0,ready=false,tracking=false,lastTarget=0,lastScan=-Infinity,candidates=[],originalFov=null,actorType=0,localClass=0,lastDummyScan=-Infinity,dummies=[],dummyReady=false;
  const trainingTypes=[{className:'AimTarget',typeName:'BattleLab.AimTarget, Assembly-CSharp',healthOffset:0x2c,kind:'dummy'}, {className:'TrainingBotAI',typeName:'BattleLab.AI.TrainingBotAI, Assembly-CSharp',healthOffset:0x40,kind:'training-bot'}, {className:'TargetTrainer',typeName:'BattleLab.TargetTrainer, Assembly-CSharp',healthOffset:0x1c,kind:'trainer'}];
  const typeCache=new Map();
@@ -25,11 +26,12 @@ export function createBuildNowNativeCamera(win,{notify=()=>{},shots=null}={}){
   // the corresponding live class signature before calling native methods.
   for(const [address,expected,token] of [[7005400,'GameManager',0x2000a1c9],[7001488,'CameraController',0x2000846d],[6999896,'AimAssist',0x20007881]]){const klass=u(m,address);if(klass!==token&&(!valid(m,klass,96)||text(m,u(m,klass+8))!==expected))return null;}
   const game=call(m,'ii',20231,0),controller=call(m,'ii',32388,0);
-  if(!valid(m,game,0x54)||name(m,game)!=='GameManager'||!valid(m,controller,0x158)||name(m,controller)!=='CameraController')return null;
+  if(!valid(m,game,0x54)||name(m,game)!=='GameManager'||!valid(m,controller,0x158)||name(m,controller)!=='CameraController'||!u(m,game+8)||!u(m,controller+8))return null;
   const local=u(m,game+0x3c),camera=u(m,controller+0x1c);
-  if(!valid(m,local,0x548)||name(m,local)!=='BaseCharacterController'||!valid(m,camera)||name(m,camera)!=='Camera'||!u(m,camera+8))return null;
-  if(module!==m){module=m;scratch=0;originalFov=null;lastTarget=0;candidates=[];dummies=[];actorType=localClass=0;typeCache.clear();lastDummyScan=-Infinity;tracker.clear();}
+  if(!valid(m,local,0x548)||name(m,local)!=='BaseCharacterController'||!valid(m,camera)||name(m,camera)!=='Camera'||(!u(m,camera+8)||!u(m,local+8)))return null;
+  if(module!==m){module=m;activeContext=null;ready=false;scratch=0;originalFov=null;lastTarget=0;candidates=[];dummies=[];actorType=localClass=0;typeCache.clear();lastDummyScan=-Infinity;tracker.clear();}
   if(!scratch)scratch=m._malloc(256);if(!valid(m,scratch,256))return null;
+  const context=[game,local,camera,controller];if(!activeContext||context.some((id,i)=>id!==activeContext[i])){activeContext=context;ready=false;lastTarget=0;lastScan=-Infinity;candidates=[];lastDummyScan=-Infinity;dummies=[];dummyReady=false;tracker.clear();shots?.reset?.();}
   if(!ready){ready=true;notify('camera-ready');}
   return {m,game,controller,local,camera};
  }
@@ -96,10 +98,10 @@ export function createBuildNowNativeCamera(win,{notify=()=>{},shots=null}={}){
   // Aim inside the actual visible collider/mesh, rather than at its foot pivot.
   return bounds.slice(0,3);
  }
- function restoreFov(){if(originalFov&&module){const {controller,camera,value,cameraValue}=originalFov;try{if(valid(module,controller,0xb4)&&name(module,controller)==='CameraController')module.HEAPF32[(controller+0xb0)>>>2]=value;if(valid(module,camera)&&name(module,camera)==='Camera')call(module,'vifi',65864,camera,cameraValue,0);}catch{}}originalFov=null;}
+ function restoreFov(){if(originalFov&&module){const {controller,camera,value,cameraValue}=originalFov;try{if(valid(module,controller,0xb4)&&name(module,controller)==='CameraController'&&u(module,controller+8))module.HEAPF32[(controller+0xb0)>>>2]=value;if(valid(module,camera)&&name(module,camera)==='Camera'&&u(module,camera+8))call(module,'vifi',65864,camera,cameraValue,0);}catch{}}originalFov=null;}
  return {
   step({now,elapsed,aim=false,tracers=false,silent=false,silentChance=90,smoothing=70,range=30,fov=null,canvas}){
-   shots?.clear();if(disposed)return [];const r=runtime();if(!r){lastTarget=0;candidates=[];status(false);practiceStatus(canvas,{stage:'waiting for game camera'});return [];}
+   shots?.clear();if(disposed)return [];const r=runtime();if(!r){if(ready)shots?.reset?.();ready=false;activeContext=null;lastTarget=0;lastScan=lastDummyScan=-Infinity;candidates=[];dummies=[];tracker.clear();status(false);practiceStatus(canvas,{stage:'waiting for game camera'});return [];}
    const {m,controller,local,camera}=r;shots?.update(m);
    if(Number.isFinite(fov)){
     if(originalFov?.controller!==controller||originalFov?.camera!==camera){restoreFov();const value=m.HEAPF32[(controller+0xb0)>>>2],cameraValue=call(m,'fii',6012,camera,0);if([value,cameraValue].every(v=>Number.isFinite(v)&&v>1&&v<179))originalFov={controller,camera,value,cameraValue};}
@@ -130,7 +132,7 @@ export function createBuildNowNativeCamera(win,{notify=()=>{},shots=null}={}){
    if(aim&&selected){const desired=anglesToTarget(origin,tracker.predict(selected.id,selected.position,now,smoothing))||selected,next=smoothCameraAngles({yaw,pitch},desired,elapsed,smoothing),min=m.HEAPF32[(controller+0x5c)>>>2],max=m.HEAPF32[(controller+0x60)>>>2];if(Number.isFinite(min)&&Number.isFinite(max)&&min<=max){m.HEAPF32[(controller+0x54)>>>2]=next.yaw;m.HEAPF32[(controller+0x58)>>>2]=Math.max(min,Math.min(max,next.pitch));}}
    return points;
   },
-  reset(){shots?.clear();lastTarget=0;lastScan=lastDummyScan=-Infinity;candidates=[];dummies=[];tracker.clear();status(false);restoreFov();},
+  reset(){shots?.reset?.();shots?.clear();ready=false;activeContext=null;lastTarget=0;lastScan=lastDummyScan=-Infinity;candidates=[];dummies=[];tracker.clear();status(false);restoreFov();},
   revoke(){shots?.clear();disposed=true;tracker.clear();status(false);restoreFov();if(module&&scratch)try{module._free(scratch);}catch{}scratch=0;candidates=[];}
  };
 }

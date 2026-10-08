@@ -46,24 +46,26 @@ export function installLolSilentShot(win,{notify=()=>{},gameId='58'}={}){
  const wa=win.WebAssembly;if(!wa||!win.crypto?.subtle)return null;
  let permitted=true,global=null,memory=null,module=null,pointer=0,ready=false,lastCount=0;
  const restore=[];
- const capture=(result,imports)=>{if(!permitted)return;const instance=result?.instance??result,g=instance?.exports?.neonSilentState;if(g){const values=[...Object.values(instance.exports),...Object.values(imports??{}).flatMap(namespace=>Object.values(namespace??{}))];const found=values.find(value=>value instanceof (wa.Memory??WebAssembly.Memory));if(found){global=g;memory=found;}}};
+ const capture=(result,imports)=>{if(!permitted)return;const instance=result?.instance??result,g=instance?.exports?.neonSilentState;if(g){const values=[...Object.values(instance.exports),...Object.values(imports??{}).flatMap(namespace=>Object.values(namespace??{}))];const found=values.find(value=>value instanceof (wa.Memory??WebAssembly.Memory));if(found){if(global!==g||memory!==found){clear();if(global)global.value=0;module=null;pointer=0;ready=false;lastCount=0;}global=g;memory=found;}}};
  const prepare=async input=>{if(!permitted)return input;try{return await patchEngine(input,{subtle:win.crypto.subtle,validate:b=>wa.validate(b)})??input;}catch(error){win.console?.warn('Neon shot controls unavailable:',error.message);return input;}};
  function patch(key,handler){if(typeof wa[key]!=='function')return;const original=wa[key],wrapped=new Proxy(original,{apply:handler});wa[key]=wrapped;restore.push(()=>{if(wa[key]===wrapped)wa[key]=original;});}
  const instantiate=wa.instantiate;
  patch('instantiate',async(target,receiver,args)=>{const result=await Reflect.apply(target,receiver,[await prepare(args[0]),...args.slice(1)]);capture(result,args[1]);return result;});
  patch('compile',async(target,receiver,args)=>Reflect.apply(target,receiver,[await prepare(args[0]),...args.slice(1)]));
  patch('instantiateStreaming',async(target,receiver,args)=>{const response=await args[0],bytes=await response.clone().arrayBuffer(),prepared=await prepare(bytes);if(prepared!==bytes){const result=await Reflect.apply(instantiate,wa,[prepared,args[1]]);capture(result,args[1]);return result;}const result=await Reflect.apply(target,receiver,[response,...args.slice(1)]);capture(result,args[1]);return result;});
- const clear=()=>{if(module&&pointer){module.HEAPU32[pointer>>>2]=0;module.HEAPU32[(pointer+8)>>>2]=0;}};
+ const clear=()=>{if(module?.HEAPU32&&pointer&&pointer+12<=module.HEAPU32.byteLength){module.HEAPU32[pointer>>>2]=0;module.HEAPU32[(pointer+8)>>>2]=0;}};
  return {
   update(m,{enabled=false,shooting=0,actor=0,health=0,kind=0,point=null,chance=90}={}){
    clear();if(!permitted||!global||memory?.buffer!==m.HEAPU8.buffer)return false;
-   if(module!==m){module=m;pointer=m._malloc(48);if(!pointer||pointer%4||pointer+48>m.HEAPU8.length){pointer=0;return false;}m.HEAPU8.fill(0,pointer,pointer+48);m.HEAPU32[(pointer+12)>>>2]=Math.floor(Math.random()*0xffffffff)||1;global.value=pointer;}
+   if(module!==m||!pointer){module=m;pointer=m._malloc(48);if(!pointer||pointer%4||pointer+48>m.HEAPU8.length){pointer=0;return false;}m.HEAPU8.fill(0,pointer,pointer+48);m.HEAPU32[(pointer+12)>>>2]=Math.floor(Math.random()*0xffffffff)||1;global.value=pointer;}
+   if(global.value!==pointer)global.value=pointer;
    if(!ready){ready=true;notify('shot-ready');}
    const count=m.HEAPU32[(pointer+36)>>>2];if(count!==lastCount){lastCount=count;notify('shot-redirected');}
    if(!enabled||!shooting||!actor||!point?.every(Number.isFinite))return true;
    m.HEAPU32[(pointer+4)>>>2]=shooting;if(gameId==='581'){m.HEAPU32[(pointer+8)>>>2]=kind==='dummy'?1:kind==='training-bot'?2:kind==='trainer'?3:0;m.HEAPU32[(pointer+32)>>>2]=health;}m.HEAPF32.set(point,(pointer+16)>>>2);m.HEAPU32[(pointer+28)>>>2]=Math.min(100,Math.max(1,Math.round(chance)||90));m.HEAPU32[(pointer+44)>>>2]=actor;m.HEAPU32[pointer>>>2]=1;return true;
   },
   clear,
+  reset(){clear();ready=false;},
   revoke(){permitted=false;clear();if(global)global.value=0;if(module&&pointer)module._free(pointer);pointer=0;restore.reverse().forEach(fn=>fn());}
  };
 }
