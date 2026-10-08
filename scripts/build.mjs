@@ -26,6 +26,7 @@ for (const game of catalog.games) {
   if (!game.url.startsWith('/') && new URL(game.url).protocol !== 'https:') throw new Error(`Invalid game address: ${game.name}`);
 }
 const required = [
+  'game-control-preferences.js',
   'game-stretch.js', 'buildnow-shot-profile.js', 'lol-silent-shot.js', 'lol-shot-profile.js', 'lol-mod-games.js', 'lol-mod-runner.js', 'lol-mod-renderer.js', 'lol-mod-menu.js', 'lol-actor-signatures.js', 'lol-native-camera.js', 'buildnow-native-camera.js', 'native-target-tracking.js', 'game-extras.css', 'updates.js', 'floating-controls.js',
   'lol-mod-renderer.js', 'lol-mod-runner.js', 'lol-mod-menu.js',
   'loading-sequence.js', 'wallpaper-preload.js', 'wallpaper-idle.js', 'wallpaper-priority.js', 'wallpaper-stream.js', 'wallpaper-cache.js', 'game-credits.js', 'icon-colors.js', 'mac-desktop.js', 'desktop-state.js', 'desktop-apps.js',

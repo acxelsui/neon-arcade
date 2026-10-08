@@ -101,12 +101,12 @@ test('owner menu validates the current runner and does not accept another game o
  for(const altered of [{...event,source:{}},{...event,origin:'https://evil.example'},{...event,data:{...event.data,gameId:'581'}},{...event,data:{...event.data,requestId:'arbitrary'}},{...event,data:{...event.data,action:'settings'}}])assert.equal(validLolModRequest(altered,options),false);
  assert.equal(validLolModRequest(event,{...options,gameId:'33'}),false);
 });
-function menuFixture(){
+function menuFixture(localStorage){
  const events={},sent=[];let permitted=true,finish;
  class Element{constructor(tag){this.tag=tag;this.children=[];this.hidden=false;this.attrs={};}append(...children){this.children.push(...children);}setAttribute(k,v){this.attrs[k]=v;}click(){this.onclick?.();}focus(){this.focused=true;}}
  const panel=new Element('div'),source={postMessage:data=>sent.push(data)},retry=new Element('button');
  const doc={querySelector:s=>s==='#game-menu-panel'?panel:s==='#game-frame-wrap iframe'?{contentWindow:source}:s==='#retry-game'?retry:null,createElement:tag=>new Element(tag),createTextNode:text=>({textContent:text})};
- const win={location:{origin:'https://arcade.example'},addEventListener:(type,fn)=>events[type]=fn};
+ const win={localStorage,location:{origin:'https://arcade.example'},addEventListener:(type,fn)=>events[type]=fn};
  initLolModMenu({doc,win,isAllowed:()=>permitted,check:()=>new Promise(resolve=>finish=resolve)});
  return {events,sent,source,panel,section:panel.children[0],setAllowed:value=>permitted=value,finish:value=>finish(value),win};
 }
@@ -150,7 +150,7 @@ test('stretch presets enable the shared setting, custom slider switches modes, a
  const f=menuFixture(),walk=el=>[el,...(el.children||[]).flatMap(walk)],nodes=walk(f.section),find=label=>nodes.find(el=>el.attrs?.['aria-label']===label),preset=find('Stretch resolution preset'),slider=find('Horizontal stretch amount');
  f.events['neon-game']({detail:{id:'581'}});preset.value='4:3';preset.onchange();assert.equal(f.sent.length,0);
  f.events.message({source:f.source,origin:f.win.location.origin,data:{channel:'neon-lol-mod-v1',gameId:'581',action:'status',status:'installed'}});
- assert.equal(preset.disabled,false);preset.onchange();assert.equal(f.sent.at(-1).settings.stretchPreset,'4:3');assert.equal(f.sent.at(-1).settings.stretch,true);
+ assert.equal(preset.disabled,false);preset.value='4:3';preset.onchange();assert.equal(f.sent.at(-1).settings.stretchPreset,'4:3');assert.equal(f.sent.at(-1).settings.stretch,true);
  slider.value='140';slider.oninput();assert.equal(preset.value,'custom');assert.equal(f.sent.at(-1).settings.stretchAmount,140);
  nodes.find(el=>el.textContent==='Reset resolution').click();assert.equal(preset.value,'native');assert.equal(f.sent.at(-1).settings.stretch,false);
  f.setAllowed(false);f.events['neon-owner-access']({detail:false});const count=f.sent.length;preset.value='5:4';preset.onchange();slider.oninput();assert.equal(f.sent.length,count);
@@ -231,4 +231,38 @@ test('tracers are visual only, GPU scans are throttled, and focus loss or revoca
  doc.pointerLockElement=null;tick(96);assert.equal(overlays[0].hidden,true);const oldReads=reads;tick(112);assert.equal(reads,oldReads);
  doc.pointerLockElement=canvas;renderer.settings({});tick(128);assert.equal(reads,oldReads);
  renderer.revoke();assert.equal(overlays[0].removed,true);
+});
+const preferenceStorage=()=>{const data=new Map();return {data,getItem:key=>data.get(key)??null,setItem:(key,value)=>data.set(key,value)};};
+function savedMenu(storage,id='58'){
+ const f=menuFixture(storage),walk=el=>[el,...(el.children||[]).flatMap(walk)],nodes=walk(f.section);f.events['neon-game']({detail:{id}});
+ f.find=label=>nodes.find(el=>el.attrs?.['aria-label']===label);f.button=text=>nodes.find(el=>el.textContent===text);
+ f.report=status=>f.events.message({source:f.source,origin:f.win.location.origin,data:{channel:'neon-lol-mod-v1',gameId:id,action:'status',status}});
+ return f;
+}
+test('reopening restores per-game controls in readiness order, including after a page reload',()=>{
+ const storage=preferenceStorage(),first=savedMenu(storage);
+ first.report('supported');first.report('camera-ready');first.report('shot-ready');
+ for(const label of ['ESP highlights','Tracers','Custom field of view','Silent aim']){const field=first.find(label);field.checked=true;field.onchange();}
+ first.find('Silent aim redirection chance').value='97';first.find('Silent aim redirection chance').oninput();
+ first.find('Stretch resolution preset').value='4:3';first.find('Stretch resolution preset').onchange();
+ first.find('Camera field of view').value='100';first.find('Camera field of view').oninput();
+ first.events['neon-game']({detail:null});assert.equal(storage.data.size,1);
+ const next=savedMenu(storage);assert.equal(next.find('Silent aim').checked,true);assert.equal(next.find('Silent aim').disabled,true);assert.equal(next.sent.length,0);
+ next.report('installed');assert.equal(next.sent.at(-1).settings.stretch,true);assert.equal(next.sent.at(-1).settings.stretchPreset,'4:3');assert.equal(next.sent.at(-1).settings.esp,false);assert.equal(next.sent.at(-1).settings.silent,false);assert.equal(next.sent.at(-1).settings.fovEnabled,false);
+ next.report('supported');assert.equal(next.sent.at(-1).settings.esp,true);assert.equal(next.sent.at(-1).settings.tracers,true);assert.equal(next.sent.at(-1).settings.silent,false);
+ next.report('camera-ready');assert.equal(next.sent.at(-1).settings.fovEnabled,true);assert.equal(next.sent.at(-1).settings.fov,100);assert.equal(next.sent.at(-1).settings.silent,false);
+ next.report('shot-ready');assert.equal(next.sent.at(-1).settings.silent,true);assert.equal(next.sent.at(-1).settings.silentChance,97);assert.equal(next.sent.at(-1).settings.aim,false);
+ next.report('installed');assert.equal(next.sent.at(-1).settings.silent,false,'refresh waits for the new shot hook');next.report('shot-ready');assert.equal(next.sent.at(-1).settings.silent,true);
+ const other=savedMenu(storage,'581');other.report('supported');other.report('camera-ready');other.report('shot-ready');assert.equal(other.sent.at(-1).settings.silent,false);assert.equal(other.sent.at(-1).settings.stretch,false);
+});
+test('saved camera lock restores only after readiness; revocation never clears preferences or bypasses access',()=>{
+ const storage=preferenceStorage(),first=savedMenu(storage,'581');first.report('supported');first.report('camera-ready');const aim=first.find('Aimbot · character lock');aim.checked=true;aim.onchange();
+ const next=savedMenu(storage,'581');next.report('installed');assert.equal(next.sent.at(-1).settings.aim,false);next.report('camera-ready');assert.equal(next.sent.at(-1).settings.aim,true);
+ const original=storage.getItem('neon-owner-controls-v1:581');next.setAllowed(false);next.events['neon-owner-access']({detail:false});assert.equal(next.sent.at(-1).action,'revoke');next.report('camera-ready');assert.equal(next.sent.at(-1).action,'revoke');assert.equal(storage.getItem('neon-owner-controls-v1:581'),original);
+});
+test('All off and reset resolution replace saved choices rather than rearming on reopening',()=>{
+ const storage=preferenceStorage(),f=savedMenu(storage);f.report('supported');f.report('camera-ready');f.report('shot-ready');
+ f.find('Stretch resolution preset').value='5:4';f.find('Stretch resolution preset').onchange();const aim=f.find('Aimbot · character lock');aim.checked=true;aim.onchange();
+ f.button('Reset resolution').click();const reset=savedMenu(storage);reset.report('installed');assert.equal(reset.find('Stretch resolution preset').value,'native');assert.equal(reset.sent.at(-1).settings.stretch,false);
+ f.button('All off').click();const next=savedMenu(storage);next.report('supported');next.report('camera-ready');next.report('shot-ready');for(const key of ['aim','silent','stretch','esp','tracers','wireframe','fovEnabled'])assert.equal(next.sent.at(-1).settings[key],false);
 });
