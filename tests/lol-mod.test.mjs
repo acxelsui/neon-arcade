@@ -1,7 +1,7 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import {attachLolMod,prepareLolMod} from '../public/lol-mod-runner.js';
-import {installLolRenderer} from '../public/lol-mod-renderer.js';
+import {installLolRenderer,detectLolTargets,selectLolTarget,createLolMotion} from '../public/lol-mod-renderer.js';
 import {validLolModRequest,initLolModMenu} from '../public/lol-mod-menu.js';
 
 test('only the verified top-level 1v1 frame receives hooks; game responses, proxy URLs and saves are untouched',()=>{
@@ -36,7 +36,7 @@ test('owner menu validates the current runner and does not accept another game o
 });
 function menuFixture(){
  const events={},sent=[];let permitted=true,finish;
- class Element{constructor(tag){this.tag=tag;this.children=[];this.hidden=false;this.attrs={};}append(...children){this.children.push(...children);}setAttribute(k,v){this.attrs[k]=v;}click(){this.onclick?.();}}
+ class Element{constructor(tag){this.tag=tag;this.children=[];this.hidden=false;this.attrs={};}append(...children){this.children.push(...children);}setAttribute(k,v){this.attrs[k]=v;}click(){this.onclick?.();}focus(){this.focused=true;}}
  const panel=new Element('div'),source={postMessage:data=>sent.push(data)},retry=new Element('button');
  const doc={querySelector:s=>s==='#game-menu-panel'?panel:s==='#game-frame-wrap iframe'?{contentWindow:source}:s==='#retry-game'?retry:null,createElement:tag=>new Element(tag),createTextNode:text=>({textContent:text})};
  const win={location:{origin:'https://arcade.example'},addEventListener:(type,fn)=>events[type]=fn};
@@ -49,6 +49,19 @@ test('verified owners get controls, role loss disables effects and late authoriz
  const pending=f.events.message(event);f.setAllowed(false);f.events['neon-owner-access']({detail:false});assert.equal(f.section.hidden,true);assert.equal(f.sent.at(-1).action,'revoke');f.finish(true);await pending;assert.equal(f.sent.at(-1).allowed,false);
  f.setAllowed(true);f.events['neon-owner-access']({detail:true});assert.equal(f.section.hidden,false);
  f.events['neon-game']({detail:{id:'581'}});assert.equal(f.section.hidden,true);
+});
+test('control sections support keyboard navigation, and All off clears switches across hidden sections',()=>{
+ const f=menuFixture();f.events['neon-game']({detail:{id:'58'}});
+ const walk=el=>[el,...(el.children||[]).flatMap(walk)],nodes=walk(f.section),find=predicate=>nodes.find(predicate);
+ const aim=find(el=>el.id==='lol-tab-aim'),visuals=find(el=>el.id==='lol-tab-visuals'),aimPage=find(el=>el.id==='lol-page-aim'),visualPage=find(el=>el.id==='lol-page-visuals');
+ assert.equal(aim.attrs['aria-selected'],'true');assert.equal(visualPage.hidden,true);
+ let prevented=false;aim.onkeydown({key:'ArrowRight',preventDefault(){prevented=true;}});assert.equal(prevented,true);assert.equal(visuals.focused,true);assert.equal(aimPage.hidden,true);assert.equal(visualPage.hidden,false);assert.equal(aim.attrs.tabindex,'-1');
+ visuals.onkeydown({key:'Home',preventDefault(){}});assert.equal(aimPage.hidden,false);assert.equal(visualPage.hidden,true);
+ const report=status=>f.events.message({source:f.source,origin:f.win.location.origin,data:{channel:'neon-lol-mod-v1',gameId:'58',action:'status',status}});
+ report('supported');const tracer=find(el=>el.attrs?.['aria-label']==='Tracers'),aimInput=find(el=>el.attrs?.['aria-label']==='Aimbot · experimental'),count=find(el=>el.className==='lol-mod-count');
+ tracer.checked=true;tracer.onchange();aimInput.checked=true;aimInput.onchange();assert.equal(count.textContent,'2 enabled');assert.equal(f.sent.at(-1).settings.tracers,true);
+ find(el=>el.textContent==='All off').click();assert.equal(count.textContent,'0 enabled');assert.equal(tracer.checked,false);assert.equal(aimInput.checked,false);assert.equal(f.sent.at(-1).settings.aim,false);assert.equal(f.sent.at(-1).settings.tracers,false);
+ f.section.children[0].click();assert.equal(f.section.children[1].hidden,false);find(el=>el.attrs?.['aria-label']==='Collapse owner controls').click();assert.equal(f.section.children[1].hidden,true);assert.equal(f.section.children[0].focused,true);
 });
 test('renderer leaves ordinary draw calls untouched when off, recovers bad shaders and restores hooks on revocation',()=>{
  const sent=[];let drawCalls=0,queries=0;
@@ -87,4 +100,43 @@ test('compatibility requires both shader stages, wireframe changes geometry and 
  renderer.settings({});gl.drawElements(gl.TRIANGLES,5001);assert.equal(draws.at(-1).mode,gl.TRIANGLES);
  const location=gl.getUniformLocation(program,'hlslcc_mtx4x4unity_ObjectToWorld');gl.uniform4fv(location,new Float32Array(16));renderer.settings({wireframe:true});gl.drawElements(gl.TRIANGLES,5001);assert.equal(draws.at(-1).mode,gl.TRIANGLES);
  renderer.revoke();
+});
+
+function paintShape(pixels,size,x,y,width,height){for(let row=y;row<y+height;row++)for(let column=x;column<x+width;column++)pixels.set([255,0,0,255],(row*size+column)*4);}
+test('target detection separates shapes, rejects broad surfaces, edge fragments and tiny noise',()=>{
+ const size=144,pixels=new Uint8Array(size*size*4);
+ paintShape(pixels,size,48,58,8,20);paintShape(pixels,size,86,63,8,20);
+ paintShape(pixels,size,15,110,112,12);paintShape(pixels,size,5,5,1,1);paintShape(pixels,size,0,35,8,10);
+ const targets=detectLolTargets(pixels,size);assert.equal(targets.length,2);
+ assert.ok(targets.every(p=>Math.abs(p.x)>10),'never averages separated shapes into empty center space');
+ const chosen=selectLolTarget(targets,null);assert.equal(chosen,targets[0]);
+ const other=targets[1];assert.equal(selectLolTarget(targets,other),other,'keeps the previous nearby shape instead of oscillating');
+ assert.equal(selectLolTarget([],other),null,'a missing shape is released immediately');
+});
+test('smooth movement is frame-rate independent, bounded and stops inside the dead zone',()=>{
+ const simulate=(fps,smoothing)=>{const motion=createLolMotion();let x=0;for(let i=0;i<fps;i++)x+=motion.step({x:40,y:0},1000/fps,smoothing).x;return x;};
+ assert.ok(Math.abs(simulate(60,70)-simulate(120,70))<.001);
+ assert.ok(simulate(60,100)<simulate(60,1),'higher smoothness accelerates more gradually');
+ const motion=createLolMotion();for(let i=0;i<100;i++){const d=motion.step({x:1000,y:1000},16,1);assert.ok(Math.hypot(d.x,d.y)<=180*.016+.001);}
+ assert.deepEqual(motion.step({x:1,y:0},16),{x:0,y:0});assert.deepEqual(motion.step(null,16),{x:0,y:0});
+});
+test('tracers are visual only, GPU scans are throttled, and focus loss or revocation clears them',()=>{
+ let reads=0,moves=0,lines=0,raf;
+ const overlays=[],canvas={isConnected:true,width:144,height:144,style:{},getBoundingClientRect:()=>({left:0,top:0,width:288,height:288}),dispatchEvent(){moves++;}};
+ const doc={pointerLockElement:canvas,hidden:false,body:{append(el){overlays.push(el);}},createElement(){return {style:{},setAttribute(){},getContext:()=>({clearRect(){},beginPath(){},moveTo(){},lineTo(){lines++;},stroke(){},arc(){}}),remove(){this.removed=true;}};}};
+ class GL{
+  constructor(){Object.assign(this,{SHADER_TYPE:1,VERTEX_SHADER:2,COMPILE_STATUS:3,CURRENT_PROGRAM:4,FRAMEBUFFER_BINDING:5,PIXEL_PACK_BUFFER_BINDING:6,drawingBufferWidth:144,drawingBufferHeight:144,canvas});}
+  shaderSource(){}compileShader(){}getShaderParameter(shader,key){return key===1?shader.type:true;}linkProgram(){}getAttachedShaders(p){return p.shaders;}getProgramParameter(){return true;}
+  getUniformLocation(program,name){return {program,name};}uniform4fv(){}drawElements(){}useProgram(p){this.current=p;}uniform1i(){}uniform1f(){}getParameter(key){return key===4?this.current:null;}isContextLost(){return false;}isProgram(){return true;}
+  readPixels(x,y,w,h,format,type,pixels){reads++;pixels.fill(0);paintShape(pixels,144,80,60,8,20);}
+ }
+ const win={document:doc,WebGL2RenderingContext:GL,requestAnimationFrame(fn){raf=fn;},MouseEvent:class{}};
+ const renderer=installLolRenderer({win}),gl=new GL(),vertex={type:2},fragment={type:0};
+ gl.shaderSource(vertex,'#version 300 es\nvoid main(){gl_Position=vec4(1.0);}');gl.shaderSource(fragment,'#version 300 es\nout vec4 SV_Target0;void main(){SV_Target0=vec4(1.0);}');gl.linkProgram({shaders:[vertex,fragment]});
+ const tick=now=>{win.requestAnimationFrame(()=>{});raf(now);};
+ renderer.settings({tracers:true});tick(0);tick(16);tick(32);assert.equal(reads,1);assert.equal(moves,0);assert.ok(lines>0);assert.equal(overlays.length,1);assert.equal(overlays[0].hidden,false);
+ tick(48);assert.equal(reads,2);renderer.settings({aim:true,tracers:true});tick(64);tick(80);assert.ok(moves>0);
+ doc.pointerLockElement=null;tick(96);assert.equal(overlays[0].hidden,true);const oldReads=reads;tick(112);assert.equal(reads,oldReads);
+ doc.pointerLockElement=canvas;renderer.settings({});tick(128);assert.equal(reads,oldReads);
+ renderer.revoke();assert.equal(overlays[0].removed,true);
 });

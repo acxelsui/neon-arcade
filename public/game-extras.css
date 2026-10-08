@@ -25,17 +25,60 @@
 #game-menu-panel #game-music-like[aria-pressed=true] svg{fill:currentColor}
 #game-menu-panel .game-menu-hacks{grid-column:1/-1;grid-row:3;min-width:0;border-top:1px solid #ffffff28;padding-top:5px;color:#f8f8f8}
 #game-menu-panel #game-hacks-toggle{width:100%;height:30px;min-height:30px;display:flex;justify-content:center;gap:8px;font:600 11px system-ui;letter-spacing:.03em}
-#game-hacks-toggle::before{content:'＋';font-size:15px}#game-hacks-toggle[aria-expanded=true]::before{content:'−'}
+#game-hacks-toggle::before{content:'ï¼‹';font-size:15px}#game-hacks-toggle[aria-expanded=true]::before{content:'âˆ’'}
 #game-hacks-form{padding:10px 5px 4px;text-align:left;font:12px/1.5 system-ui}#game-hacks-form strong{font-size:13px}#game-hacks-form p{font-size:11px;color:#dce0e5;margin:7px 0 10px}#game-hacks-form label{display:block;font-size:11px;margin-bottom:5px}
 #game-hacks-form input,#game-hacks-form select{box-sizing:border-box;width:100%;min-width:0;padding:9px 10px;border:1px solid #ffffff40;border-radius:9px;background:#080a0cdd;color:white;font:13px system-ui;margin-bottom:9px}
 #game-menu-panel .game-hacks-actions{display:flex;gap:5px;margin-top:9px}#game-menu-panel .game-hacks-actions button{width:auto;flex:1;height:auto;min-height:33px;font:600 10px system-ui;padding:7px;border:1px solid #ffffff35;background:#ffffff12}
 #game-hacks-form :focus-visible{outline:2px solid white;outline-offset:2px}#game-hacks-status:empty{display:none}#game-menu-panel #game-hacks-status{margin:9px 0 0;color:white}
 
 /* Detaching a side tab moves its existing page; the game keeps the same frame. */
-#game-menu-panel #lol-hacks-toggle{width:100%;height:30px;min-height:30px;display:flex;justify-content:center;gap:8px;font:600 11px system-ui;letter-spacing:.03em}#lol-hacks-toggle::before{content:'＋';font-size:15px}#lol-hacks-toggle[aria-expanded=true]::before{content:'−'}
-#game-menu-panel #lol-hacks-controls{box-sizing:border-box;width:100%;max-height:calc(100dvh - 190px);overflow-y:auto;padding:12px;text-align:left;display:flex;flex-direction:column;gap:8px;background:#07162480;border:1px solid #ffffff30;border-radius:12px;backdrop-filter:blur(14px);white-space:normal}
-#game-menu-panel #lol-hacks-controls[hidden]{display:none}#lol-hacks-controls strong{font-size:13px}#lol-hacks-controls small{font-size:10px;color:#cee4f5}#game-menu-panel #lol-hacks-controls p{margin:0;font:11px/1.5 system-ui;color:#d8e9f5}
-#game-menu-panel #lol-hacks-controls .lol-mod-option{display:flex;align-items:center;gap:9px;font:600 12px system-ui;padding:7px 0;cursor:pointer}#game-menu-panel #lol-hacks-controls input{width:17px;height:17px;accent-color:#90d4ff;margin:0}#game-menu-panel #lol-hacks-controls input:disabled{opacity:.4}.lol-mod-option:has(input:disabled){opacity:.65}#lol-hacks-controls :focus-visible{outline:2px solid #c4eaff;outline-offset:3px}
+#game-menu-panel #lol-hacks-toggle{width:100%;height:30px;min-height:30px;display:flex;justify-content:center;gap:8px;font:600 11px system-ui;letter-spacing:.03em}#lol-hacks-toggle::before{content:'ï¼‹';font-size:15px}#lol-hacks-toggle[aria-expanded=true]::before{content:'âˆ’'}
+#game-menu-panel #lol-hacks-controls{box-sizing:border-box;width:min(354px,calc(100vw - 32px));margin:0 calc((100% - min(354px,100vw - 32px))/2);max-height:calc(100dvh - 125px);overflow-y:auto;padding:18px;text-align:left;display:flex;flex-direction:column;gap:12px;background:radial-gradient(ellipse at 100% 0,#48caff1a,transparent 65%),linear-gradient(145deg,#101a28ee,#0a101ada);border:1px solid #96cfff40;border-radius:19px;box-shadow:0 22px 65px #0008,inset 0 1px #ffffff15;backdrop-filter:blur(22px);white-space:normal;scrollbar-width:thin;scrollbar-color:#91dfff55 transparent}
+#game-menu-panel #lol-hacks-controls[hidden],#lol-hacks-controls .lol-mod-page[hidden]{display:none}
+#lol-hacks-controls .lol-mod-heading{display:flex;align-items:center;gap:10px}
+#lol-hacks-controls .lol-mod-logo{width:30px;height:30px;display:grid;place-items:center;border:1px solid #aeeeff44;border-radius:9px;background:linear-gradient(145deg,#4da6c933,#78c9ff0a);color:#dbf7ff;font:800 20px system-ui;box-shadow:inset 0 1px #ffffff18}
+#lol-hacks-controls .lol-mod-heading strong{flex:1;font:700 16px system-ui;letter-spacing:-.025em}
+#lol-hacks-controls .lol-mod-heading small{padding:4px 6px;border:1px solid #81e2ff25;border-radius:5px;color:#9bb9cb;font:650 8px system-ui;letter-spacing:.09em;background:#60ddff08}
+#game-menu-panel #lol-hacks-controls .lol-mod-collapse{width:24px;height:24px;min-height:24px;padding:0;font:18px system-ui;border-radius:7px;color:#829aaf}
+#game-menu-panel #lol-hacks-controls p{margin:0;font:11px/1.5 system-ui;color:#a7bbcd}
+#game-menu-panel #lol-hacks-controls .lol-mod-subtitle{font:10px system-ui;color:#7794ac;margin:-6px 0 0 40px}
+#lol-hacks-controls .lol-mod-statusline{display:flex;align-items:center;justify-content:space-between;gap:10px;min-height:22px}
+#game-menu-panel #lol-hacks-controls .lol-mod-status{font-size:10px;flex:1}
+#lol-hacks-controls .lol-mod-status:before{content:'';display:inline-block;vertical-align:1px;width:5px;height:5px;border-radius:50%;background:#e7bd74;margin-right:7px}
+#lol-hacks-controls .lol-mod-status[data-state=ready]:before{background:#74d6b0;box-shadow:0 0 7px #74d6b02a}
+#lol-hacks-controls .lol-mod-count{color:#728ca3;font:10px system-ui;flex:none}
+#lol-hacks-controls .lol-mod-tabs{display:grid;grid-template-columns:1fr 1fr;gap:4px;background:#0003;border:1px solid #ffffff0e;border-radius:10px;padding:4px}
+#game-menu-panel #lol-hacks-controls .lol-mod-tabs button{width:100%;height:30px;min-height:30px;padding:0;font:600 11px system-ui;border-radius:7px;color:#839bb3}
+#game-menu-panel #lol-hacks-controls .lol-mod-tabs button[aria-selected=true]{background:#8adfff15;color:#daf4ff;border-color:#9ce5ff18;box-shadow:0 1px 4px #0003}
+#lol-hacks-controls .lol-mod-page{display:flex;flex-direction:column;gap:8px}
+#game-menu-panel #lol-hacks-controls .lol-mod-option{position:relative;display:flex;align-items:center;justify-content:space-between;gap:14px;padding:12px;border:1px solid #ffffff0e;border-radius:11px;background:#ffffff03;cursor:pointer;transition:border-color .15s,background .15s}
+#lol-hacks-controls .lol-mod-option>span:first-child{display:flex;flex-direction:column;gap:5px}
+#lol-hacks-controls .lol-mod-option strong{font:600 12px system-ui}
+#lol-hacks-controls .lol-mod-option small{font:10px/1.45 system-ui;color:#7e98b0}
+#lol-hacks-controls .lol-mod-option:has(input:checked){border-color:#82d6ff33;background:#6ecbff08}
+#lol-hacks-controls .lol-mod-option:has(input:disabled){opacity:.6;cursor:default}
+#lol-hacks-controls .lol-mod-switch{display:block;position:relative;flex:none;width:32px;height:19px}
+#game-menu-panel #lol-hacks-controls .lol-mod-switch input{position:absolute;inset:0;width:100%;height:100%;margin:0;opacity:0;cursor:inherit;z-index:1}
+#lol-hacks-controls .lol-mod-switch>span{display:block;width:100%;height:100%;border:1px solid #b9d1e22a;border-radius:20px;background:#c7d9e514;transition:background .15s}
+#lol-hacks-controls .lol-mod-switch>span:before{content:'';position:absolute;left:3px;top:4px;width:11px;height:11px;border-radius:50%;background:#859bb0;transition:transform .15s,background .15s}
+#lol-hacks-controls .lol-mod-switch input:checked+span{background:#93deee;border-color:#b5efff}
+#lol-hacks-controls .lol-mod-switch input:checked+span:before{transform:translateX(13px);background:#123445}
+#lol-hacks-controls :focus-visible,#lol-hacks-controls .lol-mod-switch:has(input:focus-visible){outline:2px solid #bceaff;outline-offset:3px}
+#lol-hacks-controls .lol-mod-smoothing{display:grid;grid-template-columns:1fr auto;gap:10px;font:600 11px system-ui;padding:12px;border:1px solid #ffffff0e;border-radius:11px;background:#ffffff03}
+#lol-hacks-controls .lol-mod-smoothing output{color:#b6e7f5;font-variant-numeric:tabular-nums;background:#a0daff0c;padding:2px 6px;border-radius:4px}
+#game-menu-panel #lol-hacks-controls .lol-mod-smoothing input{grid-column:1/-1;width:100%;height:18px;accent-color:#9ed9eb;padding:0;border:0;margin:0;cursor:pointer}
+#lol-hacks-controls .lol-mod-smoothing input:disabled{opacity:.4}
+#lol-hacks-controls .lol-mod-rangehint{grid-column:1/-1;display:flex;justify-content:space-between;font:9px system-ui;color:#66839b;margin-top:-6px}
+#lol-hacks-controls .lol-mod-details{border-top:1px solid #ffffff0e;padding-top:11px}
+#lol-hacks-controls .lol-mod-details summary{cursor:pointer;color:#7491a9;font:10px system-ui;list-style-position:inside}
+#game-menu-panel #lol-hacks-controls .lol-mod-note{margin-top:9px;font:10px/1.6 system-ui;color:#829bb0}
+#game-menu-panel #lol-hacks-controls .game-hacks-actions{margin:0;gap:8px}
+#game-menu-panel #lol-hacks-controls .game-hacks-actions button{min-height:34px;font:600 11px system-ui;border-radius:9px;background:#ffffff04;border-color:#ffffff1c;color:#afc8dc}
+#game-menu-panel #lol-hacks-controls .game-hacks-actions button:first-child{color:#b8e8f5;border-color:#83d0e533;background:#89ddff0a}
+#game-menu-panel #lol-hacks-controls button:hover{background:#9cdef020;color:#e4f9ff;border-color:#b0edff38}
+#lol-hacks-controls .lol-mod-credit{font:9px system-ui;text-align:center;color:#49667f;margin-top:-4px}
+@media(prefers-reduced-motion:reduce){#lol-hacks-controls .lol-mod-option,#lol-hacks-controls .lol-mod-switch>span,#lol-hacks-controls .lol-mod-switch>span:before{transition:none}}
+
 .game-side-toolbar{align-items:center;touch-action:none;cursor:grab}
 .game-side-toolbar select{width:0;min-width:60px}
 .game-side-toolbar .game-side-move{cursor:grab;font-size:20px;width:22px;padding:0;flex:none}
