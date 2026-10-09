@@ -6,7 +6,14 @@ export function createWallpaperPreparation({items=wallpapers,storage=globalThis.
  let cachePromise,allowed=false,selected=null,running=null,request=null,blocked=false,state='paused';const done=new Set(),failed=new Set();
  function snapshot(){return {ready:videos.filter(url=>done.has(url)).length,startsReady:streams.filter(url=>done.has(url)).length,total:videos.length,state,prepared:videos.filter(url=>done.has(url))};}
  function report(){notify(snapshot());}
- async function cache(){if(!storage)return null;return cachePromise??=storage.open('neon-wallpapers-20261004-v2').catch(()=>null);}
+ async function cache(){
+  if(!storage)return null;
+  return cachePromise??=(async()=>{
+   // Retire only the previous wallpaper movies; account and game caches stay intact.
+   try{await storage.delete?.('neon-wallpapers-20261004-v2');}catch{}
+   return storage.open('neon-wallpapers-20261008-loops-v3');
+  })().catch(()=>null);
+ }
  function valid(response,url){return response?.status===200&&response.headers.get('content-type')?.toLowerCase().startsWith(videos.includes(url)||streams.includes(url)?'video/mp4':'image/');}
  async function source(url){
   if(!known.has(url))return null;

@@ -1,9 +1,10 @@
 import {wallpaperPreparation} from './wallpaper-preload.js';
-import {wallpaperStreamUrl,createWallpaperVideo,hasWallpaperBuffer,cachedWallpaperFull} from './wallpaper-stream.js';
-let video,pending,currentUrl,epoch=0,warmed,switching,switchEpoch=0,release=[],timers=[],visible=Promise.resolve();
+import {releaseWallpaperLoop} from './wallpaper-loop.js';
+import {wallpaperStreamUrl,createWallpaperVideo,hasWallpaperBuffer,cachedWallpaperFull,wallpaperFullTime} from './wallpaper-stream.js';
+let video,pending,currentUrl,epoch=0,warmed,switching,switchEpoch=0,release=[],timers=[],retiring=new Set(),visible=Promise.resolve();
 function canPlay(){return !document.hidden&&!document.fullscreenElement;}
 function play(){if(canPlay()){video?.play().catch(()=>{});switching?.media.play().catch(()=>{});}}
-function dispose(media){if(!media)return;media.pause();media.removeAttribute('src');media.load();media.remove();}
+function dispose(media){if(!media)return;releaseWallpaperLoop(media);media.pause();media.removeAttribute('src');media.load();media.remove();}
 function status(text){
  let el=document.querySelector('#wallpaper-playback-status');const preparation=document.querySelector('#wallpaper-preload-status');
  if(!el&&preparation?.parentNode){el=document.createElement('p');el.id='wallpaper-playback-status';el.setAttribute('aria-live','polite');preparation.parentNode.insertBefore(el,preparation);}
@@ -56,7 +57,7 @@ export function setWallpaperMedia(url,poster=''){
 function activateWallpaperMedia(url,poster='',prepared){
  if(currentUrl===url&&!video?.error&&video?.dataset?.neonWallpaper4kFailed!=='true'){play();return;}
  const layer=document.querySelector('#wallpaper'),version=++epoch;currentUrl=url;wallpaperPreparation.select(url);
- timers.forEach(clearTimeout);timers=[];dispose(video);dispose(pending);video=pending=null;release.forEach(fn=>fn());release=[];
+ timers.forEach(clearTimeout);timers=[];retiring.forEach(dispose);retiring.clear();dispose(video);dispose(pending);video=pending=null;release.forEach(fn=>fn());release=[];
  let ready;visible=new Promise(resolve=>ready=resolve);
  layer.style.backgroundImage=`url(${JSON.stringify(poster||url)})`;
  if(typeof Image!=='undefined'){const image=new Image();image.fetchPriority='high';image.onload=()=>{if(version===epoch)ready();};image.onerror=()=>ready();image.src=poster||url;}
@@ -85,7 +86,7 @@ function activateWallpaperMedia(url,poster='',prepared){
   }
   function promote(){
    if(stopped||version!==epoch||video!==media||!canPlay()||high.readyState<3)return;
-   const target=media.currentTime%high.duration;
+   const target=wallpaperFullTime(url,media.currentTime,high.duration);
    if(!seeking){seeking=true;if(Number.isFinite(target)&&Math.abs(high.currentTime-target)>.15){high.currentTime=target;return;}}
    if(!hasWallpaperBuffer(high))return;
    high.play().catch(stop);
@@ -95,7 +96,10 @@ function activateWallpaperMedia(url,poster='',prepared){
   high.addEventListener('playing',()=>clearTimeout(stall));
   high.addEventListener('playing',()=>{
    if(stopped||version!==epoch||video!==media)return;
-   high.style.opacity='1';video=high;pending=null;delete media.dataset.neonWallpaperPending4k;dispose(media);status('4K live wallpaper playing · full loop.');changed();
+   // Keep the moving opening underneath until the complete video has faded in.
+   high.style.transition='opacity 350ms linear';high.style.opacity='1';video=high;pending=null;delete media.dataset.neonWallpaperPending4k;
+   retiring.add(media);timers.push(setTimeout(()=>{retiring.delete(media);dispose(media);high.style.transition='';},400));
+   status('4K live wallpaper playing · full loop.');changed();
 
   },{once:true});
   for(const event of ['canplay','progress','seeked'])high.addEventListener(event,promote);

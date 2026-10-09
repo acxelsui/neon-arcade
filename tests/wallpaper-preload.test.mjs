@@ -5,6 +5,13 @@ const items=['a','b','c'].map(name=>({url:`/wallpapers/4k/${name}.mp4`,preview:`
 function fixture(){const entries=new Map();return {entries,storage:{async open(){return {async match(url){return entries.get(url)?.clone();},async put(url,response){const body=await response.arrayBuffer();entries.set(url,new Response(body,{headers:response.headers,status:response.status}));}};}}};}
 function response(url,status=200){return new Response('asset',{status,headers:{'content-type':url.endsWith('.mp4')?'video/mp4':'image/webp','content-length':'5'}});}
 const tick=()=>new Promise(resolve=>setImmediate(resolve));
+test('the smooth-loop release replaces only its old wallpaper cache and leaves player data untouched',async()=>{
+ const deleted=[],opened=[],oldCache=new Map([[items[0].url,response(items[0].url)]]),gameCache=new Map([['player-progress','saved']]);
+ const named=new Map([['neon-wallpapers-20261004-v2',oldCache],['neon-game-saves',gameCache]]);
+ const storage={async delete(name){deleted.push(name);return named.delete(name);},async open(name){opened.push(name);if(!named.has(name))named.set(name,new Map());const entries=named.get(name);return{async match(url){return entries.get(url)?.clone();},async put(url,r){entries.set(url,r.clone());}};}};
+ const cache=createWallpaperPreparation({items:items.slice(0,1),storage,delay:async()=>{},fetcher:async url=>response(url)});await cache.resume();await cache.resume();
+ assert.deepEqual(deleted,['neon-wallpapers-20261004-v2']);assert.deepEqual(opened,['neon-wallpapers-20261008-loops-v3']);assert.equal(named.get('neon-game-saves').get('player-progress'),'saved');assert.equal(cache.snapshot().ready,1);
+});
 test('prepares every short 4K opening clip and every full 4K video sequentially, prioritizes selection, and reuses saved copies on another visit',async()=>{
  const f=fixture(),calls=[];let concurrent=0,max=0;const options={items,storage:f.storage,delay:async()=>{},fetcher:async url=>{calls.push(url);concurrent++;max=Math.max(max,concurrent);await tick();concurrent--;return response(url);}};
  const first=createWallpaperPreparation(options);first.select(items[2].url);await first.resume();assert.equal(max,1);assert.deepEqual(calls,[items[2].url.replace('/4k/','/4k-start/'),...items.slice(0,2).map(i=>i.url.replace('/4k/','/4k-start/')),...items.map(i=>i.preview),items[2].url,...items.slice(0,2).map(i=>i.url)]);assert.deepEqual(first.snapshot(),{ready:3,startsReady:3,total:3,state:'ready',prepared:items.map(i=>i.url)});

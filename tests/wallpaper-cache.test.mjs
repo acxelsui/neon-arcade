@@ -3,7 +3,7 @@ import assert from 'node:assert/strict';
 import '../public/wallpaper-cache.js';
 const path='/wallpapers/4k/demo.mp4',url='https://neon.example'+path;
 const bytes=Uint8Array.from({length:20},(_,i)=>i);
-const storage={async open(name){assert.equal(name,'neon-wallpapers-20261004-v2');return{async match(key){assert.equal(key,path);return new Response(new ReadableStream({start(c){c.enqueue(bytes.slice(0,7));c.enqueue(bytes.slice(7,14));c.enqueue(bytes.slice(14));c.close();}}),{headers:{'content-type':'video/mp4','content-length':'20'}});}};}};
+const storage={async open(name){assert.equal(name,'neon-wallpapers-20261008-loops-v3');return{async match(key){assert.equal(key,path);return new Response(new ReadableStream({start(c){c.enqueue(bytes.slice(0,7));c.enqueue(bytes.slice(7,14));c.enqueue(bytes.slice(14));c.close();}}),{headers:{'content-type':'video/mp4','content-length':'20'}});}};}};
 test('a cached 4K movie streams without constructing a full-file blob',async()=>{
  const response=await neonWallpaperCache(new Request(url),storage);assert.equal(response.status,200);assert.deepEqual(new Uint8Array(await response.arrayBuffer()),bytes);
 });

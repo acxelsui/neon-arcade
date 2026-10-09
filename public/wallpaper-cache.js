@@ -4,7 +4,7 @@ globalThis.neonWallpaperCache=async function(request,storage=globalThis.caches){
  const url=new URL(request.url);
  if(request.method!=='GET'||!/^\/wallpapers\/(?:4k|4k-start|stream)\/[a-zA-Z0-9._-]+\.mp4$/.test(url.pathname)||url.search)return null;
  try{
-  const cache=await storage.open('neon-wallpapers-20261004-v2');
+  const cache=await storage.open('neon-wallpapers-20261008-loops-v3');
   const response=await cache.match(url.pathname);
   if(response?.status!==200||!response.headers.get('content-type')?.toLowerCase().startsWith('video/mp4'))return null;
   const range=request.headers.get('range');if(!range)return response;
