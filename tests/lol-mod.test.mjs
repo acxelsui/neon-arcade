@@ -239,6 +239,20 @@ function savedMenu(storage,id='58'){
  f.report=status=>f.events.message({source:f.source,origin:f.win.location.origin,data:{channel:'neon-lol-mod-v1',gameId:id,action:'status',status}});
  return f;
 }
+
+test('sample character follows visual preferences across tabs, reset and revoked access',()=>{
+ const f=menuFixture(),walk=el=>[el,...(el.children||[]).flatMap(walk)],find=predicate=>walk(f.section).find(predicate);
+ f.events['neon-game']({detail:{id:'581'}});
+ f.events.message({source:f.source,origin:f.win.location.origin,data:{channel:'neon-lol-mod-v1',gameId:'581',action:'status',status:'supported'}});
+ const preview=find(el=>el.className==='lol-mod-character-preview');
+ for(const key of ['esp','tracers','wireframe'])assert.equal(preview.attrs['data-'+key],'false');
+ for(const label of ['ESP highlights','Tracers','Wireframe view']){const field=find(el=>el.attrs?.['aria-label']===label);field.checked=true;field.onchange();}
+ for(const key of ['esp','tracers','wireframe'])assert.equal(preview.attrs['data-'+key],'true');
+ find(el=>el.id==='lol-tab-stretch').click();assert.equal(preview.hidden,false,'sample remains separate from hidden settings pages');
+ find(el=>el.textContent==='All off').click();for(const key of ['esp','tracers','wireframe'])assert.equal(preview.attrs['data-'+key],'false');
+ const esp=find(el=>el.attrs?.['aria-label']==='ESP highlights');esp.checked=true;esp.onchange();f.setAllowed(false);f.events['neon-owner-access']({detail:false});
+ assert.equal(preview.attrs['data-esp'],'false');assert.equal(f.section.hidden,true);
+});
 test('reopening restores per-game controls in readiness order, including after a page reload',()=>{
  const storage=preferenceStorage(),first=savedMenu(storage);
  first.report('supported');first.report('camera-ready');first.report('shot-ready');

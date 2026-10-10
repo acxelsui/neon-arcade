@@ -27,10 +27,19 @@ export function initLolModMenu({check,isAllowed,doc=document,win=window}){
  for(const [key,label] of [['aim','Aimbot'],['visuals','Visuals'],['stretch','Stretch Res']]){
   const button=doc.createElement('button');button.type='button';button.textContent=label;button.id='lol-tab-'+key;button.setAttribute('role','tab');button.setAttribute('aria-controls','lol-page-'+key);
   const page=doc.createElement('div');page.id='lol-page-'+key;page.className='lol-mod-page';page.setAttribute('role','tabpanel');page.setAttribute('aria-labelledby',button.id);
+  const intro=doc.createElement('div');intro.className='lol-mod-page-heading';
+  const eyebrow=doc.createElement('small');eyebrow.textContent=key==='aim'?'01 / TARGETING':key==='visuals'?'02 / VISUALS':'03 / DISPLAY';
+  const pageTitle=doc.createElement('h2');pageTitle.textContent=key==='aim'?'Aim controls':key==='visuals'?'See the scene':'Shape your view';
+  const description=doc.createElement('p');description.textContent=key==='aim'?'Choose a mode, then tune how it responds.':key==='visuals'?'Character highlights and scene overlays.':'Pick a preset or dial in your own stretch.';
+  intro.append(eyebrow,pageTitle,description);page.append(intro);
   tabs[key]=button;pages[key]=page;navigation.append(button);button.onclick=()=>{selectTab(key);floating.reveal();};
   button.onkeydown=event=>{if(!['ArrowLeft','ArrowRight','ArrowUp','ArrowDown','Home','End'].includes(event.key))return;event.preventDefault();const keys=Object.keys(tabs),index=keys.indexOf(selectedTab),next=event.key==='Home'?keys[0]:event.key==='End'?keys.at(-1):keys[(index+(['ArrowLeft','ArrowUp'].includes(event.key)?-1:1)+keys.length)%keys.length];selectTab(next);tabs[next].focus();floating.reveal();};
  }
  selectTab('aim');const workspace=doc.createElement('div');workspace.className='lol-mod-workspace';const content=doc.createElement('div');content.className='lol-mod-content';content.append(pages.aim,pages.visuals,pages.stretch);workspace.append(navigation,content);controls.append(heading,subtitle,statusLine,workspace);
+ const preview=doc.createElement('figure');preview.className='lol-mod-character-preview';preview.setAttribute('aria-label','Sample character preview of selected visual settings');
+ const previewCaption=doc.createElement('figcaption');previewCaption.textContent='VISUAL PREVIEW';const previewImage=doc.createElement('img');previewImage.src='/icons/neon-control-character.svg';previewImage.alt='Armored sample character';previewImage.width=180;previewImage.height=250;
+ const previewBox=doc.createElement('span');previewBox.className='lol-mod-preview-box';previewBox.setAttribute('aria-hidden','true');const previewTracer=doc.createElement('span');previewTracer.className='lol-mod-preview-tracer';previewTracer.setAttribute('aria-hidden','true');
+ const previewNote=doc.createElement('small');previewNote.textContent='Sample model · not a live target';preview.append(previewCaption,previewImage,previewBox,previewTracer,previewNote);workspace.append(preview);
  for(const [key,label,description] of [['aim','Aimbot · unavailable','Waiting for the game camera.'],['silent','Silent aim','Redirect eligible shots toward the nearest crosshair target without moving your camera.'],['fovEnabled','Custom field of view','Change the actual game camera. Turning this off restores the original view.'],['esp','ESP highlights','Highlights recognized character models. Some costumes may keep their original appearance.'],['tracers','Tracers','Lines to living enemy characters inside your lock range.'],['stretch','Stretched resolution','Render a narrower view and stretch it across the game. Turn off to restore normal proportions.'],['wireframe','Wireframe view','Shows scene geometry as outlines.']]){
   const row=doc.createElement('label');row.className='lol-mod-option';const copy=doc.createElement('span'),name=doc.createElement('strong'),hint=doc.createElement('small');name.textContent=label;hint.textContent=description;copy.append(name,hint);
   rows[key]=row;labels[key]=name;hints[key]=hint;
@@ -53,7 +62,7 @@ export function initLolModMenu({check,isAllowed,doc=document,win=window}){
  const note=doc.createElement('p');note.className='lol-mod-note';note.textContent='Visual detection cannot identify players or zombies, so scenery may be highlighted. Tracers cover the central detection area. Camera aiming is disabled to prevent drift until verified player data is available. Silent aim, hitbox edits and hit-chance control are not included.';
  const details=doc.createElement('details');details.className='lol-mod-details';const detailsLabel=doc.createElement('summary');detailsLabel.textContent='How detection works';details.append(detailsLabel,note);
  const actions=doc.createElement('div');actions.className='game-hacks-actions';const off=doc.createElement('button');off.type='button';off.textContent='All off';off.onclick=()=>{if(!isAllowed()||!installed)return;reset();applySettings(true);};const refresh=doc.createElement('button');refresh.type='button';refresh.textContent='Refresh game';refresh.onclick=()=>doc.querySelector('#retry-game').click();actions.append(off,refresh);
- const credit=doc.createElement('small');credit.className='lol-mod-credit';credit.textContent='Neon Control · Tab opens / closes';controls.append(details,actions,credit);section.append(toggle,controls);panel.append(section);
+ const credit=doc.createElement('small');credit.className='lol-mod-credit';const saved=doc.createElement('span');saved.textContent='Settings saved per game';const shortcut=doc.createElement('span'),key=doc.createElement('kbd');key.textContent='Tab';shortcut.append(key,doc.createTextNode(' Open / close'));credit.append(saved,shortcut);controls.append(details,actions,credit);section.append(toggle,controls);panel.append(section);
  let active=null,generation=0,installed=false,cameraReady=false,shotReady=false,visualReady=false;
  const frame=()=>doc.querySelector('#game-frame-wrap iframe')?.contentWindow;
  function send(data){if(getLolModGame(active))frame()?.postMessage({channel:'neon-lol-mod-v1',gameId:active,...data},win.location.origin);}
@@ -68,7 +77,7 @@ export function initLolModMenu({check,isAllowed,doc=document,win=window}){
   for(const [input,output,key,suffix] of [[chanceSlider,chanceValue,'silentChance','%'],[slider,value,'smoothing',''],[fovSlider,fovValue,'fov','°'],[rangeSlider,rangeValue,'range','°'],[stretchSlider,stretchValue,'stretchAmount','%']]){input.value=String(settings[key]);output.textContent=settings[key]+suffix;}
   presetSelect.value=settings.stretchPreset;updateCount();
  }
- function updateCount(){summary.textContent=Object.values(fields).filter(field=>field.checked).length+' enabled';}
+ function updateCount(){summary.textContent=Object.values(fields).filter(field=>field.checked).length+' enabled';for(const key of ['esp','tracers','wireframe'])preview.setAttribute('data-'+key,String(fields[key].checked));}
  function reset(){for(const key of Object.keys(fields)){settings[key]=false;fields[key].checked=false;}updateCount();}
  function close(){controls.hidden=true;toggle.setAttribute('aria-expanded','false');}
  function availability(){section.hidden=!getLolModGame(active)||!isAllowed();if(section.hidden)close();}
