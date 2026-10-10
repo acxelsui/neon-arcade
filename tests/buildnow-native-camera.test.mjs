@@ -22,6 +22,48 @@ function fixture(shots=null){
  return {m,u,f,object,game,controller,local,enemy,team,dead,helper,teamHelper,positions,enemyHead,doc,bridge,step,reports,get fov(){return fov;},get freed(){return freed;}};
 }
 
+test('failed player type lookup retries without requiring another local character class',()=>{
+ const staged=[],x=fixture({clear(){},reset(){},update(m,state){staged.push(state);}}),resolve=x.m.dynCall_iii;
+ let attempts=0;x.m.dynCall_iii=(id,...args)=>id===105142?(++attempts===1?0:27000):resolve(id,...args);
+ assert.deepEqual(x.step({aim:false,tracers:true,silent:true}),[]);
+ assert.equal(x.bridge.diagnostics().phase,'type-waiting');
+ assert.equal(x.step({now:200,aim:false,tracers:true,silent:true})[0]?.id,x.enemy);
+ assert.equal(x.bridge.diagnostics().phase,'weapon-waiting');assert.equal(x.bridge.diagnostics().visible,1);
+ assert.equal(attempts,2);
+});
+
+test('reused round actors retry invalid reflected types and new weapons through consecutive respawns',()=>{
+ const staged=[],x=fixture({clear(){},reset(){},update(m,state){staged.push(state);}}),system=x.object(52000,'WeaponsSystem'),resolve=x.m.dynCall_iii;
+ x.u(x.local+0x544,system);x.u(system+0x80,x.local);let currentType=27000,attempts=0;
+ x.m.dynCall_iii=(id,...args)=>id===105142?(attempts++,currentType):resolve(id,...args);
+ x.m.dynCall_iiiii=(id,helper,type)=>type===currentType&&helper===x.helper?x.enemy:0;
+ for(let round=0;round<4;round++){
+  const weapon=x.object(60000+round*1000,'RaycastWeapon');x.u(system+0x50,weapon);x.u(weapon+0x8c,system);x.m.HEAPU8[weapon+0x9d]=1;
+  const now=100+round*1200;
+  assert.equal(x.step({now,aim:false,tracers:true,silent:true})[0]?.id,x.enemy);assert.equal(staged.at(-1).shooting,weapon);
+  x.u(currentType,0);currentType=x.object(80000+round*1000,'RuntimeType');
+  assert.equal(x.step({now:now+100,aim:false,tracers:true,silent:true})[0]?.id,x.enemy,'lookup recovers while the local class and switches are unchanged');
+  assert.equal(staged.at(-1).actor,x.enemy);
+  x.m.HEAPU8[x.local+0x533]=1;assert.deepEqual(x.step({now:now+116,aim:false,tracers:true,silent:true}),[]);x.m.HEAPU8[x.local+0x533]=0;
+  assert.equal(x.step({now:now+132,aim:false,tracers:true,silent:true})[0]?.id,x.enemy);
+ }
+ assert.ok(attempts>=5);
+});
+
+test('BuildNow reports round gates and clears cached lookups on resume and explicit reconnect',()=>{
+ const x=fixture(),resolve=x.m.dynCall_iii;let attempts=0;x.m.dynCall_iii=(id,...args)=>{if(id===105142)attempts++;return resolve(id,...args);};
+ x.step({tracers:true});assert.equal(attempts,1);assert.equal(x.bridge.diagnostics().phase,'active');
+ x.m.HEAPU8[x.local+0x533]=1;x.step({now:116,tracers:true});assert.equal(x.bridge.diagnostics().phase,'dead');
+ assert.equal(x.bridge.diagnostics().lastPlay.phase,'active','opening a menu or dying retains the useful last gameplay report');
+ x.m.HEAPU8[x.local+0x533]=0;x.step({now:132,tracers:true});assert.equal(attempts,2);
+ x.bridge.reset();x.step({now:148,tracers:true});assert.equal(attempts,3);
+ x.u(x.controller+0x10c,x.enemy);x.step({now:164,tracers:true});assert.equal(x.bridge.diagnostics().phase,'spectator');x.u(x.controller+0x10c,x.local);
+ x.doc.pointerLockElement=null;x.step({now:180,tracers:true,canvas:{style:{cursor:'default'}}});assert.equal(x.bridge.diagnostics().phase,'pointer');
+ x.step({now:196,tracers:true});assert.equal(attempts,4);x.doc.hidden=true;x.step({now:212,tracers:true});assert.equal(x.bridge.diagnostics().phase,'background');
+ x.doc.hidden=false;x.step({now:228,aim:false,tracers:false});assert.equal(x.bridge.diagnostics().phase,'disabled');
+ const report=x.bridge.diagnostics();report.phase='evil';assert.equal(x.bridge.diagnostics().phase,'disabled','returned diagnostics cannot mutate adapter state');
+});
+
 test('BuildNow recognizes active practice dummies separately, stops at death and reacquires reset targets',()=>{
  const x=fixture(),dummy=x.object(44000,'AimTarget'),health=x.object(45000,'TargetHealth'),hit=x.object(46000,'Transform'),type=x.object(47000,'RuntimeType'),str=x.object(48000,'String'),array=49000;
  x.u(dummy+0x2c,health);x.u(dummy+0x28,hit);x.positions.set(hit,[0,2,10]);x.u(array+12,1);x.u(array+16,dummy);let scans=0;

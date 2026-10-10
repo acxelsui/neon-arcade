@@ -28,8 +28,19 @@ test('FPS counts rendered intervals, reports idle, and excludes hidden or suspen
  assert.equal(meter.sample(50000,true),null);assert.equal(meter.sample(49900,true),null);
  assert.equal(meter.sample(NaN,true),null);
 });
+
+test('native connection details reach the owner telemetry without accepting invalid adapter data',()=>{
+ const reports=[],queue=[],controls={phase:'pointer',targets:0,visible:0,shotStaged:false,lastPlay:{phase:'type-waiting',targets:0,visible:0,shotStaged:false}};
+ class GL{shaderSource(){}compileShader(){}linkProgram(){}getUniformLocation(){}uniform4fv(){}drawElements(){}useProgram(){}uniform1i(){}uniform1f(){}}
+ const win={document:{hidden:false},WebGL2RenderingContext:GL,requestAnimationFrame(fn){queue.push(fn);},cancelAnimationFrame(){}};
+ const renderer=installLolRenderer({win,gameId:'581',notify:(status,sample)=>reports.push({status,sample}),cameraFactory:()=>({step:()=>[],diagnostics:()=>controls,reset(){},revoke(){}})});
+ queue.shift()(0);queue.shift()(1000);assert.deepEqual(reports.at(-1).sample.controls,controls);
+ controls.lastPlay.phase='forged';queue.shift()(2000);assert.equal(reports.at(-1).sample.controls,undefined);renderer.revoke();
+});
 test('telemetry values are bounded and appearance migration preserves old profiles and bindings',()=>{
  assert.equal(validFrameSample({fps:120,frameMs:8.3,paused:false}),true);
+ const sample={fps:60,frameMs:16.7,paused:false},controls={phase:'active',targets:2,visible:1,shotStaged:true};assert.equal(validFrameSample({...sample,controls}),true);
+ for(const patch of [{phase:'<script>'},{targets:513},{targets:-1},{visible:3},{visible:NaN},{shotStaged:1}])assert.equal(validFrameSample({...sample,controls:{...controls,...patch}}),false);
  for(const sample of [null,{fps:NaN,frameMs:8,paused:false},{fps:60,frameMs:Infinity,paused:false},{fps:60,frameMs:8,paused:'false'},{fps:1001,frameMs:8,paused:false}])assert.equal(validFrameSample(sample),false);
  assert.deepEqual(normalizeMenuAppearance({theme:'url(evil)',opacity:NaN}),{theme:'midnight',opacity:96,monitor:true});
  const data=new Map([['neon-owner-workspace-v1:581',JSON.stringify({version:1,workspace:{profiles:[{id:'p-arena',name:'Arena',settings:{silent:true}}],keybinds:{menu:'F2'}}})],['game-save','untouched']]);
