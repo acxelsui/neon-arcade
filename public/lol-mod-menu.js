@@ -1,8 +1,9 @@
 import {controlDefaults,createControlPreferences} from './game-control-preferences.js';
 import {attachFloatingControls} from './floating-controls.js';
 import {getLolModGame} from './lol-mod-games.js';
+import {bindingKeys,controlBindings,controlShortcut,createControlWorkspace,normalizePreviewColors} from './game-control-workspace.js';
 export function validLolModRequest(event,{source,origin,gameId}){
- const data=event.data;return !!source&&event.source===source&&event.origin===origin&&!!getLolModGame(gameId)&&data?.channel==='neon-lol-mod-v1'&&data.gameId===gameId&&((data.action==='authorize'&&typeof data.requestId==='string'&&/^[a-f0-9-]{36}$/i.test(data.requestId))||(data.action==='status'&&['toggle-menu','installed','supported','actor-ready','camera-ready','tracking-active','tracking-idle','shot-ready','shot-redirected','practice-ready','fallback','unsupported','aim-error','revoked'].includes(data.status)));
+ const data=event.data;return !!source&&event.source===source&&event.origin===origin&&!!getLolModGame(gameId)&&data?.channel==='neon-lol-mod-v1'&&data.gameId===gameId&&((data.action==='authorize'&&typeof data.requestId==='string'&&/^[a-f0-9-]{36}$/i.test(data.requestId))||(data.action==='status'&&['toggle-menu','installed','supported','actor-ready','camera-ready','tracking-active','tracking-idle','shot-ready','shot-redirected','practice-ready','fallback','unsupported','aim-error','revoked',...Object.keys(controlBindings).filter(k=>k!=='menu').map(k=>'shortcut-'+k)].includes(data.status)));
 }
 export function initLolModMenu({check,isAllowed,doc=document,win=window}){
  const panel=doc.querySelector('#game-menu-panel');if(!panel)return;
@@ -21,21 +22,23 @@ export function initLolModMenu({check,isAllowed,doc=document,win=window}){
  const summary=doc.createElement('span');summary.className='lol-mod-count';summary.textContent='0 enabled';summary.setAttribute('aria-live','polite');
  const statusLine=doc.createElement('div');statusLine.className='lol-mod-statusline';statusLine.append(status,summary);
  const rows={},fields={},labels={},hints={},settings={...controlDefaults},preferences=createControlPreferences(win);
+ const workspaceStore=createControlWorkspace(win);let workspaceState=workspaceStore.load(null);
  const navigation=doc.createElement('div');navigation.className='lol-mod-tabs';navigation.setAttribute('role','tablist');navigation.setAttribute('aria-orientation','vertical');navigation.setAttribute('aria-label','Owner control sections');
  const tabs={},pages={};let selectedTab='aim';
  function selectTab(key){selectedTab=key;for(const name of Object.keys(tabs)){tabs[name].setAttribute('aria-selected',String(name===key));tabs[name].setAttribute('tabindex',name===key?'0':'-1');pages[name].hidden=name!==key;}}
- for(const [key,label] of [['aim','Aimbot'],['visuals','Visuals'],['stretch','Stretch Res']]){
+ const pageCopy={aim:['01 / TARGETING','Aim controls','Choose a mode, then tune how it responds.'],visuals:['02 / VISUALS','See the scene','Character highlights and scene overlays.'],stretch:['03 / DISPLAY','Shape your view','Pick a preset or dial in your own stretch.'],profiles:['04 / PROFILES','Your setups','Save and reuse controls and preview colors for this game.'],keybinds:['05 / SHORTCUTS','Make it yours','Choose keys that do not conflict with your game controls.']};
+ for(const [key,label] of [['aim','Aimbot'],['visuals','Visuals'],['stretch','Stretch Res'],['profiles','Profiles'],['keybinds','Keybinds']]){
   const button=doc.createElement('button');button.type='button';button.textContent=label;button.id='lol-tab-'+key;button.setAttribute('role','tab');button.setAttribute('aria-controls','lol-page-'+key);
   const page=doc.createElement('div');page.id='lol-page-'+key;page.className='lol-mod-page';page.setAttribute('role','tabpanel');page.setAttribute('aria-labelledby',button.id);
   const intro=doc.createElement('div');intro.className='lol-mod-page-heading';
-  const eyebrow=doc.createElement('small');eyebrow.textContent=key==='aim'?'01 / TARGETING':key==='visuals'?'02 / VISUALS':'03 / DISPLAY';
-  const pageTitle=doc.createElement('h2');pageTitle.textContent=key==='aim'?'Aim controls':key==='visuals'?'See the scene':'Shape your view';
-  const description=doc.createElement('p');description.textContent=key==='aim'?'Choose a mode, then tune how it responds.':key==='visuals'?'Character highlights and scene overlays.':'Pick a preset or dial in your own stretch.';
+  const eyebrow=doc.createElement('small');eyebrow.textContent=pageCopy[key][0];
+  const pageTitle=doc.createElement('h2');pageTitle.textContent=pageCopy[key][1];
+  const description=doc.createElement('p');description.textContent=pageCopy[key][2];
   intro.append(eyebrow,pageTitle,description);page.append(intro);
   tabs[key]=button;pages[key]=page;navigation.append(button);button.onclick=()=>{selectTab(key);floating.reveal();};
   button.onkeydown=event=>{if(!['ArrowLeft','ArrowRight','ArrowUp','ArrowDown','Home','End'].includes(event.key))return;event.preventDefault();const keys=Object.keys(tabs),index=keys.indexOf(selectedTab),next=event.key==='Home'?keys[0]:event.key==='End'?keys.at(-1):keys[(index+(['ArrowLeft','ArrowUp'].includes(event.key)?-1:1)+keys.length)%keys.length];selectTab(next);tabs[next].focus();floating.reveal();};
  }
- selectTab('aim');const workspace=doc.createElement('div');workspace.className='lol-mod-workspace';const content=doc.createElement('div');content.className='lol-mod-content';content.append(pages.aim,pages.visuals,pages.stretch);workspace.append(navigation,content);controls.append(heading,subtitle,statusLine,workspace);
+ selectTab('aim');const workspace=doc.createElement('div');workspace.className='lol-mod-workspace';const content=doc.createElement('div');content.className='lol-mod-content';content.append(...Object.values(pages));workspace.append(navigation,content);controls.append(heading,subtitle,statusLine,workspace);
  const preview=doc.createElement('figure');preview.className='lol-mod-character-preview';preview.setAttribute('aria-label','Sample character preview of selected visual settings');
  const previewCaption=doc.createElement('figcaption');previewCaption.textContent='VISUAL PREVIEW';const previewImage=doc.createElement('img');previewImage.src='/icons/neon-control-character.svg';previewImage.alt='Armored sample character';previewImage.width=180;previewImage.height=250;
  const previewBox=doc.createElement('span');previewBox.className='lol-mod-preview-box';previewBox.setAttribute('aria-hidden','true');const previewTracer=doc.createElement('span');previewTracer.className='lol-mod-preview-tracer';previewTracer.setAttribute('aria-hidden','true');
@@ -59,6 +62,34 @@ export function initLolModMenu({check,isAllowed,doc=document,win=window}){
  presetSelect.onchange=()=>{if(presetSelect.disabled||!isAllowed()||!installed||!getLolModGame(active))return;settings.stretchPreset=presetSelect.value;settings.stretch=presetSelect.value!=='native';fields.stretch.checked=settings.stretch;updateCount();applySettings(true);};
  const stretchHint=doc.createElement('p');stretchHint.className='lol-mod-note';stretchHint.textContent='Your choices are remembered for this game on this browser. Presets fill the game window; use the slider for Custom stretch.';pages.stretch.append(stretchHint);
  const normal=doc.createElement('button');normal.type='button';normal.textContent='Reset resolution';normal.onclick=()=>{if(!isAllowed()||!installed)return;settings.stretchPreset='native';presetSelect.value='native';settings.stretch=false;settings.stretchAmount=125;fields.stretch.checked=false;stretchSlider.value='125';stretchValue.textContent='125%';updateCount();applySettings(true);};pages.stretch.append(normal);
+ const colorFields={},bindingFields={};
+ const colorHeading=doc.createElement('h3');colorHeading.className='lol-mod-section-title';colorHeading.textContent='Preview colors';pages.visuals.append(colorHeading);
+ const colorNote=doc.createElement('p');colorNote.className='lol-mod-note';colorNote.textContent='Customize the sample model only. Enable highlights or tracers to see your colors; in-game effect colors stay unchanged.';pages.visuals.append(colorNote);
+ for(const [name,label] of [['highlight','Highlight'],['tracer','Tracer']]){
+  const row=doc.createElement('label');row.className='lol-mod-color';const text=doc.createElement('span');text.textContent=label;const picker=doc.createElement('input');picker.type='color';picker.setAttribute('aria-label',label+' preview color picker');const hex=doc.createElement('input');hex.type='text';hex.maxLength=7;hex.setAttribute('aria-label',label+' preview color hex');hex.setAttribute('spellcheck','false');hex.setAttribute('pattern','#[a-fA-F0-9]{6}');
+  colorFields[name]={picker,hex};row.append(text,picker,hex);pages.visuals.append(row);
+  const change=value=>{if(!isAllowed()||!getLolModGame(active))return;const valid=/^#[a-f0-9]{6}$/i.test(value);hex.setAttribute('aria-invalid',String(!valid));if(!valid)return;workspaceState.colors={...workspaceState.colors,[name]:value.toLowerCase()};paintColors();saveWorkspace(colorStatus);};
+  picker.oninput=()=>change(picker.value);hex.oninput=()=>{if(/^#[a-f0-9]{6}$/i.test(hex.value))change(hex.value);};hex.onchange=()=>change(hex.value);
+ }
+ const colorStatus=doc.createElement('p');colorStatus.className='lol-mod-feedback';colorStatus.setAttribute('role','status');pages.visuals.append(colorStatus);
+ const profileLabel=doc.createElement('label');profileLabel.className='lol-mod-field';const profileText=doc.createElement('span');profileText.textContent='Saved profiles';const profileSelect=doc.createElement('select');profileSelect.setAttribute('aria-label','Saved control profile');profileLabel.append(profileText,profileSelect);pages.profiles.append(profileLabel);
+ const nameLabel=doc.createElement('label');nameLabel.className='lol-mod-field';const nameText=doc.createElement('span');nameText.textContent='Profile name';const profileName=doc.createElement('input');profileName.type='text';profileName.maxLength=32;profileName.placeholder='e.g. Arena or Training';profileName.setAttribute('aria-label','Control profile name');nameLabel.append(nameText,profileName);pages.profiles.append(nameLabel);
+ const profileActions=doc.createElement('div');profileActions.className='lol-mod-profile-actions';const profileButtons={};
+ for(const [name,label] of [['save','Save profile'],['apply','Apply profile'],['update','Update profile'],['delete','Delete profile']]){const button=doc.createElement('button');button.type='button';button.textContent=label;profileButtons[name]=button;profileActions.append(button);}
+ pages.profiles.append(profileActions);const profileStatus=doc.createElement('p');profileStatus.className='lol-mod-feedback';profileStatus.setAttribute('role','status');pages.profiles.append(profileStatus);
+ const profileNote=doc.createElement('p');profileNote.className='lol-mod-note';profileNote.textContent='Up to 8 profiles per game, stored on this browser. Applying a profile restores its controls and preview colors when the game is ready. Keybinds are remembered separately.';pages.profiles.append(profileNote);
+ profileSelect.onchange=()=>{if(!isAllowed()||!getLolModGame(active))return;const selected=workspaceState.profiles.find(p=>p.id===profileSelect.value);workspaceState.selectedProfile=selected?.id??'';profileName.value=selected?.name??'';refreshProfileButtons();saveWorkspace(profileStatus,selected?'Profile selected. Press Apply profile to use it.':'Choose a profile or save a new one.');};
+ profileButtons.save.onclick=()=>storeProfile(false);profileButtons.update.onclick=()=>storeProfile(true);
+ profileButtons.apply.onclick=()=>{if(!isAllowed()||!getLolModGame(active))return;const selected=workspaceState.profiles.find(p=>p.id===profileSelect.value);if(!selected)return;Object.assign(settings,selected.settings);workspaceState.colors={...selected.colors};paintSettings();paintColors();const kept=preferences.save(active,settings)&&workspaceStore.save(active,workspaceState);applySettings();profileStatus.textContent=kept?(installed?'Profile applied. Unavailable controls wait for the game.':'Profile selected. Controls will restore when the game is ready.'):'Profile applied for this visit; browser storage is unavailable.';};
+ profileButtons.delete.onclick=()=>{if(!isAllowed()||!getLolModGame(active))return;const selected=profileSelect.value;if(!workspaceState.profiles.some(p=>p.id===selected))return;workspaceState.profiles=workspaceState.profiles.filter(p=>p.id!==selected);workspaceState.selectedProfile='';profileName.value='';renderProfiles();saveWorkspace(profileStatus,'Profile deleted.');};
+ for(const [name,label] of [['menu','Open / close menu'],['off','All off'],['aim','Aimbot'],['silent','Silent aim'],['esp','ESP highlights'],['tracers','Tracers'],['wireframe','Wireframe view'],['fovEnabled','Custom FOV'],['stretch','Stretch resolution']]){
+  const row=doc.createElement('label');row.className='lol-mod-binding';const text=doc.createElement('span');text.textContent=label;const select=doc.createElement('select');select.setAttribute('aria-label',label+' keybind');bindingFields[name]=select;
+  const none=doc.createElement('option');none.value='';none.textContent='Unbound';select.append(none);
+  for(const code of bindingKeys){if(code==='Tab'&&name!=='menu')continue;const option=doc.createElement('option');option.value=code;option.textContent=keyLabel(code);select.append(option);}row.append(text,select);pages.keybinds.append(row);
+  select.onchange=()=>{if(!isAllowed()||!getLolModGame(active))return;const code=select.value,other=Object.entries(workspaceState.keybinds).find(([key,value])=>key!==name&&value&&value===code);if(other){select.value=workspaceState.keybinds[name];bindingStatus.textContent='That key is already assigned. Choose another key or unbind it first.';return;}workspaceState.keybinds={...workspaceState.keybinds,[name]:code};paintBindings();saveWorkspace(bindingStatus);applySettings();};
+ }
+ const bindingStatus=doc.createElement('p');bindingStatus.className='lol-mod-feedback';bindingStatus.setAttribute('role','status');pages.keybinds.append(bindingStatus);
+ const bindingNote=doc.createElement('p');bindingNote.className='lol-mod-note';bindingNote.textContent='Shortcuts work while playing and ignore typing, held keys and modifier combinations. Controls need the game to be ready. Use a spare key so normal movement is not interrupted.';pages.keybinds.append(bindingNote);
  const note=doc.createElement('p');note.className='lol-mod-note';note.textContent='Visual detection cannot identify players or zombies, so scenery may be highlighted. Tracers cover the central detection area. Camera aiming is disabled to prevent drift until verified player data is available. Silent aim, hitbox edits and hit-chance control are not included.';
  const details=doc.createElement('details');details.className='lol-mod-details';const detailsLabel=doc.createElement('summary');detailsLabel.textContent='How detection works';details.append(detailsLabel,note);
  const actions=doc.createElement('div');actions.className='game-hacks-actions';const off=doc.createElement('button');off.type='button';off.textContent='All off';off.onclick=()=>{if(!isAllowed()||!installed)return;reset();applySettings(true);};const refresh=doc.createElement('button');refresh.type='button';refresh.textContent='Refresh game';refresh.onclick=()=>doc.querySelector('#retry-game').click();actions.append(off,refresh);
@@ -70,12 +101,27 @@ export function initLolModMenu({check,isAllowed,doc=document,win=window}){
   if(!isAllowed()||!getLolModGame(active)||!installed)return;
   if(persist)preferences.save(active,settings);
   const effective={...settings};for(const key of Object.keys(fields))if(fields[key].disabled)effective[key]=false;
-  send({action:'settings',settings:effective});
+  send({action:'settings',settings:{...effective,keybinds:workspaceState.keybinds}});
  }
  function restorePreferences(){
-  Object.assign(settings,preferences.load(active));for(const key of Object.keys(fields))fields[key].checked=settings[key];
+  Object.assign(settings,preferences.load(active));workspaceState=workspaceStore.load(active);paintSettings();paintColors();paintBindings();renderProfiles();colorStatus.textContent=bindingStatus.textContent=profileStatus.textContent='';
+ }
+ function paintSettings(){
+  for(const key of Object.keys(fields))fields[key].checked=settings[key];
   for(const [input,output,key,suffix] of [[chanceSlider,chanceValue,'silentChance','%'],[slider,value,'smoothing',''],[fovSlider,fovValue,'fov','°'],[rangeSlider,rangeValue,'range','°'],[stretchSlider,stretchValue,'stretchAmount','%']]){input.value=String(settings[key]);output.textContent=settings[key]+suffix;}
   presetSelect.value=settings.stretchPreset;updateCount();
+ }
+ function keyLabel(code){return code==='Backquote'?'`':code.replace(/^Key|^Digit/,'')||'Unbound';}
+ function paintColors(){workspaceState.colors=normalizePreviewColors(workspaceState.colors);for(const [name,color] of Object.entries(workspaceState.colors)){preview.style?.setProperty?.('--preview-'+name,color);preview.setAttribute('data-'+name+'-color',color);colorFields[name].picker.value=colorFields[name].hex.value=color;colorFields[name].hex.setAttribute('aria-invalid','false');}}
+ function paintBindings(){for(const [name,code] of Object.entries(workspaceState.keybinds))bindingFields[name].value=code;key.textContent=keyLabel(workspaceState.keybinds.menu);}
+ function saveWorkspace(target,message='Saved for this game.'){const kept=workspaceStore.save(active,workspaceState);target.textContent=kept?message:'Changed for this visit; browser storage is unavailable.';}
+ function renderProfiles(selected=workspaceState.selectedProfile){profileSelect.replaceChildren();const placeholder=doc.createElement('option');placeholder.value='';placeholder.textContent=workspaceState.profiles.length?'Choose a saved profile':'No profiles saved yet';profileSelect.append(placeholder);for(const profile of workspaceState.profiles){const option=doc.createElement('option');option.value=profile.id;option.textContent=profile.name;profileSelect.append(option);}profileSelect.value=selected;profileName.value=workspaceState.profiles.find(p=>p.id===selected)?.name??'';refreshProfileButtons();}
+ function refreshProfileButtons(){const hasSelection=workspaceState.profiles.some(p=>p.id===profileSelect.value);for(const name of ['apply','update','delete'])profileButtons[name].disabled=!hasSelection;profileButtons.save.disabled=workspaceState.profiles.length>=8;}
+ function storeProfile(replace){
+  if(!isAllowed()||!getLolModGame(active))return;const name=profileName.value?.trim().slice(0,32);if(!name){profileStatus.textContent='Give your profile a name first.';return;}
+  const previous=workspaceState.profiles.find(p=>p.id===profileSelect.value);if(replace&&!previous)return;if(!replace&&workspaceState.profiles.length>=8){profileStatus.textContent='All 8 slots are used. Update or delete a saved profile.';return;}
+  if(workspaceState.profiles.some(p=>p.name.toLowerCase()===name.toLowerCase()&&(!replace||p.id!==previous.id))){profileStatus.textContent='That name is already saved. Select it and use Update profile.';return;}
+  const id=replace?previous.id:'p-'+crypto.randomUUID(),profile={id,name,settings:{...settings},colors:{...workspaceState.colors}};workspaceState.profiles=replace?workspaceState.profiles.map(p=>p.id===id?profile:p):[...workspaceState.profiles,profile];workspaceState.selectedProfile=id;renderProfiles(id);saveWorkspace(profileStatus,replace?'Profile updated.':'Profile saved.');
  }
  function updateCount(){summary.textContent=Object.values(fields).filter(field=>field.checked).length+' enabled';for(const key of ['esp','tracers','wireframe'])preview.setAttribute('data-'+key,String(fields[key].checked));}
  function reset(){for(const key of Object.keys(fields)){settings[key]=false;fields[key].checked=false;}updateCount();}
@@ -83,7 +129,8 @@ export function initLolModMenu({check,isAllowed,doc=document,win=window}){
  function availability(){section.hidden=!getLolModGame(active)||!isAllowed();if(section.hidden)close();}
  toggle.onclick=()=>{if(!isAllowed())return;controls.hidden=!controls.hidden;toggle.setAttribute('aria-expanded',String(!controls.hidden));if(!controls.hidden)floating.reveal();};
  function shortcutToggle(){toggle.onclick();win.dispatchEvent?.(new (win.CustomEvent??CustomEvent)('neon-game-menu-show',{detail:!controls.hidden}));if(controls.hidden)doc.querySelector('#game-frame-wrap iframe')?.focus?.();else toggle.focus();}
- win.addEventListener('keydown',event=>{if(!installed||!isAllowed()||!getLolModGame(active)||event.repeat||event.ctrlKey||event.altKey||event.metaKey||!(event.code==='Tab'||event.key==='Tab')||event.target?.closest?.('input,textarea,select,[contenteditable=true]'))return;event.preventDefault();shortcutToggle();},true);
+ function runShortcut(action){if(!installed||!isAllowed()||!getLolModGame(active))return false;if(action==='menu'){shortcutToggle();return true;}if(action==='off'){reset();applySettings(true);return true;}const field=fields[action];if(!field||field.disabled)return false;field.checked=!field.checked;field.onchange();return true;}
+ win.addEventListener('keydown',event=>{const action=controlShortcut(event,workspaceState.keybinds);if(action&&runShortcut(action))event.preventDefault();},true);
  win.addEventListener('neon-game',event=>{active=event.detail?.id??null;subtitle.textContent=(getLolModGame(active)?.name??'Game')+' · Owner workspace';labels.aim.textContent='Aimbot · character lock';fields.aim.setAttribute('aria-label',labels.aim.textContent);hints.silent.textContent='Enter a mode to connect the shot controls for this game.';hints.aim.textContent='Enter a game mode to connect its camera. Skips your character, teammates and dead targets.';note.textContent='Locks living enemy characters inside your chosen range. Pauses while the game is not active or your character is dead, and reconnects after respawn. Camera lock may select targets behind obstacles. Silent aim redirects a chosen percentage of eligible shots; cover, range and normal hit validation still apply. It does not guarantee that percentage of hits. BuildNow uses its own shot adapter for players and aim-training dummies.';generation++;installed=false;cameraReady=false;shotReady=false;visualReady=false;rows.silent.hidden=chanceRow.hidden=!getLolModGame(active);chanceSlider.disabled=true;reset();restorePreferences();for(const field of Object.values(fields))field.disabled=true;slider.disabled=fovSlider.disabled=rangeSlider.disabled=stretchSlider.disabled=presetSelect.disabled=true;status.textContent='Checking owner access and the game renderer…';status.setAttribute('data-state','waiting');close();availability();});
  win.addEventListener('neon-owner-access',event=>{availability();if(event.detail!==true){generation++;installed=false;cameraReady=false;shotReady=false;visualReady=false;rows.silent.hidden=chanceRow.hidden=!getLolModGame(active);chanceSlider.disabled=true;reset();send({action:'revoke'});}});
  win.addEventListener('message',async event=>{
@@ -96,6 +143,7 @@ export function initLolModMenu({check,isAllowed,doc=document,win=window}){
   }
   if(!isAllowed()){send({action:'revoke'});return;}
   if(data.status==='toggle-menu'){shortcutToggle();return;}
+  if(data.status.startsWith('shortcut-')){runShortcut(data.status.slice(9));return;}
   if(cameraReady&&['actor-ready','fallback'].includes(data.status))return;
   if(data.status==='installed'){visualReady=cameraReady=shotReady=false;for(const key of ['aim','silent','fovEnabled','esp','tracers'])fields[key].disabled=true;slider.disabled=fovSlider.disabled=rangeSlider.disabled=chanceSlider.disabled=true;restorePreferences();installed=true;fields.wireframe.disabled=fields.stretch.disabled=stretchSlider.disabled=presetSelect.disabled=false;status.textContent='Renderer loaded. Checking visual compatibility…';}
   else if(data.status==='supported'){visualReady=true;installed=true;stretchSlider.disabled=presetSelect.disabled=false;for(const key of ['esp','tracers','wireframe','stretch'])fields[key].disabled=false;fields.aim.disabled=!cameraReady;slider.disabled=!cameraReady;status.textContent='Visuals ready. Enter a mode to connect the camera.';}

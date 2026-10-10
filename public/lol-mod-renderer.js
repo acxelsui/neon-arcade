@@ -8,9 +8,11 @@ import {createLolNativeCamera} from './lol-native-camera.js';
 import {createBuildNowNativeCamera} from './buildnow-native-camera.js';
 import {installLolSilentShot} from './lol-silent-shot.js';
 import {createGameStretch} from './game-stretch.js';
+import {controlBindings,controlShortcut,normalizeControlBindings} from './game-control-workspace.js';
 export function installLolRenderer({win=window,notify=()=>{},gameId=null,actorMatcher=gameId==='58'?createLolActorMatcher():gameId==='581'?createBuildNowActorMatcher():null,cameraFactory=gameId==='58'?createLolNativeCamera:gameId==='581'?createBuildNowNativeCamera:null}) {
  const doc=win.document,proto=win.WebGL2RenderingContext?.prototype;
  let permitted=true,state={stretch:false,stretchAmount:125,aim:false,silent:false,silentChance:90,esp:false,wireframe:false,tracers:false,smoothing:70,fovEnabled:false,fov:75,range:30},supported=false;
+ let keybinds={...controlBindings};
  const shots=['58','581'].includes(gameId)?installLolSilentShot(win,{notify,gameId}):null;
  const camera=cameraFactory?.(win,{notify,shots})??null;
  const stretch=createGameStretch(doc,{gameId,getModule:()=>win.gameInstance?.Module});
@@ -177,11 +179,11 @@ export function installLolRenderer({win=window,notify=()=>{},gameId=null,actorMa
  const cancel=win.cancelAnimationFrame;let heartbeat;
  function pulse(now){if(!permitted)return;if(now-lastEngineFrame>40)runAim(now);heartbeat=schedule.call(win,pulse);}
  if(camera)heartbeat=schedule.call(win,pulse);
- const shortcut=event=>{if(!permitted||event.repeat||event.ctrlKey||event.altKey||event.metaKey||!(event.code==='Tab'||event.key==='Tab')||event.target?.closest?.('input,textarea,select,button,[contenteditable=true]'))return;event.preventDefault();event.stopImmediatePropagation();doc.exitPointerLock?.();notify('toggle-menu');};
+ const shortcut=event=>{if(!permitted)return;const action=controlShortcut(event,keybinds,{fromGame:true});if(!action)return;event.preventDefault();event.stopImmediatePropagation();if(action==='menu')doc.exitPointerLock?.();notify(action==='menu'?'toggle-menu':'shortcut-'+action);};
  doc.addEventListener?.('keydown',shortcut,true);
  notify('installed');
  return {
-  settings(next){if(!permitted)return;stretch.settings(next);for(const key of ['esp','wireframe','tracers'])state[key]=next?.[key]===true;state.aim=!!camera&&next?.aim===true;state.silent=!!shots&&next?.silent===true;state.silentChance=Number.isFinite(next?.silentChance)?Math.min(100,Math.max(1,Math.round(next.silentChance))):90;if(state.silent)state.aim=false;else shots?.clear();state.range=Number.isFinite(next?.range)?Math.max(5,Math.min(60,next.range)):30;state.fovEnabled=!!camera&&next?.fovEnabled===true;state.fov=Number.isFinite(next?.fov)?Math.max(40,Math.min(110,next.fov)):75;state.smoothing=Number.isFinite(next?.smoothing)?Math.min(100,Math.max(1,next.smoothing)):70;if(!state.aim&&!state.tracers)clearTracking();},
+  settings(next){if(!permitted)return;keybinds=normalizeControlBindings(next?.keybinds);stretch.settings(next);for(const key of ['esp','wireframe','tracers'])state[key]=next?.[key]===true;state.aim=!!camera&&next?.aim===true;state.silent=!!shots&&next?.silent===true;state.silentChance=Number.isFinite(next?.silentChance)?Math.min(100,Math.max(1,Math.round(next.silentChance))):90;if(state.silent)state.aim=false;else shots?.clear();state.range=Number.isFinite(next?.range)?Math.max(5,Math.min(60,next.range)):30;state.fovEnabled=!!camera&&next?.fovEnabled===true;state.fov=Number.isFinite(next?.fov)?Math.max(40,Math.min(110,next.fov)):75;state.smoothing=Number.isFinite(next?.smoothing)?Math.min(100,Math.max(1,next.smoothing)):70;if(!state.aim&&!state.tracers)clearTracking();},
   revoke(){if(!permitted)return;permitted=false;if(heartbeat!==undefined)cancel?.call(win,heartbeat);doc.removeEventListener?.('keydown',shortcut,true);reset();camera?.revoke();shots?.revoke();stretch.revoke();overlay?.remove();overlay=null;patches.reverse().forEach(restore=>restore());notify('revoked');}
  };
 }

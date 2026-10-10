@@ -103,7 +103,7 @@ test('owner menu validates the current runner and does not accept another game o
 });
 function menuFixture(localStorage){
  const events={},sent=[];let permitted=true,finish;
- class Element{constructor(tag){this.tag=tag;this.children=[];this.hidden=false;this.attrs={};}append(...children){this.children.push(...children);}setAttribute(k,v){this.attrs[k]=v;}click(){this.onclick?.();}focus(){this.focused=true;}}
+ class Element{constructor(tag){this.tag=tag;this.children=[];this.hidden=false;this.attrs={};}append(...children){this.children.push(...children);}replaceChildren(...children){this.children=[...children];}setAttribute(k,v){this.attrs[k]=v;}click(){this.onclick?.();}focus(){this.focused=true;}}
  const panel=new Element('div'),source={postMessage:data=>sent.push(data)},retry=new Element('button');
  const doc={querySelector:s=>s==='#game-menu-panel'?panel:s==='#game-frame-wrap iframe'?{contentWindow:source}:s==='#retry-game'?retry:null,createElement:tag=>new Element(tag),createTextNode:text=>({textContent:text})};
  const win={localStorage,location:{origin:'https://arcade.example'},addEventListener:(type,fn)=>events[type]=fn};
@@ -137,13 +137,15 @@ test('control sections support keyboard navigation, and All off clears switches 
  let prevented=false;aim.onkeydown({key:'ArrowRight',preventDefault(){prevented=true;}});assert.equal(prevented,true);assert.equal(visuals.focused,true);assert.equal(aimPage.hidden,true);assert.equal(visualPage.hidden,false);assert.equal(aim.attrs.tabindex,'-1');
  visuals.onkeydown({key:'Home',preventDefault(){}});assert.equal(aimPage.hidden,false);assert.equal(visualPage.hidden,true);
  const stretchTab=find(el=>el.id==='lol-tab-stretch'),stretchPage=find(el=>el.id==='lol-page-stretch');
- aim.onkeydown({key:'ArrowUp',preventDefault(){}});assert.equal(stretchTab.focused,true);assert.equal(stretchPage.hidden,false);assert.equal(aimPage.hidden,true);
- stretchTab.onkeydown({key:'ArrowDown',preventDefault(){}});assert.equal(aimPage.hidden,false);assert.equal(stretchPage.hidden,true);
+ const lastTab=find(el=>el.id==='lol-tab-keybinds'),lastPage=find(el=>el.id==='lol-page-keybinds');
+ aim.onkeydown({key:'ArrowUp',preventDefault(){}});assert.equal(lastTab.focused,true);assert.equal(lastPage.hidden,false);assert.equal(aimPage.hidden,true);
+ lastTab.onkeydown({key:'ArrowDown',preventDefault(){}});assert.equal(aimPage.hidden,false);assert.equal(lastPage.hidden,true);
+ stretchTab.click();assert.equal(stretchPage.hidden,false);
  const report=status=>f.events.message({source:f.source,origin:f.win.location.origin,data:{channel:'neon-lol-mod-v1',gameId:'58',action:'status',status}});
  report('supported');const tracer=find(el=>el.attrs?.['aria-label']==='Tracers'),esp=find(el=>el.attrs?.['aria-label']==='ESP highlights'),aimInput=find(el=>el.attrs?.['aria-label']==='Aimbot · character lock'),count=find(el=>el.className==='lol-mod-count');
  assert.equal(aimInput.disabled,true,'shader readiness alone cannot enable camera writes');report('camera-ready');assert.equal(aimInput.disabled,false);assert.equal(find(el=>el.attrs?.['aria-label']==='Aim smoothness').disabled,false);
  tracer.checked=true;tracer.onchange();esp.checked=true;esp.onchange();assert.equal(count.textContent,'2 enabled');assert.equal(f.sent.at(-1).settings.tracers,true);
- find(el=>el.textContent==='All off').click();assert.equal(count.textContent,'0 enabled');assert.equal(tracer.checked,false);assert.equal(esp.checked,false);assert.equal(aimInput.checked,false);assert.equal(f.sent.at(-1).settings.aim,false);assert.equal(f.sent.at(-1).settings.tracers,false);
+ find(el=>el.tag==='button'&&el.textContent==='All off').click();assert.equal(count.textContent,'0 enabled');assert.equal(tracer.checked,false);assert.equal(esp.checked,false);assert.equal(aimInput.checked,false);assert.equal(f.sent.at(-1).settings.aim,false);assert.equal(f.sent.at(-1).settings.tracers,false);
  f.section.children[0].click();assert.equal(f.section.children[1].hidden,false);find(el=>el.attrs?.['aria-label']==='Collapse owner controls').click();assert.equal(f.section.children[1].hidden,true);assert.equal(f.section.children[0].focused,true);
 });
 test('stretch presets enable the shared setting, custom slider switches modes, and reset restores native',()=>{
@@ -235,7 +237,7 @@ test('tracers are visual only, GPU scans are throttled, and focus loss or revoca
 const preferenceStorage=()=>{const data=new Map();return {data,getItem:key=>data.get(key)??null,setItem:(key,value)=>data.set(key,value)};};
 function savedMenu(storage,id='58'){
  const f=menuFixture(storage),walk=el=>[el,...(el.children||[]).flatMap(walk)],nodes=walk(f.section);f.events['neon-game']({detail:{id}});
- f.find=label=>nodes.find(el=>el.attrs?.['aria-label']===label);f.button=text=>nodes.find(el=>el.textContent===text);
+ f.find=label=>nodes.find(el=>el.attrs?.['aria-label']===label);f.button=text=>nodes.find(el=>el.tag==='button'&&el.textContent===text);
  f.report=status=>f.events.message({source:f.source,origin:f.win.location.origin,data:{channel:'neon-lol-mod-v1',gameId:id,action:'status',status}});
  return f;
 }
@@ -249,7 +251,7 @@ test('sample character follows visual preferences across tabs, reset and revoked
  for(const label of ['ESP highlights','Tracers','Wireframe view']){const field=find(el=>el.attrs?.['aria-label']===label);field.checked=true;field.onchange();}
  for(const key of ['esp','tracers','wireframe'])assert.equal(preview.attrs['data-'+key],'true');
  find(el=>el.id==='lol-tab-stretch').click();assert.equal(preview.hidden,false,'sample remains separate from hidden settings pages');
- find(el=>el.textContent==='All off').click();for(const key of ['esp','tracers','wireframe'])assert.equal(preview.attrs['data-'+key],'false');
+ find(el=>el.tag==='button'&&el.textContent==='All off').click();for(const key of ['esp','tracers','wireframe'])assert.equal(preview.attrs['data-'+key],'false');
  const esp=find(el=>el.attrs?.['aria-label']==='ESP highlights');esp.checked=true;esp.onchange();f.setAllowed(false);f.events['neon-owner-access']({detail:false});
  assert.equal(preview.attrs['data-esp'],'false');assert.equal(f.section.hidden,true);
 });
@@ -336,4 +338,42 @@ test('round avatar/menu draws cannot steal controls from the locked game canvas'
  // Between pointer-lock requests, the actual engine canvas still wins.
  doc.pointerLockElement=null;win.requestAnimationFrame(()=>contexts[1].drawElements(4,100,1,0));raf(7000);assert.equal(last.canvas,game);
  assert.equal(steps,7);assert.ok(drawn.every(canvas=>canvas===game));renderer.revoke();
+});
+
+test('named profiles restore controls and colors after reopening, wait for readiness, and cannot be applied by revoked roles',()=>{
+ const storage=preferenceStorage(),f=savedMenu(storage,'581');f.report('supported');f.report('camera-ready');f.report('shot-ready');
+ for(const label of ['Silent aim','Tracers']){f.find(label).checked=true;f.find(label).onchange();}
+ f.find('Highlight preview color hex').value='#ff8833';f.find('Highlight preview color hex').onchange();
+ f.find('Control profile name').value='Arena';f.button('Save profile').click();
+ const workspace=JSON.parse(storage.getItem('neon-owner-workspace-v1:581')).workspace,id=workspace.profiles[0].id;assert.equal(workspace.profiles[0].settings.silent,true);assert.equal(workspace.profiles[0].colors.highlight,'#ff8833');
+ f.button('All off').click();const next=savedMenu(storage,'581');next.find('Saved control profile').value=id;next.find('Saved control profile').onchange();next.button('Apply profile').click();assert.equal(next.find('Silent aim').checked,true);assert.equal(next.sent.length,0,'profile does not bypass game readiness');
+ next.report('installed');assert.equal(next.sent.at(-1).settings.silent,false);next.report('camera-ready');next.report('shot-ready');assert.equal(next.sent.at(-1).settings.silent,true);assert.equal(next.sent.at(-1).settings.tracers,true);
+ next.find('Control profile name').value='Arena revised';next.button('Update profile').click();assert.equal(JSON.parse(storage.getItem('neon-owner-workspace-v1:581')).workspace.profiles[0].name,'Arena revised');
+ next.setAllowed(false);next.events['neon-owner-access']({detail:false});const before=storage.getItem('neon-owner-workspace-v1:581');next.button('Delete profile').click();next.button('Apply profile').click();assert.equal(storage.getItem('neon-owner-workspace-v1:581'),before);assert.equal(next.find('Silent aim').checked,false);
+});
+
+test('per-tool keys obey readiness, reject duplicates and forged frames, retain mutual exclusion and remember menu binding',()=>{
+ const storage=preferenceStorage(),f=savedMenu(storage,'581');f.report('supported');
+ for(const [label,code] of [['Open / close menu keybind','F2'],['Aimbot keybind','KeyK'],['Silent aim keybind','KeyJ'],['Tracers keybind','KeyL'],['All off keybind','F8']]){f.find(label).value=code;f.find(label).onchange();}
+ f.find('ESP highlights keybind').value='KeyL';f.find('ESP highlights keybind').onchange();assert.equal(f.find('ESP highlights keybind').value,'');
+ let prevented=0;const press=code=>f.events.keydown({code,preventDefault(){prevented++;}});press('KeyK');assert.equal(f.find('Aimbot · character lock').checked,false);assert.equal(prevented,0);
+ f.report('camera-ready');press('KeyK');assert.equal(f.find('Aimbot · character lock').checked,true);assert.equal(prevented,1);f.report('shot-ready');press('KeyJ');assert.equal(f.find('Silent aim').checked,true);assert.equal(f.find('Aimbot · character lock').checked,false);
+ f.events.message({source:{},origin:f.win.location.origin,data:{channel:'neon-lol-mod-v1',gameId:'581',action:'status',status:'shortcut-tracers'}});assert.equal(f.find('Tracers').checked,false);f.report('shortcut-tracers');assert.equal(f.find('Tracers').checked,true);
+ f.report('shortcut-off');assert.equal(f.find('Silent aim').checked,false);assert.equal(f.find('Tracers').checked,false);
+ const next=savedMenu(storage,'581');assert.equal(next.find('Open / close menu keybind').value,'F2');assert.equal(next.find('Silent aim keybind').value,'KeyJ');next.report('installed');next.events.keydown({code:'F2',target:{closest:()=>true},preventDefault(){assert.fail('typing must keep its key');}});
+});
+
+test('renderer forwards custom shortcuts from the game frame and removes them after revocation',()=>{
+ const listeners={},reports=[];let exits=0;const doc={addEventListener:(type,fn)=>listeners[type]=fn,removeEventListener:(type,fn)=>{if(listeners[type]===fn)delete listeners[type];},exitPointerLock(){exits++;}};
+ class GL{shaderSource(){}compileShader(){}linkProgram(){}getUniformLocation(){}uniform4fv(){}drawElements(){}useProgram(){}uniform1i(){}uniform1f(){}}
+ const win={document:doc,WebGL2RenderingContext:GL,requestAnimationFrame(){}};const renderer=installLolRenderer({win,notify:status=>reports.push(status)});renderer.settings({keybinds:{menu:'F2',tracers:'KeyL',off:'F8'}});
+ let prevented=0;const press=code=>listeners.keydown({code,preventDefault(){prevented++;},stopImmediatePropagation(){}});press('Tab');assert.equal(prevented,0);press('KeyL');assert.equal(reports.at(-1),'shortcut-tracers');assert.equal(exits,0);press('F2');assert.equal(reports.at(-1),'toggle-menu');assert.equal(exits,1);press('F8');assert.equal(reports.at(-1),'shortcut-off');renderer.revoke();assert.equal(listeners.keydown,undefined);
+});
+
+test('preview colors update while typing valid hex values and keep the last valid color on invalid input',()=>{
+ const storage=preferenceStorage(),f=savedMenu(storage,'581'),hex=f.find('Highlight preview color hex');
+ hex.value='#AABBCC';hex.oninput();assert.equal(hex.value,'#aabbcc');assert.equal(JSON.parse(storage.getItem('neon-owner-workspace-v1:581')).workspace.colors.highlight,'#aabbcc');
+ hex.value='#12';hex.oninput();hex.onchange();assert.equal(hex.attrs['aria-invalid'],'true');assert.equal(JSON.parse(storage.getItem('neon-owner-workspace-v1:581')).workspace.colors.highlight,'#aabbcc');
+ f.events['neon-game']({detail:{id:'58'}});assert.equal(hex.value,'#5dbaff','another game keeps its own color');
+ f.setAllowed(false);f.events['neon-owner-access']({detail:false});hex.value='#ffffff';hex.onchange();assert.equal(storage.getItem('neon-owner-workspace-v1:58'),null);
 });
