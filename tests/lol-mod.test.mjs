@@ -305,3 +305,21 @@ test('renderer heartbeat survives engine animation scheduling changes and its Ta
  const r=installLolRenderer({win,gameId:'581',notify:s=>reports.push(s),cameraFactory:()=>({step(){steps++;return [];},reset(){},revoke(){}})});r.settings({tracers:true});queue.shift()(0);queue.shift()(16);assert.equal(steps,2,'updates continue without any engine RAF calls');let prevented=0;
  listeners.keydown({code:'Tab',preventDefault(){prevented++;},stopImmediatePropagation(){}});assert.equal(prevented,1);assert.equal(exits,1);assert.equal(reports.at(-1),'toggle-menu');r.revoke();assert.equal(listeners.keydown,undefined);assert.equal(cancels,1);queue.shift()(32);assert.equal(steps,2);
 });
+
+test('round avatar/menu draws cannot steal controls from the locked game canvas',()=>{
+ let raf,last,steps=0;const drawn=[];
+ const makeCanvas=()=>({isConnected:true,width:400,height:300,style:{},getBoundingClientRect:()=>({left:0,top:0,width:400,height:300})});
+ const game=makeCanvas(),preview=makeCanvas(),doc={pointerLockElement:game,body:{append(el){el.isConnected=true;}},createElement(){return {style:{},setAttribute(){},remove(){},getContext:()=>({clearRect(){},beginPath(){},moveTo(){},lineTo(){drawn.push(last.canvas);},stroke(){},arc(){}})};}};
+ class GL{constructor(canvas){this.canvas=canvas;Object.assign(this,{SHADER_TYPE:1,VERTEX_SHADER:2,COMPILE_STATUS:3});}shaderSource(){}compileShader(){}getShaderParameter(s,k){return k===1?s.type:true;}linkProgram(){}getAttachedShaders(p){return p.shaders;}getProgramParameter(){return true;}getUniformLocation(){return null;}uniform4fv(){}drawElements(){}useProgram(){}uniform1i(){}uniform1f(){}getParameter(){return null;}isContextLost(){return false;}isProgram(){return true;}}
+ const win={document:doc,gameInstance:{Module:{canvas:game}},WebGL2RenderingContext:GL,WebAssembly:{instantiate:async()=>({}),validate:()=>false},crypto,requestAnimationFrame(fn){raf=fn;}};
+ const renderer=installLolRenderer({win,gameId:'581',cameraFactory:()=>({step(options){steps++;last=options;return [{x:10,y:10}];},reset(){},revoke(){}})}),contexts=[new GL(game),new GL(preview)];
+ for(const gl of contexts){const v={type:2},f={type:0};gl.shaderSource(v,'#version 300 es\nvoid main(){}');gl.shaderSource(f,'#version 300 es\nout vec4 SV_Target0;void main(){}');gl.linkProgram({shaders:[v,f]});}
+ renderer.settings({silent:true,tracers:true});
+ for(let round=0;round<6;round++){
+  win.requestAnimationFrame(()=>{contexts[0].drawElements(4,100,1,0);contexts[1].drawElements(4,100,1,0);});raf(round*1000);
+  assert.equal(last.canvas,game);assert.equal(last.silent,true);assert.equal(last.tracers,true);
+ }
+ // Between pointer-lock requests, the actual engine canvas still wins.
+ doc.pointerLockElement=null;win.requestAnimationFrame(()=>contexts[1].drawElements(4,100,1,0));raf(7000);assert.equal(last.canvas,game);
+ assert.equal(steps,7);assert.ok(drawn.every(canvas=>canvas===game));renderer.revoke();
+});

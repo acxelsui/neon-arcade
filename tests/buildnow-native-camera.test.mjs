@@ -26,7 +26,7 @@ test('BuildNow recognizes active practice dummies separately, stops at death and
  const x=fixture(),dummy=x.object(44000,'AimTarget'),health=x.object(45000,'TargetHealth'),hit=x.object(46000,'Transform'),type=x.object(47000,'RuntimeType'),str=x.object(48000,'String'),array=49000;
  x.u(dummy+0x2c,health);x.u(dummy+0x28,hit);x.positions.set(hit,[0,2,10]);x.u(array+12,1);x.u(array+16,dummy);let scans=0;
  let requested='';x.m.dynCall_iiiiii=(id,self,p,start,length)=>{assert.equal(id,11650);requested='';for(let i=0;i<length;i++)requested+=String.fromCharCode(x.m.HEAPU8[p+i*2]);return str;};
- const original=x.m.dynCall_iii;x.m.dynCall_iii=(id,...args)=>{if(id===105148)return requested==='BattleLab.AimTarget, Assembly-CSharp'?type:0;if(id===8454){scans++;return array;}return original(id,...args);};
+ const original=x.m.dynCall_iii;x.m.dynCall_iii=(id,...args)=>{if(id===105148)return requested==='BattleLab.AimTarget, Assembly-CSharp'?type:0;if(id===8454){if(args[0]!==type)return 0;scans++;return array;}return original(id,...args);};
  let points=x.step();assert.equal(points.length,2);assert.equal(points[0].id,dummy);assert.equal(points[0].kind,'dummy');assert.ok(x.m.HEAPF32[(x.controller+0x58)>>>2]<0);
  x.m.HEAPU8[health+0x99]=1;points=x.step({now:200});assert.equal(points.length,1);assert.equal(points[0].kind,'player');assert.equal(scans,1);
  x.m.HEAPU8[health+0x99]=0;points=x.step({now:1200});assert.equal(points.length,2);assert.equal(scans,2);
@@ -124,4 +124,24 @@ test('V Arena reacquires a replacement opponent without requiring the local char
  x.m.HEAPU8[x.enemy+0x533]=1;x.u(30000+12,0);x.u(array+12,0);const original=x.m.dynCall_iii;x.m.dynCall_iii=(id,...args)=>id===8454?array:original(id,...args);assert.deepEqual(step(200),[]);
  x.u(enemy+0x538,41000);x.u(enemy+0x170,head);x.u(enemy+0x4f0,helper);x.positions.set(head,[0,2,10]);x.u(array+12,1);x.u(array+16,enemy);assert.equal(step(300)[0].id,enemy,'empty cached lists cannot stall new opponents for a second');
  x.m.HEAPU8[helper+0x59]=1;assert.deepEqual(step(400),[],'team guard still applies to fallback actors');
+});
+
+test('nonempty stale assist entries cannot hide repeated replacement opponents or interrupt silent-shot staging',()=>{
+ const staged=[],x=fixture({clear(){},reset(){},update(m,state){staged.push(state);}}),array=60000,system=x.object(52000,'WeaponsSystem');
+ x.u(x.local+0x544,system);x.u(system+0x80,x.local);x.u(x.enemy+0x4f0,x.helper);
+ const original=x.m.dynCall_iii;x.m.dynCall_iii=(id,...args)=>id===8454?array:original(id,...args);
+ // Keep an old registry entry whose controller/health is alive, but whose
+ // old scene pivot has been destroyed. This registry never becomes empty.
+ x.u(x.enemyHead+8,0);let previous=null;
+ for(let round=0;round<6;round++){
+  if(previous){x.m.HEAPU8[previous.health+0x99]=1;x.u(previous.actor+8,0);}
+  if(round%2){x.m.HEAPU8[x.local+0x533]=1;assert.deepEqual(x.step({now:84+round*1200,aim:false,tracers:true,silent:true}),[]);x.m.HEAPU8[x.local+0x533]=0;}
+  const base=80000+round*8000,actor=x.object(base,'BaseCharacterController'),helper=x.object(base+1600,'AimHelper'),head=x.object(base+2000,'Transform'),health=x.object(base+2400,'PlayerHealth'),weapon=x.object(base+2800,'RaycastWeapon');
+  x.u(actor+0x538,health);x.u(actor+0x170,head);x.u(actor+0x4f0,helper);x.positions.set(head,[0,2,10]);x.u(array+12,1);x.u(array+16,actor);
+  x.u(system+0x50,weapon);x.u(weapon+0x8c,system);x.m.HEAPU8[weapon+0x9d]=1;
+  const points=x.step({now:100+round*1200,aim:false,tracers:true,silent:true,silentChance:91});
+  assert.deepEqual(points.map(p=>p.id),[actor],`round ${round+1} uses the replacement opponent`);
+  assert.equal(staged.at(-1).actor,actor);assert.equal(staged.at(-1).health,health);assert.equal(staged.at(-1).shooting,weapon);assert.equal(staged.at(-1).chance,91);
+  previous={actor,health};
+ }
 });

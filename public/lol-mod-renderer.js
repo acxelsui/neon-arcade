@@ -137,7 +137,10 @@ export function installLolRenderer({win=window,notify=()=>{},gameId=null,actorMa
   if(camera&&permitted){
    if(now<cameraRetryAt){clearTracking();return;}
    const available=gl=>gl?.canvas?.isConnected&&!gl.isContextLost();
-   const gl=available(lastDrawContext)?lastDrawContext:[...contexts.keys()].reverse().find(available),canvas=gl?.canvas;stretch.step(canvas);
+   // Menu/avatar previews may draw after the game in another WebGL canvas.
+   // Keep controls attached to the playing canvas across those redraws.
+   const live=[...contexts.keys()].filter(available),locked=doc.pointerLockElement,engineCanvas=win.gameInstance?.Module?.canvas;
+   const gl=live.find(gl=>gl.canvas===locked)||live.find(gl=>gl.canvas===engineCanvas)||(available(lastDrawContext)&&(!locked||lastDrawContext.canvas===locked)?lastDrawContext:null)||live.reverse().find(gl=>!locked||gl.canvas===locked),canvas=gl?.canvas;stretch.step(canvas);
    targets=camera.step({now,elapsed,aim:state.aim,tracers:state.tracers,silent:state.silent,silentChance:state.silentChance,smoothing:state.smoothing,range:state.range,fov:state.fovEnabled?state.fov:null,canvas});
    cameraRetryAt=0;cameraFailures=0;if(canvas)paintTracers(canvas);actorSeenThisFrame=false;return;
   }

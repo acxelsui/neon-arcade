@@ -120,7 +120,10 @@ export function createBuildNowNativeCamera(win,{notify=()=>{},shots=null}={}){
    if(!aim&&!tracers&&!silent){lastTarget=0;tracker.clear();status(false);return [];}
    if(!canvas||win.document.hidden||(win.document.hasFocus&&!win.document.hasFocus())||!(win.document.pointerLockElement===canvas||canvas.style.cursor==='none')||!living(m,local)||u(m,controller+0x10c)!==local){if(playing){restartRound();resumePending=true;}status(false);practiceStatus(canvas,{stage:'game paused'});return [];}
    if(!playing){restartRound();playing=true;if(resumePending){resumePending=false;notify('camera-ready');}shots?.update(m);}
-   if(now-lastScan>=100){const seen=new Set();const registered=actors(r);candidates=[...registered,...(registered.length?[]:sceneActors(m,local,now)),...spawnedTrainingBots(m),...trainingTargets(m,now)].filter(p=>{if(seen.has(p.actor))return false;seen.add(p.actor);return true;});lastScan=now;}
+   // The assist registry can retain an old character while omitting its
+   // replacement. A nonempty registry must not disable scene discovery.
+   // Scene reflection stays throttled; live registry reads stay at 10 Hz.
+   if(now-lastScan>=100){const seen=new Set();const registered=actors(r);candidates=[...registered,...sceneActors(m,local,now),...spawnedTrainingBots(m),...trainingTargets(m,now)].filter(p=>{if(seen.has(p.actor))return false;seen.add(p.actor);return true;});lastScan=now;}
    const origin=vector(m,call(m,'iii',3579,camera,0));if(!origin)return [];
    const yaw=m.HEAPF32[(controller+0x54)>>>2],pitch=m.HEAPF32[(controller+0x58)>>>2];if(!Number.isFinite(yaw)||!Number.isFinite(pitch))return [];
    const points=[];let positionsRead=0,nearestError=180;
