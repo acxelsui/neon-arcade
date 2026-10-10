@@ -7,6 +7,17 @@ import {getLolModGame} from '../public/lol-mod-games.js';
 import {createLolActorMatcher} from '../public/lol-actor-signatures.js';
 import {readFileSync} from 'node:fs';
 
+test('themes persist per game and status telemetry rejects forged messages and resets on reconnect',()=>{
+ const data=new Map(),storage={getItem:k=>data.get(k),setItem:(k,v)=>data.set(k,v)},f=menuFixture(storage),walk=el=>[el,...(el.children||[]).flatMap(walk)],nodes=walk(f.section),field=name=>nodes.find(el=>el.attrs?.['aria-label']===name);
+ f.events['neon-game']({detail:{id:'581'}});const theme=field('Menu theme'),opacity=field('Menu opacity');theme.value='arctic';theme.onchange();opacity.value='70';opacity.oninput();assert.equal(nodes.find(el=>el.id==='lol-hacks-controls').attrs['data-theme'],'arctic');
+ const report=status=>f.events.message({source:f.source,origin:f.win.location.origin,data:{channel:'neon-lol-mod-v1',gameId:'581',action:'status',status}});
+ report('installed');report('camera-ready');report('shot-ready');assert.equal(field('Camera status').textContent,'Connected');assert.equal(field('Shot controls status').textContent,'Connected');
+ const msg={source:f.source,origin:f.win.location.origin,data:{channel:'neon-lol-mod-v1',gameId:'581',action:'telemetry',sample:{fps:60,frameMs:16.7,paused:false}}};f.events.message({...msg,source:{}});assert.equal(field('Game render FPS status').textContent,'Waiting for game frames');f.events.message(msg);assert.equal(field('Game render FPS status').textContent,'60 FPS · 16.7 ms / frame');
+ report('aim-error');assert.equal(field('Camera status').textContent,'Reconnecting');report('camera-ready');assert.equal(field('Camera status').textContent,'Connected');
+ f.events['neon-game']({detail:{id:'58'}});assert.equal(theme.value,'midnight');f.events['neon-game']({detail:{id:'581'}});assert.equal(theme.value,'arctic');assert.equal(opacity.value,'70');assert.equal(field('Game render FPS status').textContent,'Waiting for renderer');
+ f.setAllowed(false);f.events['neon-owner-access']({detail:false});f.events.message(msg);assert.equal(field('Game render FPS status').textContent,'Waiting for renderer');
+});
+
 test('character fingerprints recognize the original zombie index buffer and reject modified geometry',()=>{
  const bytes=new Uint8Array(readFileSync(new URL('./fixtures/lol-zombie-indices.bin',import.meta.url))),matcher=createLolActorMatcher();
  assert.equal(matcher.matches(bytes),true);assert.equal(matcher.acceptsLength(bytes.length),true);
@@ -137,7 +148,7 @@ test('control sections support keyboard navigation, and All off clears switches 
  let prevented=false;aim.onkeydown({key:'ArrowRight',preventDefault(){prevented=true;}});assert.equal(prevented,true);assert.equal(visuals.focused,true);assert.equal(aimPage.hidden,true);assert.equal(visualPage.hidden,false);assert.equal(aim.attrs.tabindex,'-1');
  visuals.onkeydown({key:'Home',preventDefault(){}});assert.equal(aimPage.hidden,false);assert.equal(visualPage.hidden,true);
  const stretchTab=find(el=>el.id==='lol-tab-stretch'),stretchPage=find(el=>el.id==='lol-page-stretch');
- const lastTab=find(el=>el.id==='lol-tab-keybinds'),lastPage=find(el=>el.id==='lol-page-keybinds');
+ const lastTab=find(el=>el.id==='lol-tab-status'),lastPage=find(el=>el.id==='lol-page-status');
  aim.onkeydown({key:'ArrowUp',preventDefault(){}});assert.equal(lastTab.focused,true);assert.equal(lastPage.hidden,false);assert.equal(aimPage.hidden,true);
  lastTab.onkeydown({key:'ArrowDown',preventDefault(){}});assert.equal(aimPage.hidden,false);assert.equal(lastPage.hidden,true);
  stretchTab.click();assert.equal(stretchPage.hidden,false);

@@ -19,6 +19,8 @@ export function controlShortcut(event,bindings,{fromGame=false}={}){
  const code=event.code||(event.key==='Tab'?'Tab':null);
  return Object.entries(bindings).find(([,key])=>key&&key===code)?.[0]??null;
 }
+export const menuThemes=Object.freeze({midnight:'Midnight blue',arctic:'Arctic white',graphite:'Graphite black'});
+export function normalizeMenuAppearance(value){return {theme:Object.hasOwn(menuThemes,value?.theme)?value.theme:'midnight',opacity:Number.isFinite(value?.opacity)?Math.max(65,Math.min(100,Math.round(value.opacity))):96,monitor:value?.monitor!==false};}
 export function normalizeControlWorkspace(value){
  const colors=normalizePreviewColors(value?.colors),keybinds=normalizeControlBindings(value?.keybinds),profiles=[];
  if(Array.isArray(value?.profiles))for(const row of value.profiles.slice(0,8)){
@@ -26,7 +28,7 @@ export function normalizeControlWorkspace(value){
   profiles.push({id:row.id,name:row.name.trim().slice(0,32),settings:normalizeControlPreferences(row.settings),colors:normalizePreviewColors(row.colors)});
  }
  const selectedProfile=profiles.some(p=>p.id===value?.selectedProfile)?value.selectedProfile:'';
- return {colors,keybinds,profiles,selectedProfile};
+ return {colors,keybinds,profiles,selectedProfile,appearance:normalizeMenuAppearance(value?.appearance)};
 }
 // Workspace data has its own namespace. Profiles never authorize owner access.
 export function createControlWorkspace(win){

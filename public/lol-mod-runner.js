@@ -23,7 +23,8 @@ export async function prepareLolMod({gameId='58',win=window,origin=location.orig
  });
  if(!granted)return null;
  const mod={allowed:true,gameId,renderer:null};
- const notify=status=>win.parent.postMessage({channel,gameId,action:'status',status},origin);
+ const notify=(status,sample)=>win.parent.postMessage(status==='telemetry'
+  ?{channel,gameId,action:'telemetry',sample}:{channel,gameId,action:'status',status},origin);
  win.addEventListener('message',event=>{
   const data=event.data;
   if(event.source===win.parent&&event.origin===origin&&data?.channel===channel&&data.gameId===gameId){

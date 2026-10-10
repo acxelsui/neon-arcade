@@ -8,11 +8,12 @@ import {createLolNativeCamera} from './lol-native-camera.js';
 import {createBuildNowNativeCamera} from './buildnow-native-camera.js';
 import {installLolSilentShot} from './lol-silent-shot.js';
 import {createGameStretch} from './game-stretch.js';
+import {createGameFrameMeter} from './game-control-monitor.js';
 import {controlBindings,controlShortcut,normalizeControlBindings} from './game-control-workspace.js';
 export function installLolRenderer({win=window,notify=()=>{},gameId=null,actorMatcher=gameId==='58'?createLolActorMatcher():gameId==='581'?createBuildNowActorMatcher():null,cameraFactory=gameId==='58'?createLolNativeCamera:gameId==='581'?createBuildNowNativeCamera:null}) {
  const doc=win.document,proto=win.WebGL2RenderingContext?.prototype;
  let permitted=true,state={stretch:false,stretchAmount:125,aim:false,silent:false,silentChance:90,esp:false,wireframe:false,tracers:false,smoothing:70,fovEnabled:false,fov:75,range:30},supported=false;
- let keybinds={...controlBindings};
+ let keybinds={...controlBindings};const meter=createGameFrameMeter();let drewFrame=false,playingCanvas=null;
  const shots=['58','581'].includes(gameId)?installLolSilentShot(win,{notify,gameId}):null;
  const camera=cameraFactory?.(win,{notify,shots})??null;
  const stretch=createGameStretch(doc,{gameId,getModule:()=>win.gameInstance?.Module});
@@ -103,7 +104,7 @@ export function installLolRenderer({win=window,notify=()=>{},gameId=null,actorMa
   }
  }
  patch(proto,'drawElements',(target,gl,args)=>{
-  lastDrawContext=gl;
+  lastDrawContext=gl;if(gl.canvas?.isConnected!==false){const playing=doc.pointerLockElement||playingCanvas;if(!playing||playing===gl.canvas)drewFrame=true;}
   if(!permitted||(!state.esp&&!state.wireframe&&(!state.tracers||camera)))return Reflect.apply(target,gl,args);
   const program=gl.getParameter(gl.CURRENT_PROGRAM),info=program&&programs.get(program);
   if(info){
@@ -143,7 +144,7 @@ export function installLolRenderer({win=window,notify=()=>{},gameId=null,actorMa
    // Keep controls attached to the playing canvas across those redraws.
    const live=[...contexts.keys()].filter(available),locked=doc.pointerLockElement,engineCanvas=win.gameInstance?.Module?.canvas;
    const gl=live.find(gl=>gl.canvas===locked)||live.find(gl=>gl.canvas===engineCanvas)||(available(lastDrawContext)&&(!locked||lastDrawContext.canvas===locked)?lastDrawContext:null)||live.reverse().find(gl=>!locked||gl.canvas===locked),canvas=gl?.canvas;stretch.step(canvas);
-   targets=camera.step({now,elapsed,aim:state.aim,tracers:state.tracers,silent:state.silent,silentChance:state.silentChance,smoothing:state.smoothing,range:state.range,fov:state.fovEnabled?state.fov:null,canvas});
+   playingCanvas=canvas??playingCanvas;targets=camera.step({now,elapsed,aim:state.aim,tracers:state.tracers,silent:state.silent,silentChance:state.silentChance,smoothing:state.smoothing,range:state.range,fov:state.fovEnabled?state.fov:null,canvas});
    cameraRetryAt=0;cameraFailures=0;if(canvas)paintTracers(canvas);actorSeenThisFrame=false;return;
   }
   if(!permitted||(!state.aim&&!state.tracers)||!supported||doc.hidden||(doc.hasFocus&& !doc.hasFocus())){actorSeenThisFrame=false;clearTracking();return;}
@@ -177,8 +178,8 @@ export function installLolRenderer({win=window,notify=()=>{},gameId=null,actorMa
  // Use the engine's completed frame normally; continue independently if its
  // round transition replaces the animation callback with a cached scheduler.
  const cancel=win.cancelAnimationFrame;let heartbeat;
- function pulse(now){if(!permitted)return;if(now-lastEngineFrame>40)runAim(now);heartbeat=schedule.call(win,pulse);}
- if(camera)heartbeat=schedule.call(win,pulse);
+ function pulse(now){if(!permitted)return;if(now-lastEngineFrame>40)runAim(now);const sample=meter.sample(now,drewFrame,doc.hidden);drewFrame=false;if(sample)notify('telemetry',sample);heartbeat=schedule.call(win,pulse);}
+ heartbeat=schedule.call(win,pulse);
  const shortcut=event=>{if(!permitted)return;const action=controlShortcut(event,keybinds,{fromGame:true});if(!action)return;event.preventDefault();event.stopImmediatePropagation();if(action==='menu')doc.exitPointerLock?.();notify(action==='menu'?'toggle-menu':'shortcut-'+action);};
  doc.addEventListener?.('keydown',shortcut,true);
  notify('installed');
