@@ -7,6 +7,7 @@ export function withoutBuildNowDemoAds(source){
  const matches=[...source.matchAll(pattern)];if(matches.length!==1)return source;
  return source.replace(pattern,`async requestAd(e, t) {
   this.requestInProgress = false; this.adPlaying = false;
+  await Promise.resolve();
   if (e === "rewarded") { if (t?.adError) (0, o.wrapUserFn)(t.adError)(new i.AdError("other", "Rewarded ads are unavailable in this standalone game.")); }
   else if (t?.adFinished) (0, o.wrapUserFn)(t.adFinished)();
  }`);
@@ -14,5 +15,5 @@ export function withoutBuildNowDemoAds(source){
 export function buildNowSdkAddress(source){
  const original='script.src="cg-sdk.js"';
  if(source.split(original).length!==2)return source;
- return source.replace(original,'script.src="cg-sdk.js?neon-standalone=20261013"');
+ return source.replace(original,'script.src="cg-sdk.js?neon-standalone=20261013b"');
 }

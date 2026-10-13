@@ -20,6 +20,10 @@ export function installLolRenderer({win=window,notify=()=>{},gameId=null,actorMa
  const patches=[],contexts=new Map(),shaders=new WeakMap(),locations=new WeakMap(),programs=new WeakMap(),buffers=new WeakMap();
  let actorReady=false,actorSeenThisFrame=false,lastProcessedFrame=null,lastEngineFrame=-Infinity,cameraRetryAt=0,cameraFailures=0,lastDrawContext=null;
  if(!proto){shots?.revoke();notify('unsupported');return;}
+ // Unity releases programs/buffers when modes and rounds change. Release our
+ // corresponding bookkeeping too instead of pinning retired GL objects.
+ if(typeof proto.deleteProgram==='function')patch(proto,'deleteProgram',(target,gl,args)=>{const result=Reflect.apply(target,gl,args);contexts.get(gl)?.delete(args[0]);programs.delete(args[0]);return result;});
+ if(typeof proto.deleteBuffer==='function')patch(proto,'deleteBuffer',(target,gl,args)=>{const result=Reflect.apply(target,gl,args);buffers.delete(args[0]);return result;});
  const native={};for(const name of ['shaderSource','compileShader','linkProgram','getUniformLocation','uniform4fv','drawElements','useProgram','uniform1i','uniform1f'])native[name]=proto[name];
  const vertexCode='\nneonModDepth=gl_Position.z; if(neonModEnabled && neonModDepth>neonModThreshold){gl_Position.z=1.0;}\n';
  const fragmentCode=actorMatcher?'\nif(neonModEnabled && neonModDepth>neonModThreshold){SV_Target0=vec4(1.0,0.0,1.0,1.0);}\n':'\nif(neonModEnabled && neonModDepth>neonModThreshold){SV_Target0=vec4(1.0,0.0,0.0,1.0);}\n';

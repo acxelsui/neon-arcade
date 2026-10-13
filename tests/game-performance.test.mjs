@@ -5,6 +5,7 @@ import {attachGamePerformance} from '../public/game-performance.js';
 import {gameTransport} from '../public/game-transport.js';
 import {minecraftFrame,minecraftFrames} from '../public/minecraft-source.js';
 import {withoutBuildNowDemoAds,buildNowSdkAddress} from '../public/buildnow-sdk.js';
+import {installLolRenderer} from '../public/lol-mod-renderer.js';
 
 test('Minecraft uses only the selected game frame through the existing relay, with a WASM GC fallback',async()=>{
  const catalog=JSON.parse(readFileSync(new URL('../public/catalog.json',import.meta.url)));
@@ -19,7 +20,7 @@ test('the real local BuildNow demo-ad methods finish ordinary ads without pausin
  const ad=new Function('o','i',`return new (class {${updated}})()` )({wrapUserFn:fn=>fn},{AdError:Error});
  let started=0,finished=0,errors=0;ad.renderFakeAd=()=>{throw Error('must not create a demo overlay or timer');};
  const callbacks={adStarted:()=>started++,adFinished:()=>finished++,adError:()=>errors++};
- await ad.requestAd('midgame',callbacks);await ad.requestAd('midgame',callbacks);assert.equal(started,0);assert.equal(finished,2);assert.equal(ad.requestInProgress,false);assert.equal(ad.adPlaying,false);
+ const pending=ad.requestAd('midgame',callbacks);assert.equal(finished,0,'Unity completes its current update before the SDK calls back');await pending;await ad.requestAd('midgame',callbacks);assert.equal(started,0);assert.equal(finished,2);assert.equal(ad.requestInProgress,false);assert.equal(ad.adPlaying,false);
  await ad.requestAd('rewarded',callbacks);assert.equal(finished,2);assert.equal(errors,1);assert.equal(started,0);
 });
 test('SDK rewrite is scoped to the exact BuildNow file and removes stale transfer length headers',async()=>{
@@ -31,9 +32,9 @@ test('SDK rewrite is scoped to the exact BuildNow file and removes stale transfe
 });
 test('a fresh framework address updates only the demo SDK URL so previously cached ads are not reused',async()=>{
  const source='function _InitSDK(){var script=document.createElement("script");script.src="cg-sdk.js";document.head.appendChild(script);} function other(){return "saved game";}';
- const updated=buildNowSdkAddress(source);assert.ok(updated.includes('cg-sdk.js?neon-standalone=20261013'));assert.ok(updated.endsWith('function other(){return "saved game";}'));assert.equal(buildNowSdkAddress(source+source),source+source,'ambiguous SDKs are left intact');
+ const updated=buildNowSdkAddress(source);assert.ok(updated.includes('cg-sdk.js?neon-standalone=20261013b'));assert.ok(updated.endsWith('function other(){return "saved game";}'));assert.equal(buildNowSdkAddress(source+source),source+source,'ambiguous SDKs are left intact');
  let requested;const transport=gameTransport({request:async remote=>{requested=remote.href;return {status:200,headers:[['content-length','1']],body:new Blob([source]).stream()};}},'https://arcade.example');
- const url='https://cdn.jsdelivr.net/gh/bubblfan/cg-rip@main/buildnow-gg/Build/91a2bfcec140bc524100478b99a4f6d7.framework.js?neon-standalone=20261013';
+ const url='https://cdn.jsdelivr.net/gh/bubblfan/cg-rip@main/buildnow-gg/Build/91a2bfcec140bc524100478b99a4f6d7.framework.js?neon-standalone=20261013b';
  const result=await transport.request(new URL(url),'GET',null,[],undefined);assert.equal(requested,url);assert.equal(await new Response(result.body).text(),updated);
 });
 test('performance refresh preserves the running game and ignores forged sources, origins, games and nested frames',()=>{
@@ -47,4 +48,17 @@ test('performance refresh preserves the running game and ignores forged sources,
  assert.equal(draws.length,0);assert.equal(sent.length,0);
  events.message(event);assert.deepEqual(draws,['resize']);assert.deepEqual(world,{score:21,quarter:3});assert.equal(sent[0].data.ready,true);
  events.pagehide();assert.equal(events.message,undefined);
+});
+test('graphics objects retired between rounds no longer stay in the reset traversal and native deletion is preserved',()=>{
+ let deletes=0,bufferDeletes=0,checks=0;
+ class GL {
+  shaderSource(){} compileShader(){} linkProgram(){} getUniformLocation(){return null;}uniform4fv(){}drawElements(){}useProgram(){}uniform1i(){}uniform1f(){}
+  getAttachedShaders(){return [];}getProgramParameter(){return true;}getParameter(){return null;}isContextLost(){return false;}isProgram(){checks++;return false;}
+  deleteProgram(){deletes++;}deleteBuffer(){bufferDeletes++;}
+ }
+ const gl=new GL(),nativeDelete=GL.prototype.deleteProgram,doc={createElement:()=>({}),addEventListener(){},removeEventListener(){}};
+ const win={document:doc,WebGL2RenderingContext:GL,requestAnimationFrame(){return 1;},cancelAnimationFrame(){}};
+ const renderer=installLolRenderer({win,actorMatcher:null,cameraFactory:null});
+ for(let i=0;i<1000;i++){const program={};gl.linkProgram(program);gl.deleteProgram(program);gl.deleteBuffer({});}
+ assert.equal(deletes,1000);assert.equal(bufferDeletes,1000);renderer.revoke();assert.equal(checks,0,'retired programs are no longer pinned or repeatedly checked on reset');assert.equal(GL.prototype.deleteProgram,nativeDelete,'revocation restores native GL methods');
 });

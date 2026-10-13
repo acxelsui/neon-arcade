@@ -18,8 +18,8 @@ export function gameTransport(transport, origin, fetchLocal = fetch) {
     }
     if (remote.origin !== GAME_ORIGIN || !remote.pathname.startsWith('/games/')) {
       const buildNowScript=remote.origin==='https://cdn.jsdelivr.net'&&remote.pathname.startsWith('/gh/bubblfan/cg-rip@main/buildnow-gg/');
-      const demoSdk=buildNowScript&&remote.pathname.endsWith('/cg-sdk.js')&&['','?neon-standalone=20261013'].includes(remote.search);
-      const framework=buildNowScript&&remote.pathname.endsWith('/Build/91a2bfcec140bc524100478b99a4f6d7.framework.js')&&remote.search==='?neon-standalone=20261013';
+      const demoSdk=buildNowScript&&remote.pathname.endsWith('/cg-sdk.js')&&['','?neon-standalone=20261013b'].includes(remote.search);
+      const framework=buildNowScript&&remote.pathname.endsWith('/Build/91a2bfcec140bc524100478b99a4f6d7.framework.js')&&remote.search==='?neon-standalone=20261013b';
       if(method==='GET'&&(demoSdk||framework)){
         const response=await request(remote,method,body,headers,signal);
         if(response.status===200&&response.body){
