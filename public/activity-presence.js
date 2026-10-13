@@ -9,9 +9,10 @@ export function formatPresence(player,elapsed=false){
  return player.game_name+' · '+(minutes<1?'just started':minutes+' min');
 }
 export function initActivityPresence({send,initialPage='home',events=window}){
- let page=initialPage,game=null;
- const report=()=>send('activity',{game:game||pageActivity(page)});
+ let page=initialPage,game=null,gameVisible=true;
+ const report=()=>send('activity',{game:game&&gameVisible?game:pageActivity(page)});
  events.addEventListener('neon-page',event=>{page=event.detail;report();});
- events.addEventListener('neon-game',event=>{game=event.detail;report();});
+ events.addEventListener('neon-game',event=>{game=event.detail;gameVisible=true;report();});
+ events.addEventListener('neon-game-window',event=>{gameVisible=event.detail===true;report();});
  report();
 }

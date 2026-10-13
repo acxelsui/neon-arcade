@@ -1,3 +1,4 @@
+import {initGamePerformance} from './game-performance.js';
 export function initGameMenu(){
  const player=document.querySelector('#player'),bar=player.querySelector('.player-bar');
  const mac=!!document.querySelector('link[href="/mac-desktop.css"]');
@@ -45,5 +46,6 @@ export function initGameMenu(){
  menu.addEventListener('keydown',e=>{if(!desktop&&e.key==='Escape'&&!panel.hidden){e.preventDefault();e.stopPropagation();dismiss();toggle.focus()}});
  panel.addEventListener('click',e=>{if(e.target.closest('button')&&!e.target.closest('.game-menu-music')&&!e.target.closest('.game-menu-hacks')){const restore=panel.contains(document.activeElement);dismiss();if(restore&&!player.hidden)toggle.focus()}});
  document.addEventListener('pointerdown',e=>{if(!menu.contains(e.target))dismiss()});window.addEventListener('neon-game',dismiss);
- show(desktop);
+ const home=document.createElement('button');home.id='game-keep-open';home.type='button';home.title='Home — keep game open';home.setAttribute('aria-label',home.title);home.innerHTML='<svg viewBox="0 0 24 24" aria-hidden="true"><path d="m3 10 9-7 9 7v10H3z"/><path d="M9 20v-7h6v7"/></svg>';home.onclick=()=>window.dispatchEvent(new Event('neon-game-minimize'));left.append(home);
+ initGamePerformance();show(desktop);
 }

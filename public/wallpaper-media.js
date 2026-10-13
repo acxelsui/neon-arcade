@@ -1,8 +1,8 @@
 import {wallpaperPreparation} from './wallpaper-preload.js';
 import {releaseWallpaperLoop} from './wallpaper-loop.js';
 import {wallpaperStreamUrl,createWallpaperVideo,hasWallpaperBuffer,cachedWallpaperFull,wallpaperFullTime} from './wallpaper-stream.js';
-let video,pending,currentUrl,epoch=0,warmed,switching,switchEpoch=0,release=[],timers=[],retiring=new Set(),visible=Promise.resolve();
-function canPlay(){return !document.hidden&&!document.fullscreenElement;}
+let video,pending,currentUrl,epoch=0,warmed,switching,switchEpoch=0,release=[],timers=[],retiring=new Set(),visible=Promise.resolve(),gameOpen=false;
+function canPlay(){return !document.hidden&&!document.fullscreenElement&&!gameOpen;}
 function play(){if(canPlay()){video?.play().catch(()=>{});switching?.media.play().catch(()=>{});}}
 function dispose(media){if(!media)return;releaseWallpaperLoop(media);media.pause();media.removeAttribute('src');media.load();media.remove();}
 function status(text){
@@ -126,3 +126,7 @@ function activateWallpaperMedia(url,poster='',prepared){
 document.addEventListener('visibilitychange',()=>{if(document.hidden){video?.pause();switching?.media.pause();dispose(warmed);warmed=null;}else play();});
 document.addEventListener('fullscreenchange',()=>{if(document.fullscreenElement){video?.pause();switching?.media.pause();dispose(warmed);warmed=null;}else play();});
 document.addEventListener('pointerdown',play,{passive:true});
+if(typeof window!=='undefined'){
+ window.addEventListener('neon-game-window',event=>{gameOpen=event.detail===true;if(gameOpen){video?.pause();switching?.media.pause();}else play();});
+ window.addEventListener('neon-game',event=>{gameOpen=!!event.detail;if(gameOpen){video?.pause();switching?.media.pause();for(const media of retiring)media.pause();dispose(warmed);warmed=null;wallpaperPreparation.pause();}else play();});
+}

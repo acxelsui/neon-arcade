@@ -4,6 +4,9 @@ export function ownerRequest(data){
  switch(data.action){
  case 'owner-game-status':case 'owner-game-review':return gameStatusRequest(data);
  case 'owner-overview':return ['neon_owner_overview',{}];
+ case 'owner-player-activity':
+  if(!Number.isInteger(data.hours)||![1,24,168].includes(data.hours))throw Error('Choose 1 hour, 24 hours or 7 days.');
+  return ['neon_owner_player_activity',{window_hours:data.hours}];
  case 'owner-players':
   if(!['all','banned','muted','staff'].includes(data.filter)||!Number.isInteger(data.offset)||data.offset<0||data.offset>100000)throw Error('Choose a valid player filter.');
   return ['neon_owner_players',{query:String(data.query||'').trim().slice(0,24),category:data.filter,page_offset:data.offset}];

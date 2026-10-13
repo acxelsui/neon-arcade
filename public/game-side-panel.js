@@ -38,5 +38,6 @@ export function initGameSidePanel({showPage}){
  grip.onkeydown=event=>keyboard(event);corner.onkeydown=event=>keyboard(event,true);grip.onclick=()=>grip.focus();
  window.addEventListener('resize',()=>{if(floating)fit();});
  window.addEventListener('neon-game',e=>{if(!e.detail)hide()});
+ window.addEventListener('neon-game-window',e=>{if(e.detail===false&&!panel.hidden)hide();});
  initGameMenu();
 }

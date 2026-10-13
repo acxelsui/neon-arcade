@@ -2,7 +2,7 @@ import test from 'node:test';
 import assert from 'node:assert/strict';
 import vm from 'node:vm';
 import {readFile} from 'node:fs/promises';
-const source=(await readFile(new URL('../public/game-menu.js',import.meta.url),'utf8')).replace('export function','function');
+const source=(await readFile(new URL('../public/game-menu.js',import.meta.url),'utf8')).replace(/^import .*;\r?\n/gm,'').replace('export function','function');
 function fixture(desktop){
  const handlers={},events={};let doc;
  class Element{
@@ -18,7 +18,7 @@ function fixture(desktop){
  const body=new Element('body'),player=new Element('div'),bar=new Element('div'),frame=new Element('iframe'),name=new Element('span');player.id='player';bar.className='player-bar';name.id='playing-name';bar.append(name);player.append(bar,frame);body.append(player);
  const originals={};for(const id of ['retry-game','blank-button','game-fullscreen','game-side-toggle','close-game']){const button=new Element('button');button.id=id;button.setAttribute('aria-label',id);button.onclick=()=>handlers[id]=(handlers[id]??0)+1;originals[id]=button;bar.append(button)}
  doc={activeElement:null,querySelector:selector=>selector.startsWith('link[')?((desktop===true&&selector.includes('windows-'))||(desktop==='mac'&&selector.includes('mac-')))?{}:null:selector==='#game-frame-wrap iframe'?frame:body.querySelector(selector),createElement:tag=>new Element(tag),createElementNS:(_,tag)=>new Element(tag),addEventListener:(k,v)=>events[k]=v};
- const windowEvents={},actions=[];vm.runInNewContext(source+';initGameMenu()',{document:doc,window:{addEventListener:(k,v)=>windowEvents[k]=v,dispatchEvent:event=>actions.push(event)},CustomEvent:class{constructor(type,opts){this.type=type;this.detail=opts.detail}}});
+ const windowEvents={},actions=[];vm.runInNewContext(source+';initGameMenu()',{initGamePerformance:()=>{},Event:class{constructor(type){this.type=type;}},document:doc,window:{addEventListener:(k,v)=>windowEvents[k]=v,dispatchEvent:event=>actions.push(event)},CustomEvent:class{constructor(type,opts){this.type=type;this.detail=opts.detail}}});
  return {doc,player,bar,frame,name,originals,handlers,events,windowEvents,actions,menu:body.querySelector('#game-menu'),panel:body.querySelector('#game-menu-panel'),toggle:body.querySelector('#game-menu-toggle')};
 }
 test('Windows game bar retains controls and stays open after clicks, outside focus, and game changes',()=>{

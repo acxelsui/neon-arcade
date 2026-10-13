@@ -46,6 +46,7 @@ export function initDesktopWidgets({desktop,navigate,manage}){
  toggle.className='widget-play';musicControls.append(previous,toggle,next,action('Open Music',()=>navigate('music'),'Open Music ↗'));music.append(track,musicDetail,musicControls);
  function renderMusic(state=musicState){musicState=state||{};track.textContent=musicState.ready?musicState.title:'Your soundtrack';musicDetail.textContent=musicState.ready?(musicState.playing?'Playing now':'Paused'):musicState.active?'Choose a song in Music.':'Choose a song to start listening.';previous.disabled=!musicState.canPrevious;toggle.disabled=!musicState.canToggle;next.disabled=!musicState.canNext;toggle.textContent=musicState.playing?'Ⅱ':'▷';toggle.setAttribute('aria-label',musicState.playing?'Pause music':'Play music');toggle.title=toggle.getAttribute('aria-label');}
  window.addEventListener('neon-music-state',event=>renderMusic(event.detail));renderMusic();
+ window.addEventListener('neon-game-window',event=>{gameOpen=event.detail===true;renderVisibility();});
 
  const online=cards.get('online').querySelector('.widget-body'),onlineSummary=node('p','','widget-online-summary'),players=node('div','','widget-players');
  online.append(onlineSummary,players,action('Open Friends',()=>navigate('friends'),'Find your friends ↗'));

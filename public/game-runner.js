@@ -4,6 +4,8 @@ import {createGameLoadReport} from './game-load-report.js';
 import {prepareGameSave} from './game-save-runner.js';
 import {prepareLolMod} from './lol-mod-runner.js';
 import {getLolModGame} from './lol-mod-games.js';
+import {minecraftFrame,minecraftFrames} from './minecraft-source.js';
+import {attachGamePerformance} from './game-performance.js';
 const status = document.querySelector('#status');
 const report=createGameLoadReport({gameId:new URLSearchParams(location.search).get('id')});
 let failed=false;
@@ -23,6 +25,7 @@ try {
   const mod=getLolModGame(game.id)?await prepareLolMod({gameId:game.id}):null;
   const controller = await initBootstrap(transport => gameTransport(transport, location.origin));
   const frame = controller.createFrame();
+  attachGamePerformance(frame,{gameId:game.id});
   watchFrame(frame,message=>{clearTimeout(slow);showFailure(message,'failed',message.includes('error (')?'http':'network')},()=>{clearTimeout(slow);failed=false;status.hidden=true;report('loaded')});
   frame.element.title = game.name;
   frame.element.allow = 'autoplay; fullscreen; gamepad';
@@ -31,7 +34,7 @@ try {
   frame.element.addEventListener('load', () => { if(!failed && frame.element.src) {clearTimeout(slow);status.hidden = true;} });
   document.body.append(frame.element);
   mod?.attach(frame);
-  frame.go(new URL(game.url, GAME_ORIGIN).href);
+  frame.go(game.url===minecraftFrames.wasm?minecraftFrame():new URL(game.url, GAME_ORIGIN).href);
   }
 } catch (error) {
   clearTimeout(slow);showFailure('Could not start the game. '+error.message);

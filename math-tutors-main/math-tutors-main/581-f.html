@@ -1,11 +1,4 @@
-<script async src="https://www.googletagmanager.com/gtag/js?id=G-L7856P3VNT"></script>
-<script>
-  window.dataLayer = window.dataLayer || [];
-  function gtag(){dataLayer.push(arguments);}
-  gtag('js', new Date());
-
-  gtag('config', 'G-L7856P3VNT');
-</script><!DOCTYPE html>
+<!DOCTYPE html>
 <html lang="en-us">
   <head>
     <base href="https://cdn.jsdelivr.net/gh/bubblfan/cg-rip@main/buildnow-gg/">
@@ -164,7 +157,7 @@
       const loaderUrl = "Build/7a2dbded24d57e056180125b1583e7c4.loader.js";
       const config = {
         dataUrl: "Build/ab8dd356a41a2943639294657a0990f8.data",
-        frameworkUrl: "Build/91a2bfcec140bc524100478b99a4f6d7.framework.js",
+        frameworkUrl: "Build/91a2bfcec140bc524100478b99a4f6d7.framework.js?neon-standalone=20261013",
         codeUrl: "Build/7db022abd161455e3cc5f207e75d294b.wasm",
         streamingAssetsUrl: "StreamingAssets",
         companyName: "BuildNow GG",
@@ -179,6 +172,8 @@
         createUnityInstance(canvas, config, progress => { document.getElementById("loading-text").innerText = "Starting BuildNow.gg… " + Math.round(progress*100) + "%"; }).then((unityInstance) => {
           window.gameInstance = unityInstance;
           document.getElementById("loading-text").style.display = "none";
+          // The engine has consumed both files; release temporary download blobs.
+          for (const url of Object.values(mergedMap)) URL.revokeObjectURL(url);
         }).catch(showLoadError);
       };
       document.body.appendChild(script);

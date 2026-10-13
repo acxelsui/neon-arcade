@@ -1,5 +1,6 @@
 // Feed bundled files into Scramjet without asking the relay to access localhost.
 // All other HTTP requests and WebSocket connections remain on libcurl.
+import {withoutBuildNowDemoAds,buildNowSdkAddress} from './buildnow-sdk.js';
 export const GAME_ORIGIN = 'https://games.neon-arcade.invalid';
 export function gameTransport(transport, origin, fetchLocal = fetch) {
   const request = transport.request.bind(transport);
@@ -16,6 +17,17 @@ export function gameTransport(transport, origin, fetchLocal = fetch) {
       return {...probe, body:null, headers:resultHeaders, status:probe.status===206?200:probe.status, statusText:probe.status===206?'OK':probe.statusText};
     }
     if (remote.origin !== GAME_ORIGIN || !remote.pathname.startsWith('/games/')) {
+      const buildNowScript=remote.origin==='https://cdn.jsdelivr.net'&&remote.pathname.startsWith('/gh/bubblfan/cg-rip@main/buildnow-gg/');
+      const demoSdk=buildNowScript&&remote.pathname.endsWith('/cg-sdk.js')&&['','?neon-standalone=20261013'].includes(remote.search);
+      const framework=buildNowScript&&remote.pathname.endsWith('/Build/91a2bfcec140bc524100478b99a4f6d7.framework.js')&&remote.search==='?neon-standalone=20261013';
+      if(method==='GET'&&(demoSdk||framework)){
+        const response=await request(remote,method,body,headers,signal);
+        if(response.status===200&&response.body){
+          const text=await new Response(response.body).text(),updated=demoSdk?withoutBuildNowDemoAds(text):buildNowSdkAddress(text);
+          return {...response,body:new Blob([updated]).stream(),headers:response.headers.filter(([name])=>!['content-length','content-encoding','etag'].includes(name.toLowerCase()))};
+        }
+        return response;
+      }
       return request(remote, method, body, headers, signal);
     }
     const response = await fetchLocal(new URL(remote.pathname + remote.search, origin).href, {
