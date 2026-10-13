@@ -5,8 +5,8 @@ import {anglesToTarget,angleDelta,smoothCameraAngles} from './lol-native-camera.
 import {createNativeTargetTracker} from './native-target-tracking.js';
 export function createBuildNowNativeCamera(win,{notify=()=>{},shots=null}={}){
  const tracker=createNativeTargetTracker();
- let detail={phase:'camera-waiting',targets:0,visible:0,shotStaged:false},lastPlay=null;
- const report=(phase,extra={})=>{detail={phase,targets:0,visible:0,shotStaged:false,...extra};if(['origin-waiting','type-waiting','no-targets','outside-range','active','weapon-waiting'].includes(phase))lastPlay={...detail};};
+ let detail={phase:'camera-waiting',targets:0,visible:0,shotStaged:false},lastPlay=null,frameNow=0,lastPlayAt=null;
+ const report=(phase,extra={})=>{detail={phase,targets:0,visible:0,shotStaged:false,...extra};if(['origin-waiting','type-waiting','no-targets','outside-range','active','weapon-waiting'].includes(phase)){lastPlay={...detail};lastPlayAt=frameNow;}};
  let practiceInfo={stage:'waiting',found:0,alive:0},lastPractice='';
  function practiceStatus(canvas,extra={}){const value=JSON.stringify({...practiceInfo,...extra});if(value!==lastPractice){lastPractice=value;canvas?.setAttribute?.('data-neon-training',value);}}
  let activeContext=null,playing=false,resumePending=false,lastPlayerScan=-Infinity,scenePlayers=[];
@@ -19,7 +19,10 @@ export function createBuildNowNativeCamera(win,{notify=()=>{},shots=null}={}){
  const name=(m,p)=>valid(m,p)?text(m,u(m,u(m,p)+8)):'';
  const status=value=>{if(tracking!==value){tracking=value;notify(value?'tracking-active':'tracking-idle');}};
  const call=(m,sig,id,...args)=>m['dynCall_'+sig](id,...args);
- const living=(m,actor)=>valid(m,actor,0x548)&&name(m,actor)==='BaseCharacterController'&&u(m,actor+8)&&!m.HEAPU8[actor+0x533]&&valid(m,u(m,actor+0x538),0x9b)&&!m.HEAPU8[u(m,actor+0x538)+0x99];
+ // PlayerHealth.OnRespawned clears Health.m_IsDead. The character's separate
+ // cached isDead flag is set by death callbacks and is not cleared there.
+ // Reading that old flag permanently excluded reused party characters.
+ const living=(m,actor)=>valid(m,actor,0x548)&&name(m,actor)==='BaseCharacterController'&&u(m,actor+8)&&valid(m,u(m,actor+0x538),0x9b)&&name(m,u(m,actor+0x538))==='PlayerHealth'&&u(m,u(m,actor+0x538)+8)&&!m.HEAPU8[u(m,actor+0x538)+0x99];
  const liveDummy=(m,actor,profile=trainingTypes[0])=>valid(m,actor,Math.max(0x3c,profile.healthOffset+4))&&name(m,actor)===profile.className&&u(m,actor+8)&&valid(m,u(m,actor+profile.healthOffset),0x9b)&&(profile.kind==='training-bot'?['AIHealth','TargetHealth'].includes(name(m,u(m,actor+profile.healthOffset))):name(m,u(m,actor+profile.healthOffset))==='TargetHealth')&&u(m,u(m,actor+profile.healthOffset)+8)&&!m.HEAPU8[u(m,actor+profile.healthOffset)+0x99];
  function runtime(){
   const m=win.gameInstance?.Module;if(!m?.HEAPU32||!m.HEAPF32||!m._malloc||!['ii','iii','iiiii','viii','viiiii','fii','vifi'].every(s=>typeof m['dynCall_'+s]==='function'))return null;
@@ -115,14 +118,17 @@ export function createBuildNowNativeCamera(win,{notify=()=>{},shots=null}={}){
  function restoreFov(){if(originalFov&&module){const {controller,camera,value,cameraValue}=originalFov;try{if(valid(module,controller,0xb4)&&name(module,controller)==='CameraController'&&u(module,controller+8))module.HEAPF32[(controller+0xb0)>>>2]=value;if(valid(module,camera)&&name(module,camera)==='Camera'&&u(module,camera+8))call(module,'vifi',65864,camera,cameraValue,0);}catch{}}originalFov=null;}
  return {
   step({now,elapsed,aim=false,tracers=false,silent=false,silentChance=90,smoothing=70,range=30,fov=null,canvas}){
-   shots?.clear();if(disposed)return [];const r=runtime();if(!r){restartRound();ready=false;activeContext=null;report('camera-waiting');status(false);practiceStatus(canvas,{stage:'waiting for game camera'});return [];}
+   if(Number.isFinite(now))frameNow=now;shots?.clear();if(disposed)return [];const r=runtime();if(!r){restartRound();ready=false;activeContext=null;report('camera-waiting');status(false);practiceStatus(canvas,{stage:'waiting for game camera'});return [];}
    const {m,controller,local,camera}=r;shots?.update(m);
    if(Number.isFinite(fov)){
     if(originalFov?.controller!==controller||originalFov?.camera!==camera){restoreFov();const value=m.HEAPF32[(controller+0xb0)>>>2],cameraValue=call(m,'fii',6012,camera,0);if([value,cameraValue].every(v=>Number.isFinite(v)&&v>1&&v<179))originalFov={controller,camera,value,cameraValue};}
     if(originalFov){const value=Math.max(40,Math.min(110,fov));m.HEAPF32[(controller+0xb0)>>>2]=value;call(m,'vifi',65864,camera,value,0);}
    }else restoreFov();
    if(!aim&&!tracers&&!silent){lastTarget=0;tracker.clear();report('disabled');status(false);return [];}
-   const pause=!canvas?'canvas-waiting':win.document.hidden?'background':(win.document.hasFocus&&!win.document.hasFocus())?'focus':!(win.document.pointerLockElement===canvas||canvas.style.cursor==='none')?'pointer':!living(m,local)?'dead':u(m,controller+0x10c)!==local?'spectator':null;
+   // Pointer lock is direct evidence that this game owns the mouse. A focus
+   // report from the embedded document must not override that ownership.
+   const locked=!!canvas&&win.document.pointerLockElement===canvas;
+   const pause=!canvas?'canvas-waiting':win.document.hidden?'background':(!locked&&win.document.hasFocus&&!win.document.hasFocus())?'focus':!(locked||canvas.style.cursor==='none')?'pointer':!living(m,local)?'dead':u(m,controller+0x10c)!==local?'spectator':null;
    if(pause){if(playing){restartRound();resumePending=true;}report(pause);status(false);practiceStatus(canvas,{stage:'game paused',reason:pause});return [];}
    if(!playing){restartRound();playing=true;if(resumePending){resumePending=false;notify('camera-ready');}shots?.update(m);}
    // The assist registry can retain an old character while omitting its
@@ -152,7 +158,7 @@ export function createBuildNowNativeCamera(win,{notify=()=>{},shots=null}={}){
    if(aim&&selected){const desired=anglesToTarget(origin,tracker.predict(selected.id,selected.position,now,smoothing))||selected,next=smoothCameraAngles({yaw,pitch},desired,elapsed,smoothing),min=m.HEAPF32[(controller+0x5c)>>>2],max=m.HEAPF32[(controller+0x60)>>>2];if(Number.isFinite(min)&&Number.isFinite(max)&&min<=max){m.HEAPF32[(controller+0x54)>>>2]=next.yaw;m.HEAPF32[(controller+0x58)>>>2]=Math.max(min,Math.min(max,next.pitch));}}
    return points;
   },
-  diagnostics(){return {...detail,...(lastPlay?{lastPlay:{...lastPlay}}:{})};},
+  diagnostics(){return {...detail,...(lastPlay?{lastPlay:{...lastPlay},lastPlayAgeMs:Math.min(86400000,Math.max(0,Math.round(frameNow-lastPlayAt)))}:{})};},
   reset(){restartRound();shots?.clear();ready=false;activeContext=null;report('camera-waiting');status(false);restoreFov();},
   revoke(){shots?.clear();disposed=true;tracker.clear();status(false);restoreFov();if(module&&scratch)try{module._free(scratch);}catch{}scratch=0;candidates=[];}
  };

@@ -49,3 +49,10 @@ test('telemetry values are bounded and appearance migration preserves old profil
  store.save('581',{...old,appearance:{theme:'arctic',opacity:70,monitor:false}});
  assert.deepEqual(store.load('581').appearance,{theme:'arctic',opacity:70,monitor:false});assert.equal(store.load('58').appearance.theme,'midnight');assert.equal(data.get('game-save'),'untouched');
 });
+
+test('execution counters and last-play ages are bounded before accepting owner telemetry',()=>{
+ const sample={fps:60,frameMs:16.7,paused:false,controls:{phase:'focus',targets:0,visible:0,shotStaged:false,lastPlayAgeMs:4000},execution:{shotChecks:2,shotRedirects:1,tracersEnabled:true,tracersDrawn:1,tracerDrawAgeMs:4000}};
+ assert.equal(validFrameSample(sample),true);
+ for(const change of [{shotChecks:-1},{shotRedirects:Infinity},{tracersEnabled:1},{tracersDrawn:9},{tracerDrawAgeMs:86400001}])assert.equal(validFrameSample({...sample,execution:{...sample.execution,...change}}),false);
+ assert.equal(validFrameSample({...sample,controls:{...sample.controls,lastPlayAgeMs:NaN}}),false);
+});

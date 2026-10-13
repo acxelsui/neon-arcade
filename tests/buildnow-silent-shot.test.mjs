@@ -15,11 +15,31 @@ test('BuildNow redirects native Fire direction for players and dummies while pre
 test('BuildNow respects shot chance, off, remote weapons, dead players/dummies and replaced health objects',async()=>{
  for(const kind of ['player','dummy','training-bot','trainer'])for(const mode of ['off','other','remote','dead','replaced','destroyed','revoked','bad-kind']){const x=await fixture(kind);if(mode==='off')x.u[1024]=0;if(mode==='other')x.u[1025]=2000;if(mode==='remote')x.b[1157]=0;if(mode==='dead')x.b[8153]=1;if(mode==='replaced')x.u[1032]=8100;if(mode==='destroyed')x.u[1252]=0;if(mode==='revoked')x.e.state.value=0;if(mode==='bad-kind')x.u[1026]=255;x.shoot();assert.deepEqual(x.direction(),[0,0,1],kind+' '+mode);}
  const x=await fixture();x.u[1031]=90;for(let i=0;i<10000;i++)x.shoot();assert.ok(x.u[1033]>8800&&x.u[1033]<9200);assert.equal(x.u[1034],10000);
- const dead=await fixture();dead.b[5000+1331]=1;dead.shoot();assert.deepEqual(dead.direction(),[0,0,1]);
+ const dead=await fixture();dead.b[5000+1331]=1;dead.b[8153]=1;dead.shoot();assert.deepEqual(dead.direction(),[0,0,1]);
+});
+
+test('native shot rays resume over repeated party respawns when the cached character-death flag stays set',async()=>{
+ const x=await fixture();
+ for(let round=0;round<5;round++){
+  x.b[5000+1331]=1;x.b[8153]=1;x.shoot();assert.deepEqual(x.direction(),[0,0,1],'dead health still blocks shots');
+  x.b[8153]=0;x.shoot();const n=Math.sqrt(102);assert.ok(Math.abs(x.direction()[2]-10/n)<1e-6,'health respawn restores the ray without clearing the old character flag');
+  assert.equal(x.u[1033],round+1);
+ }
 });
 test('unknown BuildNow engines remain unchanged, and exported-memory builds connect and revoke',async()=>{
  assert.equal(await patchBuildNowShotWasm(kernel),null);
  const memory=new WebAssembly.Memory({initial:1}),g=new WebAssembly.Global({value:'i32',mutable:true},0),original=async()=>({instance:{exports:{ek:memory,neonSilentState:g}}}),wa={instantiate:original,validate:()=>true};
  const hook=installLolSilentShot({WebAssembly:wa,crypto,console},{gameId:'581'});await wa.instantiate(kernel,{});const m={HEAPU8:new Uint8Array(memory.buffer),HEAPU32:new Uint32Array(memory.buffer),HEAPF32:new Float32Array(memory.buffer),_malloc:()=>4096,_free(){}};
  assert.equal(hook.update(m,{enabled:true,shooting:1000,actor:5000,health:8000,kind:'dummy',point:[1,2,10],chance:85}),true);assert.equal(g.value,4096);assert.equal(m.HEAPU32[1032],8000);assert.equal(m.HEAPU32[1026],1);assert.equal(m.HEAPU32[1031],85);hook.revoke();assert.equal(g.value,0);assert.equal(m.HEAPU32[1024],0);assert.equal(wa.instantiate,original);
+});
+
+test('native shot diagnostics count executed checks and redirects, not prepared targets, and survive reset and memory growth',async()=>{
+ const x=await fixture(),g=x.e.state,wa={instantiate:async()=>({instance:{exports:{neonSilentState:g,memory:x.e.memory}}}),validate:()=>true},reports=[];
+ const hook=installLolSilentShot({WebAssembly:wa,crypto},{gameId:'581',notify:s=>reports.push(s)});await wa.instantiate(kernel);
+ const m={HEAPU8:x.b,HEAPU32:x.u,HEAPF32:x.f,_malloc:()=>4096,_free(){}};
+ const stage=()=>hook.update(m,{enabled:true,shooting:1000,actor:5000,health:8000,kind:'player',point:[1,2,10],chance:100});
+ stage();assert.deepEqual(hook.diagnostics(),{checks:0,redirects:0});x.shoot();stage();assert.deepEqual(hook.diagnostics(),{checks:1,redirects:1});
+ hook.reset();assert.deepEqual(hook.diagnostics(),{checks:1,redirects:1});stage();x.shoot();assert.deepEqual(hook.diagnostics(),{checks:2,redirects:2});
+ x.e.memory.grow(1);m.HEAPU8=new Uint8Array(x.e.memory.buffer);m.HEAPU32=new Uint32Array(x.e.memory.buffer);m.HEAPF32=new Float32Array(x.e.memory.buffer);assert.deepEqual(hook.diagnostics(),{checks:2,redirects:2});
+ hook.revoke();assert.deepEqual(hook.diagnostics(),{checks:0,redirects:0});assert.ok(reports.includes('shot-redirected'));
 });

@@ -65,6 +65,10 @@ export function installLolSilentShot(win,{notify=()=>{},gameId='58'}={}){
    m.HEAPU32[(pointer+4)>>>2]=shooting;if(gameId==='581'){m.HEAPU32[(pointer+8)>>>2]=kind==='dummy'?1:kind==='training-bot'?2:kind==='trainer'?3:0;m.HEAPU32[(pointer+32)>>>2]=health;}m.HEAPF32.set(point,(pointer+16)>>>2);m.HEAPU32[(pointer+28)>>>2]=Math.min(100,Math.max(1,Math.round(chance)||90));m.HEAPU32[(pointer+44)>>>2]=actor;m.HEAPU32[pointer>>>2]=1;return true;
   },
   clear,
+  diagnostics(){
+   if(!permitted||!module?.HEAPU32||!pointer||pointer+48>module.HEAPU8.length||memory?.buffer!==module.HEAPU8.buffer)return {checks:0,redirects:0};
+   return {checks:module.HEAPU32[(pointer+40)>>>2],redirects:module.HEAPU32[(pointer+36)>>>2]};
+  },
   reset(){clear();ready=false;},
   revoke(){permitted=false;clear();if(global)global.value=0;if(module&&pointer)module._free(pointer);pointer=0;restore.reverse().forEach(fn=>fn());}
  };

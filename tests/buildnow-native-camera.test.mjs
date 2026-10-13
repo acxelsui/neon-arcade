@@ -7,7 +7,7 @@ function fixture(shots=null){
  const object=(p,name)=>{const klass=address;address+=128;const str=address+3;address+=128;u(p,klass);u(p+8,1);u(klass+8,str);m.HEAPU8.set(new TextEncoder().encode(name),str);return p;};
  const game=object(10000,'GameManager'),controller=object(11000,'CameraController'),local=object(12000,'BaseCharacterController'),enemy=object(14000,'BaseCharacterController'),team=object(16000,'BaseCharacterController'),dead=object(18000,'BaseCharacterController'),camera=object(20000,'Camera'),cameraTransform=object(21000,'Transform'),enemyHead=object(22000,'Transform'),helper=object(23000,'AimHelper'),teamHelper=object(24000,'AimHelper'),deadHelper=object(25000,'AimHelper'),assist=object(26000,'AimAssist'),type=object(27000,'RuntimeType');
  u(7005400,m.HEAPU32[game>>>2]);u(7001488,m.HEAPU32[controller>>>2]);u(6999896,m.HEAPU32[assist>>>2]);u(game+0x3c,local);u(controller+0x1c,camera);u(controller+0x10c,local);f(controller+0x5c,-80);f(controller+0x60,80);f(controller+0xb0,65);
- for(const [actor,health] of [[local,40000],[enemy,41000],[team,42000],[dead,43000]]){object(health,'PlayerHealth');u(actor+0x538,health);u(actor+0x170,enemyHead);}m.HEAPU8[dead+0x533]=1;m.HEAPU8[teamHelper+0x59]=1;
+ for(const [actor,health] of [[local,40000],[enemy,41000],[team,42000],[dead,43000]]){object(health,'PlayerHealth');u(actor+0x538,health);u(actor+0x170,enemyHead);}m.HEAPU8[dead+0x533]=1;m.HEAPU8[43000+0x99]=1;m.HEAPU8[teamHelper+0x59]=1;
  const parents=new Map([[helper,enemy],[teamHelper,team],[deadHelper,dead]]),list=30000,items=31000;u(assist+0x10,list);u(list+8,items);u(list+12,3);u(items+12,3);[helper,teamHelper,deadHelper].forEach((p,i)=>u(items+16+4*i,p));
  positions.set(cameraTransform,[0,1,0]);positions.set(enemyHead,[1,2,10]);
  m._malloc=()=>32000;m._free=()=>freed++;
@@ -21,6 +21,31 @@ function fixture(shots=null){
  const step=(extra={})=>bridge.step({now:100,elapsed:16,aim:true,canvas,...extra});
  return {m,u,f,object,game,controller,local,enemy,team,dead,helper,teamHelper,positions,enemyHead,doc,bridge,step,reports,get fov(){return fov;},get freed(){return freed;}};
 }
+
+test('party targets and local controls resume from live health over repeated deaths despite old character flags',()=>{
+ const staged=[],x=fixture({clear(){},reset(){},update(m,state){staged.push(state);}}),system=x.object(52000,'WeaponsSystem'),weapon=x.object(53000,'RaycastWeapon');
+ x.u(x.local+0x544,system);x.u(system+0x50,weapon);x.u(system+0x80,x.local);x.u(weapon+0x8c,system);x.m.HEAPU8[weapon+0x9d]=1;
+ const step=now=>x.step({now,aim:false,silent:true,tracers:true});
+ for(let round=0;round<5;round++){
+  const now=100+round*1200;
+  assert.equal(step(now)[0]?.id,x.enemy);assert.equal(staged.at(-1).actor,x.enemy);
+  x.m.HEAPU8[x.enemy+0x533]=1;x.m.HEAPU8[41000+0x99]=1;assert.deepEqual(step(now+100),[],'opponent death hides tracers and clears shot staging');
+  x.m.HEAPU8[41000+0x99]=0;assert.equal(step(now+200)[0]?.id,x.enemy,'opponent health respawn reacquires the reused character');assert.equal(staged.at(-1).actor,x.enemy);
+  x.m.HEAPU8[x.local+0x533]=1;x.m.HEAPU8[40000+0x99]=1;assert.deepEqual(step(now+300),[],'local death pauses controls');
+  x.m.HEAPU8[40000+0x99]=0;assert.equal(step(now+400)[0]?.id,x.enemy,'next round resumes even when both character flags still record death');assert.equal(x.bridge.diagnostics().shotStaged,true);
+ }
+ x.u(41000+8,0);assert.deepEqual(step(6500),[],'destroyed health is never a live target');
+});
+
+test('mouse lock keeps BuildNow controls active when embedded focus disagrees, and old gameplay reports age while paused',()=>{
+ const x=fixture();x.doc.hasFocus=()=>false;
+ assert.equal(x.step({now:100,tracers:true})[0]?.id,x.enemy);
+ assert.equal(x.bridge.diagnostics().phase,'active');assert.equal(x.bridge.diagnostics().lastPlayAgeMs,0);
+ x.m.HEAPU8[40000+0x99]=1;x.step({now:200,tracers:true});assert.equal(x.bridge.diagnostics().phase,'dead');
+ x.m.HEAPU8[40000+0x99]=0;assert.equal(x.step({now:300,tracers:true})[0]?.id,x.enemy,'the same mouse lock resumes after death');
+ x.doc.pointerLockElement=null;x.step({now:5300,tracers:true});assert.equal(x.bridge.diagnostics().phase,'focus');assert.equal(x.bridge.diagnostics().lastPlayAgeMs,5000);
+ x.doc.hidden=true;x.step({now:5400,tracers:true});assert.equal(x.bridge.diagnostics().phase,'background','mouse ownership never overrides a hidden tab');
+});
 
 test('failed player type lookup retries without requiring another local character class',()=>{
  const staged=[],x=fixture({clear(){},reset(){},update(m,state){staged.push(state);}}),resolve=x.m.dynCall_iii;
@@ -44,7 +69,7 @@ test('reused round actors retry invalid reflected types and new weapons through 
   x.u(currentType,0);currentType=x.object(80000+round*1000,'RuntimeType');
   assert.equal(x.step({now:now+100,aim:false,tracers:true,silent:true})[0]?.id,x.enemy,'lookup recovers while the local class and switches are unchanged');
   assert.equal(staged.at(-1).actor,x.enemy);
-  x.m.HEAPU8[x.local+0x533]=1;assert.deepEqual(x.step({now:now+116,aim:false,tracers:true,silent:true}),[]);x.m.HEAPU8[x.local+0x533]=0;
+  x.m.HEAPU8[40000+0x99]=1;assert.deepEqual(x.step({now:now+116,aim:false,tracers:true,silent:true}),[]);x.m.HEAPU8[40000+0x99]=0;
   assert.equal(x.step({now:now+132,aim:false,tracers:true,silent:true})[0]?.id,x.enemy);
  }
  assert.ok(attempts>=5);
@@ -53,9 +78,9 @@ test('reused round actors retry invalid reflected types and new weapons through 
 test('BuildNow reports round gates and clears cached lookups on resume and explicit reconnect',()=>{
  const x=fixture(),resolve=x.m.dynCall_iii;let attempts=0;x.m.dynCall_iii=(id,...args)=>{if(id===105142)attempts++;return resolve(id,...args);};
  x.step({tracers:true});assert.equal(attempts,1);assert.equal(x.bridge.diagnostics().phase,'active');
- x.m.HEAPU8[x.local+0x533]=1;x.step({now:116,tracers:true});assert.equal(x.bridge.diagnostics().phase,'dead');
+ x.m.HEAPU8[40000+0x99]=1;x.step({now:116,tracers:true});assert.equal(x.bridge.diagnostics().phase,'dead');
  assert.equal(x.bridge.diagnostics().lastPlay.phase,'active','opening a menu or dying retains the useful last gameplay report');
- x.m.HEAPU8[x.local+0x533]=0;x.step({now:132,tracers:true});assert.equal(attempts,2);
+ x.m.HEAPU8[40000+0x99]=0;x.step({now:132,tracers:true});assert.equal(attempts,2);
  x.bridge.reset();x.step({now:148,tracers:true});assert.equal(attempts,3);
  x.u(x.controller+0x10c,x.enemy);x.step({now:164,tracers:true});assert.equal(x.bridge.diagnostics().phase,'spectator');x.u(x.controller+0x10c,x.local);
  x.doc.pointerLockElement=null;x.step({now:180,tracers:true,canvas:{style:{cursor:'default'}}});assert.equal(x.bridge.diagnostics().phase,'pointer');
@@ -109,7 +134,7 @@ test('Start-spawned training bots are reacquired from the live registry within t
 test('BuildNow targets live non-team characters from its own registry and never pulls downward toward an elevated head',()=>{
  const x=fixture(),before=x.m.HEAPU8.slice(),points=x.step();assert.equal(points.length,1);assert.equal(points[0].id,x.enemy);assert.ok(x.m.HEAPF32[(x.controller+0x58)>>>2]<0);assert.ok(x.m.HEAPF32[(x.controller+0x54)>>>2]>0);assert.deepEqual(x.reports,['camera-ready','tracking-active']);
  for(let i=0;i<before.length;i++)if(before[i]!==x.m.HEAPU8[i])assert.ok((i>=x.controller+0x54&&i<x.controller+0x5c)||(i>=32000&&i<32048),'no actor, health, save or network writes');
- x.m.HEAPU8[x.local+0x533]=1;assert.deepEqual(x.step({now:200}),[]);x.m.HEAPU8[x.local+0x533]=0;assert.equal(x.step({now:300}).length,1);
+ x.m.HEAPU8[40000+0x99]=1;assert.deepEqual(x.step({now:200}),[]);x.m.HEAPU8[40000+0x99]=0;assert.equal(x.step({now:300}).length,1);
  x.m.HEAPU8[41000+0x99]=1;assert.deepEqual(x.step({now:400}),[]);
 });
 test('BuildNow refuses unfamiliar builds, spectator cameras, background input and out-of-range targets',()=>{
@@ -136,7 +161,7 @@ test('BuildNow stages local silent shots independently from camera lock and clea
  x.u(x.local+0x544,system);x.u(system+0x50,weapon);x.u(system+0x80,x.local);x.u(weapon+0x8c,system);x.m.HEAPU8[weapon+0x9d]=1;
  const yaw=x.m.HEAPF32[(x.controller+0x54)/4],pitch=x.m.HEAPF32[(x.controller+0x58)/4];x.step({aim:false,silent:true,silentChance:77});
  assert.deepEqual(staged.at(-1),{enabled:true,shooting:weapon,actor:x.enemy,kind:'player',health:41000,point:[1,2,10],chance:77});assert.equal(x.m.HEAPF32[(x.controller+0x54)/4],yaw);assert.equal(x.m.HEAPF32[(x.controller+0x58)/4],pitch);
- x.doc.hidden=true;x.step({aim:false,silent:true,now:200});assert.equal(staged.at(-1),undefined);x.doc.hidden=false;x.m.HEAPU8[x.local+0x533]=1;x.step({aim:false,silent:true,now:300});assert.equal(staged.at(-1),undefined);x.m.HEAPU8[x.local+0x533]=0;
+ x.doc.hidden=true;x.step({aim:false,silent:true,now:200});assert.equal(staged.at(-1),undefined);x.doc.hidden=false;x.m.HEAPU8[40000+0x99]=1;x.step({aim:false,silent:true,now:300});assert.equal(staged.at(-1),undefined);x.m.HEAPU8[40000+0x99]=0;
  x.m.HEAPU8[weapon+0x9d]=0;x.step({aim:false,silent:true,now:400});assert.equal(staged.at(-1),undefined);x.m.HEAPU8[weapon+0x9d]=1;x.step({aim:false,silent:true,now:500});assert.equal(staged.at(-1).actor,x.enemy);x.bridge.revoke();assert.ok(clears>=6);
 });
 test('BuildNow round replacement reconnects tracers and silent shots to the new local actor and weapon',()=>{
@@ -161,10 +186,10 @@ test('Zone Wars resumes reused actors/camera and reconnects player detection whi
 });
 
 test('V Arena reacquires a replacement opponent without requiring the local character to respawn',()=>{
- const x=fixture(),array=60000,enemy=x.object(62000,'BaseCharacterController'),helper=x.object(64000,'AimHelper'),head=x.object(66000,'Transform');
+ const x=fixture(),array=60000,enemy=x.object(62000,'BaseCharacterController'),helper=x.object(64000,'AimHelper'),head=x.object(66000,'Transform'),health=x.object(68000,'PlayerHealth');
  const step=now=>x.step({now,aim:false,tracers:true,silent:true});assert.equal(step(100)[0].id,x.enemy);
- x.m.HEAPU8[x.enemy+0x533]=1;x.u(30000+12,0);x.u(array+12,0);const original=x.m.dynCall_iii;x.m.dynCall_iii=(id,...args)=>id===8454?array:original(id,...args);assert.deepEqual(step(200),[]);
- x.u(enemy+0x538,41000);x.u(enemy+0x170,head);x.u(enemy+0x4f0,helper);x.positions.set(head,[0,2,10]);x.u(array+12,1);x.u(array+16,enemy);assert.equal(step(300)[0].id,enemy,'empty cached lists cannot stall new opponents for a second');
+ x.m.HEAPU8[41000+0x99]=1;x.u(30000+12,0);x.u(array+12,0);const original=x.m.dynCall_iii;x.m.dynCall_iii=(id,...args)=>id===8454?array:original(id,...args);assert.deepEqual(step(200),[]);
+ x.u(enemy+0x538,health);x.u(enemy+0x170,head);x.u(enemy+0x4f0,helper);x.positions.set(head,[0,2,10]);x.u(array+12,1);x.u(array+16,enemy);assert.equal(step(300)[0].id,enemy,'empty cached lists cannot stall new opponents for a second');
  x.m.HEAPU8[helper+0x59]=1;assert.deepEqual(step(400),[],'team guard still applies to fallback actors');
 });
 
@@ -177,7 +202,7 @@ test('nonempty stale assist entries cannot hide repeated replacement opponents o
  x.u(x.enemyHead+8,0);let previous=null;
  for(let round=0;round<6;round++){
   if(previous){x.m.HEAPU8[previous.health+0x99]=1;x.u(previous.actor+8,0);}
-  if(round%2){x.m.HEAPU8[x.local+0x533]=1;assert.deepEqual(x.step({now:84+round*1200,aim:false,tracers:true,silent:true}),[]);x.m.HEAPU8[x.local+0x533]=0;}
+  if(round%2){x.m.HEAPU8[40000+0x99]=1;assert.deepEqual(x.step({now:84+round*1200,aim:false,tracers:true,silent:true}),[]);x.m.HEAPU8[40000+0x99]=0;}
   const base=80000+round*8000,actor=x.object(base,'BaseCharacterController'),helper=x.object(base+1600,'AimHelper'),head=x.object(base+2000,'Transform'),health=x.object(base+2400,'PlayerHealth'),weapon=x.object(base+2800,'RaycastWeapon');
   x.u(actor+0x538,health);x.u(actor+0x170,head);x.u(actor+0x4f0,helper);x.positions.set(head,[0,2,10]);x.u(array+12,1);x.u(array+16,actor);
   x.u(system+0x50,weapon);x.u(weapon+0x8c,system);x.m.HEAPU8[weapon+0x9d]=1;

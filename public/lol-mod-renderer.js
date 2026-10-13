@@ -8,7 +8,7 @@ import {createLolNativeCamera} from './lol-native-camera.js';
 import {createBuildNowNativeCamera} from './buildnow-native-camera.js';
 import {installLolSilentShot} from './lol-silent-shot.js';
 import {createGameStretch} from './game-stretch.js';
-import {createGameFrameMeter,validControlDetail} from './game-control-monitor.js';
+import {createGameFrameMeter,validControlDetail,validControlExecution} from './game-control-monitor.js';
 import {controlBindings,controlShortcut,normalizeControlBindings} from './game-control-workspace.js';
 export function installLolRenderer({win=window,notify=()=>{},gameId=null,actorMatcher=gameId==='58'?createLolActorMatcher():gameId==='581'?createBuildNowActorMatcher():null,cameraFactory=gameId==='58'?createLolNativeCamera:gameId==='581'?createBuildNowNativeCamera:null}) {
  const doc=win.document,proto=win.WebGL2RenderingContext?.prototype;
@@ -117,9 +117,9 @@ export function installLolRenderer({win=window,notify=()=>{},gameId=null,actorMa
  });
  // One reusable GPU read at most 25 times/second, rather than allocating and
  // reading pixels again for every potential-player draw call.
- let lastScan=-Infinity,lastFrame=null,pixels=null,targets=[],tracked=null,motion=createLolMotion(),overlay=null;
+ let lastScan=-Infinity,lastFrame=null,pixels=null,targets=[],tracked=null,motion=createLolMotion(),overlay=null,tracerLastDrawAt=null,tracerLastCount=0;
  function clearTracking(){if(targets.length||tracked)motion=createLolMotion();targets=[];tracked=null;if(overlay)overlay.hidden=true;}
- function paintTracers(canvas){
+ function paintTracers(canvas,now){
   if(!state.tracers||!targets.length){if(overlay)overlay.hidden=true;return;}
   if(!overlay||overlay.isConnected===false){overlay?.remove();overlay=doc.createElement('canvas');overlay.setAttribute('aria-hidden','true');overlay.style.cssText='position:fixed;pointer-events:none;z-index:2147483646;';doc.body.append(overlay);}
   const rect=canvas.getBoundingClientRect();if(rect.width<1||rect.height<1){overlay.hidden=true;return;}
@@ -128,10 +128,13 @@ export function installLolRenderer({win=window,notify=()=>{},gameId=null,actorMa
   overlay.style.left=rect.left+'px';overlay.style.top=rect.top+'px';overlay.style.width=rect.width+'px';overlay.style.height=rect.height+'px';overlay.hidden=false;
   const context=overlay.getContext('2d');if(!context)return;
   context.clearRect(0,0,width,height);context.lineWidth=1.3;context.strokeStyle='#82e9ffc4';
-  for(const point of targets.slice(0,8)){
+  let drawn=0;for(const point of targets.slice(0,8)){
    const x=width/2+point.x*width/glSize(canvas,'width'),y=height/2+point.y*height/glSize(canvas,'height');
+   if(!Number.isFinite(x)||!Number.isFinite(y))continue;
    context.beginPath();context.moveTo(width/2,height-14);context.lineTo(x,y);context.stroke();context.beginPath();context.arc(x,y,4,0,Math.PI*2);context.stroke();
+   drawn++;
   }
+  if(drawn){tracerLastCount=drawn;tracerLastDrawAt=now;}
  }
  function glSize(canvas,axis){return Math.max(1,axis==='width'?canvas.width:canvas.height);}
  function aim(now){
@@ -145,7 +148,7 @@ export function installLolRenderer({win=window,notify=()=>{},gameId=null,actorMa
    const live=[...contexts.keys()].filter(available),locked=doc.pointerLockElement,engineCanvas=win.gameInstance?.Module?.canvas;
    const gl=live.find(gl=>gl.canvas===locked)||live.find(gl=>gl.canvas===engineCanvas)||(available(lastDrawContext)&&(!locked||lastDrawContext.canvas===locked)?lastDrawContext:null)||live.reverse().find(gl=>!locked||gl.canvas===locked),canvas=gl?.canvas;stretch.step(canvas);
    playingCanvas=canvas??playingCanvas;targets=camera.step({now,elapsed,aim:state.aim,tracers:state.tracers,silent:state.silent,silentChance:state.silentChance,smoothing:state.smoothing,range:state.range,fov:state.fovEnabled?state.fov:null,canvas});
-   cameraRetryAt=0;cameraFailures=0;if(canvas)paintTracers(canvas);actorSeenThisFrame=false;return;
+   cameraRetryAt=0;cameraFailures=0;if(canvas)paintTracers(canvas,now);actorSeenThisFrame=false;return;
   }
   if(!permitted||(!state.aim&&!state.tracers)||!supported||doc.hidden||(doc.hasFocus&& !doc.hasFocus())){actorSeenThisFrame=false;clearTracking();return;}
   let active=false;
@@ -163,7 +166,7 @@ export function installLolRenderer({win=window,notify=()=>{},gameId=null,actorMa
     targets=actorMatcher&&!actorSeenThisFrame?[]:detectLolTargets(pixels,size,actorMatcher?'magenta':'red');const selected=selectLolTarget(targets,tracked);
     if(!selected)motion=createLolMotion();tracked=selected;
    }
-   paintTracers(canvas);
+   paintTracers(canvas,now);
    break;
   }
   actorSeenThisFrame=false;
@@ -178,7 +181,7 @@ export function installLolRenderer({win=window,notify=()=>{},gameId=null,actorMa
  // Use the engine's completed frame normally; continue independently if its
  // round transition replaces the animation callback with a cached scheduler.
  const cancel=win.cancelAnimationFrame;let heartbeat;
- function pulse(now){if(!permitted)return;if(now-lastEngineFrame>40)runAim(now);const sample=meter.sample(now,drewFrame,doc.hidden);drewFrame=false;if(sample){const controls=camera?.diagnostics?.();notify('telemetry',validControlDetail(controls)?{...sample,controls}:sample);}heartbeat=schedule.call(win,pulse);}
+ function pulse(now){if(!permitted)return;if(now-lastEngineFrame>40)runAim(now);const sample=meter.sample(now,drewFrame,doc.hidden);drewFrame=false;if(sample){const controls=camera?.diagnostics?.(),shot=shots?.diagnostics?.(),execution={shotChecks:shot?.checks??0,shotRedirects:shot?.redirects??0,tracersEnabled:state.tracers,tracersDrawn:tracerLastCount,...(tracerLastDrawAt===null?{}:{tracerDrawAgeMs:Math.min(86400000,Math.max(0,Math.round(now-tracerLastDrawAt)))})};notify('telemetry',{...sample,...(validControlDetail(controls)?{controls}:{}),...((camera||shots)&&validControlExecution(execution)?{execution}:{})});}heartbeat=schedule.call(win,pulse);}
  heartbeat=schedule.call(win,pulse);
  const shortcut=event=>{if(!permitted)return;const action=controlShortcut(event,keybinds,{fromGame:true});if(!action)return;event.preventDefault();event.stopImmediatePropagation();if(action==='menu')doc.exitPointerLock?.();notify(action==='menu'?'toggle-menu':'shortcut-'+action);};
  doc.addEventListener?.('keydown',shortcut,true);
