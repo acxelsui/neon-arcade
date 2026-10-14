@@ -2,7 +2,7 @@ import {watchFrame} from './proxy-feedback.js';
 import {brandMusicDocument} from './music-branding.js';
 import {readMusicState,performMusicAction} from './music-controls.js';
 import {playlistSong,createPlaylistQueue} from './playlist-player.js';
-const MUSIC_URL='https://6ab87f0e6a91203ed89fa447--neoostesting.netlify.app/neo-os/music-v2/index.html?v=20260919-scholarnook-v1&theme=system-v1&widgets=live-v1&runtime=20260908-audio-performance-v1';
+import {MUSIC_URL,musicStartup} from './music-startup.js';
 export function initMusic(getController){
  const $=s=>document.querySelector(s);let frame,loading=null,version=0,cleanup=()=>{},brandedDoc,lastMusicState='';
  const status=text=>$('#music-status').textContent=text;
@@ -38,14 +38,15 @@ export function initMusic(getController){
    if(doc.title==='Student Learning Portal')status('The source returned a learning portal instead of music. Try Reload; the music page may require a session on that site.');
   }catch{status('Music opened, but its inner branding could not be changed in this browser.')}
  }
- function open(reset=false){
+ function open(reset=false,{background=false}={}){
+  if(!background)$('#music-dock').hidden=false;
   if(loading)return loading;
-  $('#music-dock').hidden=false;
   if(frame){if(reset){status('Connecting to Neon Arcade Music…');frame.go(MUSIC_URL)}return Promise.resolve(frame)}
   const current=++version;status('Connecting to Neon Arcade Music…');
   const pending=(async()=>{
   try{
    const controller=await getController();if(current!==version)return;
+   musicStartup.warm(controller.transport);
    frame=controller.createFrame();frame.element.title='Neon Arcade Music';frame.element.allow='autoplay; fullscreen; encrypted-media; picture-in-picture';frame.element.allowFullscreen=true;
    watchFrame(frame,error=>status(error+' Use Reload to retry.'),()=>status(''));
    frame.element.addEventListener('load',brand);
@@ -54,7 +55,10 @@ export function initMusic(getController){
   })();loading=pending;pending.finally(()=>{if(loading===pending)loading=null;});return pending;
  }
  function page(name){const active=name==='music';document.body.classList.toggle('music-view',active);if(active){$('#music-dock').classList.remove('compact');$('#music-minimize').setAttribute('aria-expanded','true');open()}else{$('#music-dock').classList.add('compact');$('#music-minimize').setAttribute('aria-expanded','false')}}
- window.addEventListener('neon-page',e=>page(e.detail));
+ window.addEventListener('neon-page',e=>{page(e.detail);if(e.detail==='playlists')open(false,{background:true});});
+ window.addEventListener('neon-music-prepare',()=>open(false,{background:true}));
+ const prepareProxy=event=>{if(event.target?.closest?.('[data-page="music"],[data-app="music"],#shell-music'))getController().catch(()=>{});};
+ document.addEventListener?.('pointerover',prepareProxy,{passive:true});document.addEventListener?.('focusin',prepareProxy);
  const openButton=$('#music-open');if(openButton)openButton.onclick=()=>open();$('#music-home').onclick=()=>open(true);
  $('#music-reload').onclick=()=>{if(frame){status('Reconnecting to music…');frame.reload()}else open()};
  $('#music-minimize').onclick=()=>{const compact=$('#music-dock').classList.toggle('compact');$('#music-minimize').setAttribute('aria-expanded',String(!compact));$('#music-minimize').textContent=compact?'＋':'−'};

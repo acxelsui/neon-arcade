@@ -26,6 +26,7 @@ for (const game of catalog.games) {
   if (!game.url.startsWith('/') && new URL(game.url).protocol !== 'https:') throw new Error(`Invalid game address: ${game.name}`);
 }
 const required = [
+  'music-search.js', 'playlist-search.js', 'music-startup.js',
   'minecraft-source.js', 'artwork/minecraft.webp', 'buildnow-sdk.js', 'game-performance.js', 'owner-player-activity.js', 'player-activity-model.js',
   'wallpaper-loop.js',
   'game-control-preferences.js',
