@@ -1,6 +1,6 @@
 import {initShellReveal} from './shell-reveal.js';
 import {initMacDesktop} from './mac-desktop.js';
-const labels={home:'Home',games:'Games',search:'Search',sports:'Sports',movies:'Movies',cloud:'Neon Cloud Gaming',weather:'Weather',ai:'AI Chat',music:'Music',settings:'Settings',community:'Neon Arcade Chat',profile:'Player profile',friends:'Friends',playlists:'Playlists',remote:'Remote access'};
+const labels={home:'Home',games:'Games',search:'Search',sports:'Sports',movies:'Movies',cloud:'Neon Cloud Gaming',weather:'Weather',ai:'AI Chat',music:'Music',settings:'Settings',community:'Neon Arcade Chat',profile:'Player profile',friends:'Friends',playlists:'Playlists',remote:'Remote access',hacks:'Hacks'};
 export function initShell({navigate,search,reload}){
  initShellReveal();
  // Initialize after the remote module has added its owner-gated page.
@@ -20,6 +20,7 @@ export function initShell({navigate,search,reload}){
  }
  function change(page){active=labels[page]?page:'home';if(!tabs.includes(active))tabs.push(active);if(!travelling&&history[position]!==active){history=history.slice(0,position+1);history.push(active);position=history.length-1}render()}
  window.addEventListener('neon-page',event=>change(event.detail));
+ window.addEventListener('neon-hacks-access',event=>{if(event.detail===true)return;const index=tabs.indexOf('hacks');if(index>=0)tabs.splice(index,1);if(active==='hacks')navigate('home');else render();});
  window.addEventListener('neon-owner-access',event=>{if(event.detail===true)return;const index=tabs.indexOf('remote');if(index>=0)tabs.splice(index,1);if(active==='remote')navigate('home');else render();});
  function step(amount){const next=position+amount;if(next<0||next>=history.length)return;position=next;travelling=true;navigate(history[position]);travelling=false}
  $('#shell-back').onclick=()=>step(-1);$('#shell-forward').onclick=()=>step(1);$('#shell-reload').onclick=reload;$('#shell-new').onclick=()=>navigate('search');

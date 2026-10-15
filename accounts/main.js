@@ -1,6 +1,7 @@
 import {createAccountLoading} from './loading-sequence.js';
 import {createChatPopout} from './chat-popout.js';
 import {createRemoteBridge} from './remote-bridge.js';
+import {createHacksBridge} from './hacks-bridge.js';
 import {initMessageNotifications} from './message-notifications.js';
 import {initFriendNotifications} from './friend-notifications.js';
 import {browserIdentity} from './browser-identity.js';
@@ -26,6 +27,7 @@ const pollMessages=initMessageNotifications({rpc,send,getProfile:()=>profile});
 const pollFriendRequests=initFriendNotifications({rpc,send,getProfile:()=>profile});
 const checkSiteAccess=createSiteAccessMonitor({rpc,getProfile:()=>profile,getDeviceKey:getBrowserKey,onBanned:bannedGate});
 const handleRemoteAccess=createRemoteBridge({getProfile:()=>profile,getSession:()=>client.auth.getSession(),send});
+const handleHacks=createHacksBridge({getProfile:()=>profile,getSession:()=>client.auth.getSession(),send});
 const handleChat=initChatBridge({rpc,send,getProfile:()=>profile,decorateRows:async rows=>{
  const ids=[...new Set(rows.map(row=>row.sender_id))];const decoration=await decorations(ids);
  const missing=ids.filter(id=>!avatarCache.has(id)||avatarCache.get(id).expires<Date.now());
@@ -117,6 +119,7 @@ window.addEventListener('message',event=>{
  if(event.data.type==='ai-popout-preview'){screenPopout.preview(event.data.url);return}
  if(event.data.type==='ai-popout-open'){screenPopout.open().catch(error=>send('ai-popout-error',{error:error.message}));return}
  if(event.data.type==='chat-request'){handleChat(event.data);return}
+ if(event.data.type==='hacks-request'){handleHacks(event.data);return}
  if(event.data.type==='owner-remote-v2-request'){handleRemoteAccess(event.data);return}
  if(event.data.type==='social-request'){handleSocial(event.data);return}
  if(event.data.type==='profile-updated'){sync();return}

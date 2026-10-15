@@ -1,4 +1,5 @@
 import {musicStartup} from './music-startup.js';
+import {initHacks} from './hacks.js';
 import {reportArcadeLoading,finishArcadeLoading,failArcadeLoading} from './loading-sequence.js';
 import {createYouTubeSearch} from './youtube-search.js';
 import {initRemoteAccess} from './remote-access.js';
@@ -24,7 +25,7 @@ import { filterLibrary, bookmarkUrl } from './library-tools.js';
 import { initAppearance } from './appearance.js';
 const $=s=>document.querySelector(s);
 const store={get(k,f){try{return JSON.parse(localStorage.getItem('neon-'+k))??f}catch{return f}},set(k,v){try{localStorage.setItem('neon-'+k,JSON.stringify(v))}catch{}}};
-let remoteAccess;
+let remoteAccess,hacksAccess;
 let libraryRendered=false;
 let catalog,selectedGame,previousFocus,controllerPromise,webFrame,gameMinimized=false;
 const keptGame=document.createElement('section');keptGame.id='kept-game';keptGame.hidden=true;keptGame.setAttribute('aria-label','Game kept open');
@@ -35,7 +36,7 @@ function resumeGame(){if(!selectedGame||!$('#game-frame-wrap iframe'))return;gam
 async function minimizeGame(){if(!selectedGame||$('#player').hidden)return;if(document.fullscreenElement){try{await document.exitFullscreen();}catch{toast('Exit fullscreen first to keep this game open.');return;}}document.exitPointerLock?.();gameMinimized=true;keptTitle.textContent=selectedGame.name;keptGame.hidden=false;$('#player').hidden=true;$('header').inert=false;$('main').inert=false;document.body.style.overflow='';window.dispatchEvent(new CustomEvent('neon-game-window',{detail:false}));showPage('home');resumeButton.focus();}
 window.addEventListener('neon-game-minimize',minimizeGame);
 function toast(message){$('#toast').textContent=message;$('#toast').hidden=false;setTimeout(()=>$('#toast').hidden=true,4000)}
-function showPage(name){if(name==='remote'&&!remoteAccess?.isAllowed())name='home';if(!['home','games','search','sports','movies','cloud','weather','ai','music','settings','community','profile','friends','playlists','remote'].includes(name))name='home';document.querySelectorAll('.page').forEach(p=>p.hidden=p.id!==name);document.querySelectorAll('nav button').forEach(b=>{b.classList.toggle('active',b.dataset.page===name);b.setAttribute('aria-current',b.dataset.page===name?'page':'false')});if(location.hash!=='#'+name)history.replaceState(null,'','#'+name);window.scrollTo(0,0);if(name==='games'&&!libraryRendered)renderGames();if(name==='sports')openSports();if(name==='movies')openMovies();window.dispatchEvent(new CustomEvent('neon-page',{detail:name}))}
+function showPage(name){if(name==='remote'&&!remoteAccess?.isAllowed())name='home';if(name==='hacks'&&!hacksAccess?.isAllowed())name='home';if(!['home','games','search','sports','movies','cloud','weather','ai','music','settings','community','profile','friends','playlists','remote','hacks'].includes(name))name='home';document.querySelectorAll('.page').forEach(p=>p.hidden=p.id!==name);document.querySelectorAll('nav button').forEach(b=>{b.classList.toggle('active',b.dataset.page===name);b.setAttribute('aria-current',b.dataset.page===name?'page':'false')});if(location.hash!=='#'+name)history.replaceState(null,'','#'+name);window.scrollTo(0,0);if(name==='games'&&!libraryRendered)renderGames();if(name==='sports')openSports();if(name==='movies')openMovies();window.dispatchEvent(new CustomEvent('neon-page',{detail:name}))}
 document.querySelectorAll('[data-page]').forEach(b=>b.onclick=()=>showPage(b.dataset.page));window.addEventListener('hashchange',()=>showPage(location.hash.slice(1)));
 function updateClock(){const now=new Date();$('#clock').textContent=now.toLocaleTimeString([],{hour:'2-digit',minute:'2-digit',hour12:!store.get('24hour',false)}).replace(/\s?[AP]M/i,'');$('#date').textContent=now.toLocaleDateString([],{weekday:'long',month:'long',day:'numeric',year:'numeric'});$('#clock').dateTime=now.toISOString();$('#clock-period').textContent=store.get('24hour',false)?'':(now.getHours()<12?'AM':'PM');$('#home-greeting').textContent=now.getHours()<12?'Good morning':now.getHours()<18?'Good afternoon':'Good evening'}
 $('#clock-format').checked=store.get('24hour',false);$('#clock-format').onchange=e=>{store.set('24hour',e.target.checked);updateClock()};updateClock();setInterval(updateClock,1000);
@@ -167,6 +168,7 @@ renderBookmarks();
 initShell({navigate:showPage,search:text=>{showPage("search");browse(text)},reload:()=>{const page=location.hash.slice(1);if(page==="search"&&webFrame)webFrame.reload();else if(page==="sports"&&sportsFrame)sportsFrame.reload();else if(page==="movies"&&moviesFrame)moviesFrame.reload();else if(page==="cloud")document.querySelector("#cloud-reload").click();else if(page==="music")document.querySelector("#music-reload").click();else location.reload()}});
 
 remoteAccess=initRemoteAccess({navigate:showPage});
+hacksAccess=initHacks({navigate:showPage,getController});
 
 initMusic(getController);
 

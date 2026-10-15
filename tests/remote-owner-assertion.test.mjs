@@ -8,7 +8,10 @@ import {RemoteError} from '../accounts/lib/remote-proxy.js';
 const key='k'.repeat(64),token='o'.repeat(64),owner='aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaaa',body={action:'list'},time=10000;
 test('a website assertion binds the live verified owner, exact request and token for five seconds',()=>{
  const assertion=signOwnerAssertion({key,owner,token,body,now:time});assert.equal(verifyOwnerAssertion({assertion,key,token,body,now:time}).id,owner);
- for(const change of [{key:'x'.repeat(64)},{token:'b'.repeat(64)},{body:{action:'logs'}},{now:time+5001},{now:time-1001},{assertion:assertion.slice(0,-2)+'xx'}])assert.throws(()=>verifyOwnerAssertion({assertion,key,token,body,now:time,...change}));
+ // Change a full signature byte. Replacing a base64url suffix can leave the
+ // decoded signature unchanged by chance, making the negative check flaky.
+ const split=assertion.indexOf('.')+1,tampered=assertion.slice(0,split)+(assertion[split]==='A'?'B':'A')+assertion.slice(split+1);
+ for(const change of [{key:'x'.repeat(64)},{token:'b'.repeat(64)},{body:{action:'logs'}},{now:time+5001},{now:time-1001},{assertion:tampered}])assert.throws(()=>verifyOwnerAssertion({assertion,key,token,body,now:time,...change}));
 });
 test('the website verifies owner role on every request before signing; caller identities and assertions are stripped',async()=>{
  let denied=false,checks=0;const seen=[],api=createRemoteAPI({env:{NEON_REMOTE_BRIDGE_KEY:key,NEON_REMOTE_RELAY_URL:'https://relay.example'},verify:async value=>{assert.equal(value,token);checks++;if(denied)throw new RemoteError('Owner access required',403);return owner;},fetcher:async(url,options)=>{seen.push(options);return {ok:true,json:async()=>({devices:[]})};}});

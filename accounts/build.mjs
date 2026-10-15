@@ -8,6 +8,7 @@ for(const name of ['chat-popout.js','chat-floating.js','screen-chat.css','chat.c
 for(const name of ['remote-bridge.js','remote-rules.js'])await copyFile(name,'dist/'+name);
 await copyFile('game-status-rules.js','dist/game-status-rules.js');
 await copyFile('game-save-rules.js','dist/game-save-rules.js');
+await copyFile('hacks-bridge.js','dist/hacks-bridge.js');
 await mkdir('dist/downloads',{recursive:true});
 await copyFile('downloads/NeonLauncher.exe','dist/downloads/NeonLauncher.exe');
 

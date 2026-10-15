@@ -8,7 +8,7 @@ import {initGameCredits} from './game-credits.js';
 import {initIconColors} from './icon-colors.js';
 import {defaultDesktopApps,appList,dockApps} from './desktop-apps.js';
 
-const apps={home:['Neon Home','home'],games:['Games','games'],search:['Browser','browser'],sports:['Sports','sports'],movies:['Movies','movies'],friends:['Friends','friends'],profile:['Your profile','profile'],playlists:['Playlists','playlists'],community:['Arcade Chat','chat'],ai:['Neon AI','ai'],music:['Music','music'],cloud:['Cloud gaming','cloud'],weather:['Weather','weather'],settings:['Settings','settings'],remote:['Remote access','remote'],owner:['Owner toolkit','owner']};
+const apps={home:['Neon Home','home'],games:['Games','games'],search:['Browser','browser'],sports:['Sports','sports'],movies:['Movies','movies'],friends:['Friends','friends'],profile:['Your profile','profile'],playlists:['Playlists','playlists'],community:['Arcade Chat','chat'],ai:['Neon AI','ai'],music:['Music','music'],cloud:['Cloud gaming','cloud'],weather:['Weather','weather'],settings:['Settings','settings'],remote:['Remote access','remote'],owner:['Owner toolkit','owner'],hacks:['Hacks','hacks']};
 const paths=Object.fromEntries([...Object.values(apps).map(([,name])=>[name,true]),['launchpad',true]]);
 function icon(name){const image=document.createElement('img');image.src='/artwork/cartoon/'+(document.body.classList.contains('mac-icons-transparent')?'transparent/':'')+(paths[name]?name:'home')+'.svg';image.alt='';image.draggable=false;image.className='mac-cartoon-icon';return image;}
 function button(label,fn,cls=''){const el=document.createElement('button');el.type='button';el.className=cls;el.title=label;el.setAttribute('aria-label',label);el.onclick=fn;return el;}
@@ -73,7 +73,7 @@ export function initMacDesktop({navigate,search,reload}) {
  const allHeading=text('div','All apps','mac-panel-heading');const all=document.createElement('div');all.className='mac-all-apps';start.append(allHeading,all);
  const noResults=text('p','No apps found. Press Enter to search the web.','mac-empty');noResults.hidden=true;start.append(noResults);
  const footer=document.createElement('footer');footer.className='mac-start-footer';const profile=button('Your profile',()=>launch('profile'),'mac-start-profile');profile.append(icon('profile'),text('span','Your Neon account'));const personalize=button('Personalize desktop',()=>launch('settings'),'mac-tray-button');personalize.append(icon('settings'));footer.append(profile,personalize);start.append(footer);
- function permitted(id){if(id==='owner')return document.querySelector('#owner-toolkit-open')?.hidden===false;if(id==='remote')return document.querySelector('#remote-access-nav')?.hidden===false;return !!document.getElementById(id)?.classList.contains('page');}
+ function permitted(id){if(id==='hacks')return document.querySelector('#hacks-nav')?.hidden===false;if(id==='owner')return document.querySelector('#owner-toolkit-open')?.hidden===false;if(id==='remote')return document.querySelector('#remote-access-nav')?.hidden===false;return !!document.getElementById(id)?.classList.contains('page');}
  const appMenu=panel('app-menu','Customize app');appMenu.setAttribute('role','menu');
  function changePin(id,place,enabled){if(!permitted(id))return;let list=place==='desktop'?desktopPins:dockPins;list=list.filter(item=>item!==id);if(enabled)list.push(id);if(place==='desktop')desktopPins=list;else dockPins=list;save('shortcuts',desktopPins);save('dock',dockPins);buildApps();}
  function openAppMenu(id,anchor,event){event.preventDefault();event.stopPropagation();if(!permitted(id))return;appMenu.replaceChildren(text('strong',apps[id][0]));for(const [place,list,label] of [['desktop',desktopPins,'desktop'],['dock',dockPins,'Dock']]){const enabled=list.includes(id),copy=enabled?'Remove from '+label:'Add to '+label,control=button(copy,()=>{changePin(id,place,!enabled);togglePanel('app-menu',false);anchor.isConnected?anchor.focus():startButton.focus();},'mac-app-menu-item');control.textContent=copy;control.setAttribute('role','menuitem');appMenu.append(control);}
@@ -85,7 +85,7 @@ export function initMacDesktop({navigate,search,reload}) {
  function launch(id){if(!permitted(id))return;togglePanel(currentPanel||'start',false);if(id==='owner'){document.querySelector('#owner-toolkit-open').click();return;}navigate(id);views.get(id)?.page.focus({preventScroll:true});}
  function buildApps(){
   const available=Object.keys(apps).filter(permitted);shortcuts.replaceChildren();for(const id of desktopPins.filter(permitted))shortcuts.append(appButton(id,'mac-shortcut'));
-  pinned.replaceChildren();for(const id of ['games','search','music','movies','cloud','ai','community','friends','settings','remote','owner','profile'].filter(permitted))pinned.append(appButton(id,'mac-pinned-app'));
+  pinned.replaceChildren();for(const id of ['games','search','music','movies','cloud','ai','community','friends','settings','hacks','remote','owner','profile'].filter(permitted))pinned.append(appButton(id,'mac-pinned-app'));
   all.replaceChildren();for(const id of available.sort((a,b)=>apps[a][0].localeCompare(apps[b][0])))all.append(appButton(id,'mac-all-app'));
   filterApps();renderTaskbar();renderAppSettings();
  }
@@ -124,6 +124,7 @@ export function initMacDesktop({navigate,search,reload}) {
  function openPage(id){if(!permitted(id))return;const page=document.getElementById(id);if(!views.has(id))preparePage(page);const isNew=!state.windows.has(id),item=state.open(id);if(isNew){const {width,height}=viewport(),offset=(state.windows.size-1)%5*25,rect=saved('geometry-'+id,null);item.rect=rect&&['x','y','w','h'].every(k=>Number.isFinite(rect[k]))?rect:{x:Math.max(8,(width-Math.min(1080,width-56))/2)+offset,y:26+offset,w:Math.min(1080,width-56),h:Math.min(710,height-56)};item.maximized=true;}paint();}
  for(const page of main.querySelectorAll(':scope > .page'))preparePage(page);
  window.addEventListener('neon-page',event=>openPage(event.detail));
+ window.addEventListener('neon-hacks-access',event=>{if(!event.detail){state.close('hacks');paint();}buildApps();});
  window.addEventListener('neon-owner-access',event=>{if(!event.detail){state.close('remote');paint();}buildApps();});
  new MutationObserver(()=>buildApps()).observe(document.querySelector('.side-rail'),{childList:true,subtree:true,attributes:true,attributeFilter:['hidden']});
  window.addEventListener('resize',paint);
