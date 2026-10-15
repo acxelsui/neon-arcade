@@ -8,7 +8,7 @@ import {bundleUI} from '../scripts/bundle-ui.mjs';
 
 test('bundling retains startup order, classic proxy bootstrap, styles and stable asset names on repeated builds',async()=>{
  const root=await mkdtemp(path.join(os.tmpdir(),'neon-bundle-test-')),publicDir=path.join(root,'public');
- const styles=['style','chat','music','refresh','shell','weather','members','social','avatar-decorations','playlists','hacks','neon-dashboard','community-chat','announcements','game-extras','owner-toolkit','media-frames','remote-access','shell-reveal','mac-desktop','neon-loading'];
+ const styles=['style','chat','music','refresh','shell','weather','members','social','avatar-decorations','playlists','hacks','neon-dashboard','community-chat','announcements','game-extras','owner-toolkit','media-frames','remote-access','shell-reveal','mac-desktop','window-glass','neon-loading'];
  try{
   await mkdir(publicDir);await writeFile(path.join(root,'package.json'),'{"type":"module"}');
   for(const style of styles)await writeFile(path.join(publicDir,style+'.css'),`.${style}{color:white;background-image:url('/artwork/example.webp')}`);

@@ -1,12 +1,13 @@
+import {createConversationStorage} from './chat-storage.js';
+import {requestChat} from './chat-recovery.js';
 import {renderChatContent} from './chat-render.js';
 import {createScreenPopoutBridge} from './chat-popout-bridge.js';
 import {createFloatingScreenChat} from './chat-floating.js';
 import {createScreenShare,startScreenChat} from './chat-screen.js';
 import {conversationContext} from './chat-context.js';
 const $=s=>document.querySelector(s);
-const key='neon-ai-conversations';
-let chats=[];
-try{const saved=JSON.parse(localStorage.getItem(key)||'[]');if(Array.isArray(saved))chats=saved.filter(c=>c&&typeof c.id==='string'&&Array.isArray(c.messages)).slice(0,20).map(c=>({...c,messages:c.messages.filter(m=>m&&['user','assistant'].includes(m.role)&&typeof m.content==='string').slice(-100)}))}catch{}
+const conversationStorage=createConversationStorage();
+let chats=await conversationStorage.read();
 let active=chats[0]?.id, pending=null, attachments=[], preparing=false;
 let preferences={style:'balanced',instructions:'',model:'auto'};
 try{preferences={...preferences,...JSON.parse(localStorage.getItem('neon-ai-preferences')||'{}')}}catch{}
@@ -35,23 +36,24 @@ window.addEventListener('pagehide',screenShare.stop);
 function refreshScreenPreview(){if(!screenShare.active())return;try{const url=screenShare.preview();floatingChat.preview(url);if(popoutOpen)screenPopout.preview(url)}catch{}}
 function current(){return chats.find(c=>c.id===active)}
 function status(text){$('#chat-status').textContent=text;floatingChat.status(text)}
-function save(){try{localStorage.setItem(key,JSON.stringify(chats.map(c=>({...c,messages:c.messages.map(({images,...m})=>m)}))))}catch{status('Browser storage is full. This chat will only last until you leave.')}}
-function makeChat(){screenShare.stop();cancel();attachments=[];renderAttachments();const chat={id:crypto.randomUUID(),title:'New chat',date:Date.now(),messages:[]};chats.unshift(chat);chats=chats.slice(0,20);active=chat.id;save();render();$('#chat-input').focus()}
+function save(){conversationStorage.write(chats).catch(()=>status('Device storage is full. Export your chats to keep a copy.'));}
+function makeChat(){screenShare.stop();cancel();attachments=[];renderAttachments();const chat={id:crypto.randomUUID(),title:'New chat',date:Date.now(),messages:[]};chats.unshift(chat);active=chat.id;save();render();$('#chat-input').focus()}
 function clearWait(){clearInterval(retryTimer);retryTimer=null;retryUntil=0;$('#chat-retry').disabled=false;$('#chat-retry').textContent='↻ Retry message';}
 function waitToRetry(seconds,copy){clearWait();retryUntil=Date.now()+Math.min(86400,Math.max(1,seconds))*1000;const update=()=>{const left=Math.max(0,Math.ceil((retryUntil-Date.now())/1000));$('#chat-retry').disabled=left>0;$('#chat-retry').textContent=left?`Retry in ${left>=60?Math.ceil(left/60)+' min':left+'s'}`:'↻ Retry message';status(left?copy+' Retry in '+(left>=60?Math.ceil(left/60)+' minute(s).':left+' seconds.'):'You can retry your saved message now.');if(!left){clearInterval(retryTimer);retryTimer=null;}};update();retryTimer=setInterval(update,1000);}
 function cancel(){clearWait();if(pending){pending.abort();pending=null}setBusy(false);status('')}
 function setBusy(busy){floatingChat.busy(busy);$('#chat-screen-start').disabled=busy||preparing;$('#chat-image-input').disabled=busy||preparing;$('#chat-send').disabled=busy;$('#chat-regenerate').disabled=busy;$('#chat-stop').hidden=!busy;$('#chat-input').disabled=busy;$('#chat-retry').hidden=true;$('#chat-messages').setAttribute('aria-busy',String(busy))}
-let renderedChat=null,latestOnReveal=false;
+let renderedChat=null,latestOnReveal=false,visibleTurns=100;
 function resizeComposer(){const input=$('#chat-input');input.style.height='auto';input.style.height=Math.min(110,Math.max(48,input.scrollHeight))+'px';}
 function updateJump(){const log=$('#chat-messages');$('#chat-latest').hidden=!current()?.messages.length||log.scrollHeight-log.scrollTop-log.clientHeight<80;}
 function render({toLatest=false}={}){
   const log=$('#chat-messages'),previousTop=log.scrollTop,nearBottom=log.scrollHeight-log.scrollTop-log.clientHeight<80;
 
-  const chat=current();floatingChat.messages(chat?.messages||[]);$('#chat-history').replaceChildren();
+  const chat=current();if(renderedChat!==active)visibleTurns=100;floatingChat.messages(chat?.messages||[]);$('#chat-history').replaceChildren();
   for(const c of chats.filter(c=>(c.title+' '+c.messages.map(m=>m.content).join(' ')).toLowerCase().includes($('#chat-search').value.toLowerCase()))){const b=document.createElement('button');b.className='chat-history-item';b.setAttribute('aria-pressed',String(c.id===active));const label=document.createElement('strong');label.textContent=c.title;const date=document.createElement('small');date.textContent=new Date(c.date).toLocaleDateString([],{month:'short',day:'numeric'});b.append(label,date);b.onclick=()=>{screenShare.stop();cancel();attachments=[];renderAttachments();active=c.id;render()};$('#chat-history').append(b)}
   if(!$('#chat-history').children.length){const empty=document.createElement('p');empty.className='chat-history-empty';empty.textContent=$('#chat-search').value?'No matching conversations.':'Your conversations will appear here.';$('#chat-history').append(empty)}
   log.replaceChildren();
-  for(const m of chat?.messages||[]){const article=document.createElement('article');article.className='chat-message '+m.role;const label=document.createElement('span');label.className='chat-role';label.textContent=m.role==='user'?'You':m.model?'Neon · '+(modelLabels.get(m.model)||m.model):'Neon';article.append(label);renderChatContent(article,m.content,{onCopyError:()=>status('Select the code to copy it.')});for(const image of m.images||[]){const img=document.createElement('img');img.className='chat-sent-image';img.src=image;img.alt='Attached screenshot';article.append(img)}if(m.imageNames?.length&&!m.images?.length){const note=document.createElement('small');note.textContent='Previous screenshot: '+m.imageNames.join(', ')+'. Attach it again to ask about it.';article.append(note)}if(m.role==='assistant'){const copy=document.createElement('button');copy.className='chat-copy';copy.textContent='Copy';copy.onclick=async()=>{try{await navigator.clipboard.writeText(m.content);copy.textContent='Copied'}catch{status('Select the reply text to copy it.')}};article.append(copy)}log.append(article)}
+  if(chat?.messages.length>visibleTurns){const earlier=document.createElement('button');earlier.type='button';earlier.className='chat-load-earlier';earlier.textContent='Load earlier messages';earlier.onclick=()=>{const oldHeight=log.scrollHeight,oldTop=log.scrollTop;visibleTurns+=100;render();log.scrollTop=oldTop+log.scrollHeight-oldHeight;};log.append(earlier);}
+  for(const m of (chat?.messages||[]).slice(-visibleTurns)){const article=document.createElement('article');article.className='chat-message '+m.role;const label=document.createElement('span');label.className='chat-role';label.textContent=m.role==='user'?'You':m.model?'Neon · '+(modelLabels.get(m.model)||m.model):'Neon';article.append(label);renderChatContent(article,m.content,{onCopyError:()=>status('Select the code to copy it.')});for(const image of m.images||[]){const img=document.createElement('img');img.className='chat-sent-image';img.src=image;img.alt='Attached screenshot';article.append(img)}if(m.imageNames?.length&&!m.images?.length){const note=document.createElement('small');note.textContent='Previous screenshot: '+m.imageNames.join(', ')+'. Attach it again to ask about it.';article.append(note)}if(m.role==='assistant'){const copy=document.createElement('button');copy.className='chat-copy';copy.textContent='Copy';copy.onclick=async()=>{try{await navigator.clipboard.writeText(m.content);copy.textContent='Copied'}catch{status('Select the reply text to copy it.')}};article.append(copy)}log.append(article)}
   $('#chat-welcome').hidden=Boolean(chat?.messages.length);$('#chat-delete').disabled=!chat;$('#chat-rename').disabled=!chat;$('#chat-export').disabled=!chat;$('#chat-regenerate').hidden=chat?.messages.at(-1)?.role!=='assistant';const followLatest=toLatest||renderedChat!==active||nearBottom;latestOnReveal=followLatest&&!log.clientHeight;log.style.scrollBehavior='auto';log.scrollTop=followLatest?log.scrollHeight:previousTop;log.style.scrollBehavior='';renderedChat=active;updateJump();
 }
 async function send(retry=false,question=null){
@@ -67,7 +69,7 @@ async function send(retry=false,question=null){
   if(chat.messages.at(-1)?.role!=='user')return;
   resizeComposer();render({toLatest:true});setBusy(true);status('Neon is thinking…');const controller=new AbortController();pending=controller;
   const messages=conversationContext(chat.messages,{maxChars:contextChars});
-  try{const response=await fetch('/api/chat',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({messages,...preferences}),signal:controller.signal});const result=await response.json();if(!response.ok){const error=new Error(result.error||'Could not get a reply.');error.retryAfter=response.status===429?Number(result.retryAfter)||Number(response.headers.get('Retry-After'))||60:0;throw error;}if(pending!==controller)return;chat.messages.push({role:'assistant',content:result.content,...(result.model?{model:result.model}:{})});save();render();status(result.contextTrimmed?'Neon used recent messages for this reply. Your full conversation is still saved.':'')}
+  try{const result=await requestChat({messages,...preferences},{signal:controller.signal,progress:({seconds})=>status('Neon is reconnecting. Retrying in '+seconds+'s… Your message is saved. Use Stop to cancel.')});if(pending!==controller)return;chat.messages.push({role:'assistant',content:result.content,...(result.model?{model:result.model}:{})});save();render();status(result.contextTrimmed?'Neon used recent messages for this reply. Your full conversation is still saved.':'')}
   catch(error){if(pending!==controller)return;status(error.name==='AbortError'?'Reply stopped.':error.message);$('#chat-retry').hidden=false;if(error.retryAfter)waitToRetry(error.retryAfter,error.message)}
   finally{if(pending===controller){pending=null;floatingChat.busy(false);$('#chat-send').disabled=false;$('#chat-regenerate').disabled=false;$('#chat-stop').hidden=true;$('#chat-input').disabled=false;$('#chat-image-input').disabled=false;$('#chat-screen-start').disabled=false;$('#chat-messages').setAttribute('aria-busy','false');if(question===null)$('#chat-input').focus()}}
   return true;

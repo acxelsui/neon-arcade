@@ -1,0 +1,52 @@
+/* A light tint leaves the selected wallpaper visible, including behind app chrome. */
+*{scrollbar-width:thin;scrollbar-color:#aebbd060 transparent}::-webkit-scrollbar{width:6px;height:6px}::-webkit-scrollbar-track{background:transparent}::-webkit-scrollbar-thumb{background:#aebbd060;border-radius:99px;border:1px solid transparent;background-clip:padding-box}::-webkit-scrollbar-thumb:hover{background:#dae6f299}::-webkit-scrollbar-corner{background:transparent}
+.mac-ui .mac-window[data-window]:is([data-window=search],[data-window=hacks],[data-window=ai],[data-window=games],[data-window=music]){background:transparent;backdrop-filter:none;-webkit-backdrop-filter:none;border-color:#ffffff32}
+.mac-ui .mac-window:is([data-window=search],[data-window=hacks],[data-window=ai],[data-window=games],[data-window=music])::before{content:none;display:none;background:transparent;backdrop-filter:none;-webkit-backdrop-filter:none}
+.mac-ui .mac-window:is([data-window=search],[data-window=hacks],[data-window=ai],[data-window=games],[data-window=music]) .mac-titlebar{background:transparent;border-bottom:1px solid #ffffff1c;backdrop-filter:none;-webkit-backdrop-filter:none}
+.mac-ui .mac-window .page#search{display:grid;grid-template-columns:66px minmax(0,1fr);grid-template-rows:auto minmax(0,1fr);gap:0;overflow:hidden;background:transparent;animation:none}
+#search>.browser{grid-column:2;grid-row:1;background:transparent;border:0;border-bottom:1px solid #ffffff16;border-radius:0;box-shadow:none;backdrop-filter:none}
+#search #address-form{background:#0a122542;border-color:#ffffff24;border-radius:99px}
+#search>.browser-orbits{grid-column:1;grid-row:1 / -1;display:flex;flex-direction:column;align-items:center;gap:12px;padding:18px 8px;background:transparent;border-right:1px solid #ffffff16;min-height:0}
+.browser-orbit-list{display:flex;flex-direction:column;gap:13px;min-height:0;overflow:auto;padding:4px;scrollbar-width:none}
+.browser-orbit,.browser-orbit-add,.browser-orbit-close{display:grid;place-items:center;flex:none;width:38px;height:38px;border-radius:50%;border:1px solid #ffffff30;background:#11131b55;color:#e2e2ed;font-size:12px;transition:background .18s,border-color .18s,box-shadow .18s,transform .18s}
+.browser-orbit:hover,.browser-orbit-add:hover{background:#ffffff24;transform:translateY(-2px)}
+.browser-orbit[aria-selected=true]{background:linear-gradient(145deg,#b89aff30,#6f67ff12);border-color:#d4c1ff99;box-shadow:0 0 16px #b29aff38,inset 0 1px #ffffff38;color:#f2eaff}
+.browser-orbit-add{font-size:24px;border-style:dashed}.browser-orbit-close{margin-top:auto;font-size:23px;border-color:transparent;background:transparent;color:#cedbef}.browser-orbit-close:disabled{opacity:.25;cursor:default}
+#search>#search-start,#search>#web-frames{grid-column:2;grid-row:2;width:100%;min-height:0!important;height:100%!important;margin:0!important;max-width:none;background:transparent;border-radius:0;overflow:auto}
+#search>#search-start{padding:clamp(30px,6vh,70px) max(22px,calc((100% - 700px)/2)) 35px;text-shadow:0 2px 20px #0008}
+#search-start .big-search,#search-start .quick-grid button,#search-start .bookmark-card{background:#111e332e;border:1px solid #ffffff30;box-shadow:inset 0 1px #fff1,0 8px 20px #0001;backdrop-filter:none}
+#search-start .quick-grid button{border-radius:17px;transition:transform .18s,background .18s}#search-start .quick-grid button:hover{transform:translateY(-3px);background:#9ac5ff20}
+#search-start h1{font-size:clamp(38px,6cqw,72px);letter-spacing:-.05em}#search-start .eyebrow{font-size:10px;letter-spacing:.2em}
+.browser-tab-pane{height:100%;display:flex;flex-direction:column;min-height:0}.browser-tab-frame{position:relative;flex:1;min-height:0}.browser-tab-frame iframe{position:absolute;inset:0;width:100%;height:100%;border:0}
+#search #youtube-search-options{flex:none;margin:0;background:#0c172a80}#search>#web-error{z-index:5}
+#hacks .hacks-session,#hacks .hacks-frame,#hacks .hacks-frame iframe{background:transparent}
+#hacks .hacks-controls{background:#111e334f;backdrop-filter:none;-webkit-backdrop-filter:none;border-color:#ffffff35}
+#hacks .hacks-page,#hacks{background:transparent}.hacks-card{background:#111e333d}
+.mac-ui .mac-window :is(#sports-frames,#movies-frames),.mac-ui .mac-window :is(#sports-frames,#movies-frames)>iframe{background:transparent}
+.mac-ui #games .game-grid{grid-template-columns:repeat(auto-fill,minmax(112px,1fr));gap:12px}
+.mac-ui #games .game-card{border-radius:13px;border-color:#ffffff24;background:#1017252b;backdrop-filter:none}
+.mac-ui #games .game-open{display:block;width:100%;padding:0}
+.mac-ui #games .game-open img{display:block;width:100%;height:auto;aspect-ratio:4/3;object-fit:cover}
+.mac-ui #games .game-card .game-name{font-size:10px;padding:8px;background:#0c16253b}
+.mac-ui #games .favorite-star{width:25px;height:25px;font-size:15px;right:5px;top:5px}
+.mac-ui .mac-window:not([hidden]){animation:neon-window-reveal .24s cubic-bezier(.2,.8,.2,1)}
+.mac-ui .mac-panel:not([hidden]),dialog[open],#web-error:not([hidden]){animation:neon-menu-reveal .18s ease-out}
+.mac-ui button{transition:background-color .16s,border-color .16s,box-shadow .16s,transform .16s}
+.mac-ui button:active:not(:disabled){transform:scale(.95)}
+.mac-ui .mac-task-button:hover,.mac-ui .mac-shortcut:hover{transform:translateY(-3px)}
+@keyframes neon-window-reveal{from{opacity:.1;transform:translateY(9px) scale(.993)}to{opacity:1;transform:none}}
+@keyframes neon-menu-reveal{from{opacity:0;transform:translateY(5px)}to{opacity:1;transform:none}}
+@media(max-width:600px){.mac-ui .mac-window .page#search{grid-template-columns:52px minmax(0,1fr)}#search>.browser-orbits{padding:12px 4px}.browser-orbit,.browser-orbit-add,.browser-orbit-close{width:34px;height:34px}#search>.browser .browser-toolbar{gap:0;padding:6px 3px}#search #address-form{padding:4px 8px;gap:4px}#search #address-form input{min-width:0;font-size:12px}#search>#search-start{padding:28px 16px}#search-start .quick-grid{grid-template-columns:repeat(2,1fr)}}
+@media(prefers-reduced-motion:reduce){.mac-ui .mac-window,.mac-ui .mac-panel,.mac-ui dialog,.mac-ui #web-error{animation:none!important}.mac-ui button,.browser-orbit,.browser-orbit-add,#search-start .quick-grid button{transition:none!important}.mac-ui button:active,.mac-ui .mac-task-button:hover,.mac-ui .mac-shortcut:hover{transform:none!important}}
+
+.mac-ui .mac-window #music-dock,.mac-ui .mac-window #music-frame,.mac-ui .mac-window #music-frame iframe{background:transparent;backdrop-filter:none;-webkit-backdrop-filter:none}.mac-ui .music-dock-heading,.mac-ui .music-dock-footer{background:#0c182b33;border-color:#ffffff20}
+
+.mac-ui .mac-window:is([data-window=search],[data-window=ai],[data-window=games],[data-window=music],[data-window=hacks]) *{backdrop-filter:none!important;-webkit-backdrop-filter:none!important}.mac-ui .music-dock-heading,.mac-ui .music-dock-footer{background:transparent}
+.mac-ui #ai,.mac-ui #ai .chat-shell,.mac-ui #ai .chat-sidebar,.mac-ui #ai .chat-main,.mac-ui #ai .chat-heading,.mac-ui #ai .chat-bottom,.mac-ui #ai #chat-messages{background:transparent!important;background-image:none!important;backdrop-filter:none!important;-webkit-backdrop-filter:none!important;box-shadow:none}
+.mac-ui #ai .chat-shell{border-color:#ffffff2b}.mac-ui #ai .chat-sidebar{border-color:#ffffff2b}.mac-ui #ai #chat-form{background:#0b172c30;border-color:#ffffff42}.mac-ui #ai .chat-message.user{background:#0b172c32;border-color:#ffffff32}.mac-ui #ai .chat-message pre{background:#07111f9c}
+.mac-ui #games{background:transparent!important}
+.mac-ui :is(.game-card,.bookmark-card,.hacks-card){transition:transform .2s cubic-bezier(.2,.8,.2,1),border-color .2s,box-shadow .2s}
+.mac-ui :is(input,textarea,select){transition:border-color .18s,box-shadow .18s}
+.mac-ui :is(input,textarea,select):focus-visible{box-shadow:0 0 0 3px #9ecaff20}
+@media(hover:hover){.mac-ui :is(.game-card,.bookmark-card,.hacks-card):hover{transform:translateY(-3px);border-color:#c3ddff80;box-shadow:0 8px 22px #0003}}
+@media(prefers-reduced-motion:reduce){.mac-ui :is(.game-card,.bookmark-card,.hacks-card,input,textarea,select){transition:none!important}.mac-ui :is(.game-card,.bookmark-card,.hacks-card):hover{transform:none}}

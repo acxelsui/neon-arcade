@@ -1,3 +1,4 @@
+import {applyEmbeddedAppearance} from './embedded-appearance.js';
 import {watchFrame} from './proxy-feedback.js';
 import {brandMusicDocument} from './music-branding.js';
 import {readMusicState,performMusicAction} from './music-controls.js';
@@ -33,7 +34,7 @@ export function initMusic(getController){
   cleanup();
   try{
    const doc=frame?.element.contentDocument;if(!doc?.body)return;
-   cleanup=brandMusicDocument(doc,'NEO Music','Neon Arcade Music');
+   const stopBrand=brandMusicDocument(doc,'NEO Music','Neon Arcade Music'),stopTheme=applyEmbeddedAppearance(doc,'music');cleanup=()=>{stopBrand();stopTheme();};
    brandedDoc=doc;
    if(doc.title==='Student Learning Portal')status('The source returned a learning portal instead of music. Try Reload; the music page may require a session on that site.');
   }catch{status('Music opened, but its inner branding could not be changed in this browser.')}

@@ -24,14 +24,14 @@ export function chatRequest(data){
  default:throw new Error('Unknown chat action.');
  }
 }
-export function initChatBridge({rpc,send,getProfile,decorateRows}){
+export function initChatBridge({rpc,send,getProfile,decorateRows,postUpdate}){
  let pending=0;
  return async data=>{
   if(!getProfile()||typeof data.requestId!=='string'||data.requestId.length>80)return;
   if(pending>=5){send('chat-result',{requestId:data.requestId,error:'Please wait for chat to catch up.'});return}
   pending++;const owner=getProfile().id;
   if(['game-save-read','game-save-write'].includes(data.action)&&data.expectedUserId!==owner){pending--;send('chat-result',{requestId:data.requestId,error:'Your account changed. Reopen the game.',self:owner});return;}
-  try{const [name,args]=chatRequest(data);let result=await rpc(name,args);if(data.action==='history'&&decorateRows)result=await decorateRows(result);if(getProfile()?.id===owner)send('chat-result',{requestId:data.requestId,result,self:owner})}
+  try{if(data.action==='updates-post'){if(!postUpdate)throw Error('Updates are unavailable.');const result=await postUpdate(chatText(data.text));if(getProfile()?.id===owner)send('chat-result',{requestId:data.requestId,result,self:owner});return;}const [name,args]=chatRequest(data);let result=await rpc(name,args);if(data.action==='history'&&decorateRows)result=await decorateRows(result);if(getProfile()?.id===owner)send('chat-result',{requestId:data.requestId,result,self:owner})}
   catch(error){if(getProfile()?.id===owner)send('chat-result',{requestId:data.requestId,self:owner,error:['PGRST202','42883'].includes(error.code)?(data.action==='owner-player-activity'?'Player history needs its database setup. Run player-activity.sql.':['game-save-read','game-save-write'].includes(data.action)?'Game saves need their database setup. Run game-saves.sql.':['owner-game-status','owner-game-review','game-load-report'].includes(data.action)?'Game status needs its database setup. Run game-status.sql.':data.action.startsWith('owner-')?'The owner toolkit needs its database setup. Run owner-toolkit.sql.':'Chat needs its database setup. Ask the site owner to run chat.sql.'):error.message||'Chat could not connect. Try again.'})}
   finally{pending--}
  };

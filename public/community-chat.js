@@ -1,7 +1,8 @@
+import {updateMessages,isOwnerUpdate} from './community-updates.js';
 import {messageDay,renderCommunityMessage} from './community-view.js';
 export function initCommunityChat(){
  const $=s=>document.querySelector(s),account=location.hostname==='localhost'?'http://localhost:3002':'https://neon-arcade-improvedv3.vercel.app';
- const standalone=parent===window,pending=new Map(),drafts=new Map();let announcements=false,me=null,peer=null,self=null,active=false,loading=false,refreshAgain=false,generation=0,last='',sending=false;
+ const standalone=parent===window,pending=new Map(),drafts=new Map();let updatesRoom=false,announcements=false,me=null,peer=null,self=null,active=false,loading=false,refreshAgain=false,generation=0,last='',sending=false;
  const status=text=>$('#community-status').textContent=text;
  let followOnReveal=true;
  function resizeComposer(){const input=$('#community-input');input.style.height='auto';input.style.height=Math.max(44,Math.min(110,input.scrollHeight))+'px';}
@@ -29,38 +30,39 @@ export function initCommunityChat(){
  async function conversations(){try{const rows=await request('conversations');$('#community-conversations').replaceChildren(...(rows||[]).map(channel));if(!rows?.length){const note=document.createElement('p');note.className='community-conversations-empty';note.textContent='Find a player to start a conversation.';$('#community-conversations').append(note)}}catch(error){status(error.message)}}
  async function refresh(){
   if(!active)return;if(loading){refreshAgain=true;return;}loading=true;const version=generation,target=peer?.id??null;
-  try{await loadSelf();if(me?.banned){empty('Your account is banned from chat.');return}const history=await request('history',{peer:target});if(version!==generation)return;const rows=target?history:(history||[]).filter(row=>!!row.announcement===announcements);
+  try{let history=[];try{await loadSelf();history=await request('history',{peer:target});}catch(error){if(!updatesRoom)throw error;status('Release notes are available. Owner messages will reconnect.');}if(me?.banned){empty('Your account is banned from chat.');return}if(version!==generation)return;const rows=updatesRoom?updateMessages(history):target?history:(history||[]).filter(row=>!!row.announcement===announcements&&!isOwnerUpdate(row));
    const signature=JSON.stringify(rows);if(signature!==last){const box=$('#community-messages'),bottom=box.scrollHeight-box.scrollTop-box.clientHeight<80||!last;last=signature;
     if(!rows?.length)empty(announcements?'No announcements yet. Post one for everyone to see.':peer?'Start your private conversation.':'No messages yet. Say hello to the server!');
     else{const previousTop=box.scrollTop;box.replaceChildren();let dayKey='';for(const row of [...rows].reverse()){
      const day=messageDay(row.created_at);if(day.key!==dayKey){const separator=document.createElement('div');separator.className='community-day';separator.textContent=day.label;box.append(separator);dayKey=day.key;}
-     const canDelete=row.sender_id===self||(!peer&&isMod()&&row.role!=='owner'&&(me.role==='owner'||row.role!=='admin'));
+     const canDelete=!row.system&&(row.sender_id===self||(!peer&&isMod()&&row.role!=='owner'&&(me.role==='owner'||row.role!=='admin')));
      const item=renderCommunityMessage(row,{self,account,canDelete,onDelete:async remove=>{if(!confirm('Delete this message?'))return;remove.disabled=true;try{await request('delete',{messageId:row.id});last='';await refresh()}catch(error){status(error.message);remove.disabled=false}}});box.append(item);
     }if(!bottom)box.scrollTop=previousTop;}if(bottom){box.scrollTop=box.scrollHeight;followOnReveal=!box.clientHeight;}updateLatest();
    }if(!restricted())status('');
   }catch(error){if(version===generation)status(error.message)}finally{loading=false;if(active&&(version!==generation||refreshAgain)){refreshAgain=false;refresh()}}
  }
- function roomKey(){return announcements?'announcements':peer?.id||'server'}
- function select(player,announcementRoom=false){
-  drafts.set(roomKey(),$('#community-input').value);peer=player;announcements=announcementRoom;
+ function roomKey(){return updatesRoom?'updates':announcements?'announcements':peer?.id||'server'}
+ function select(player,announcementRoom=false,updateRoom=false){
+  drafts.set(roomKey(),$('#community-input').value);peer=player;announcements=announcementRoom;updatesRoom=updateRoom;
   $('#community-input').value=drafts.get(roomKey())||'';$('#community-counter').textContent=$('#community-input').value.length+' / 1,000';resizeComposer();generation++;last='';
-  $('#community-room-title').textContent=announcements?'Announcements':player?player.username:'Neon Arcade';
-  $('#community-room-description').textContent=announcements?'Announcements for everyone · only owners and admins can post.':player?'Private conversation · only you and this player.':'A shared room for every signed-in player.';
-  $('#community-room-icon').textContent=announcements?'↗':player?'@':'#';$('#community-room-type').textContent=announcements?'Team updates':player?'Private conversation':'Public room';
-  $('#community-input').placeholder=announcements?'Write an announcement for everyone…':player?'Message '+player.username+'…':'Message the server…';
-  $('#community-send').textContent=announcements?'Post ↗':'Send ↗';
-  $('#community-server').classList.toggle('active',!player&&!announcements);$('#community-announcements').classList.toggle('active',announcements);$('#community-server').setAttribute('aria-pressed',String(!player&&!announcements));$('#community-announcements').setAttribute('aria-pressed',String(announcements));for(const channel of document.querySelectorAll('.community-dm')){const selected=channel.dataset.peerId===peer?.id;channel.classList.toggle('active',selected);channel.setAttribute('aria-pressed',String(selected));}if(narrow.matches)showRooms(false);
+  $('#community-room-title').textContent=updatesRoom?'Updates':announcements?'Announcements':player?player.username:'Neon Arcade';
+  $('#community-room-description').textContent=updatesRoom?'Release notes from Neon Arcade Bot and the owner.':announcements?'Announcements for everyone · only owners and admins can post.':player?'Private conversation · only you and this player.':'A shared room for every signed-in player.';
+  $('#community-room-icon').textContent=updatesRoom?'N':announcements?'↗':player?'@':'#';$('#community-room-type').textContent=updatesRoom?'READ-ONLY CHANNEL':announcements?'Team updates':player?'Private conversation':'Public room';
+  $('#community-input').placeholder=updatesRoom?(me?.role==='owner'?'Write an update…':'Only the owner and Neon Arcade Bot can post here.'):announcements?'Write an announcement for everyone…':player?'Message '+player.username+'…':'Message the server…';
+  $('#community-send').textContent=updatesRoom?'Post update ↗':announcements?'Post ↗':'Send ↗';
+  $('#community-updates').classList.toggle('active',updatesRoom);$('#community-updates').setAttribute('aria-pressed',String(updatesRoom));$('#community-input').maxLength=updatesRoom?950:1000;$('#community-server').classList.toggle('active',!player&&!announcements&&!updatesRoom);$('#community-announcements').classList.toggle('active',announcements);$('#community-server').setAttribute('aria-pressed',String(!player&&!announcements&&!updatesRoom));$('#community-announcements').setAttribute('aria-pressed',String(announcements));for(const channel of document.querySelectorAll('.community-dm')){const selected=channel.dataset.peerId===peer?.id;channel.classList.toggle('active',selected);channel.setAttribute('aria-pressed',String(selected));}if(narrow.matches)showRooms(false);
   updateComposer();empty('Loading messages…');refresh();conversations();
  }
  window.addEventListener('neon-open-dm',event=>{const player=event.detail;if(player&&typeof player.id==='string'&&typeof player.username==='string')select(player);});
  $('#community-server').onclick=()=>select(null);
+ $('#community-updates').onclick=()=>select(null,false,true);
  $('#community-announcements').onclick=()=>select(null,true);
  $('#community-refresh').onclick=()=>{refresh();conversations()};
  $('#community-search').onsubmit=async event=>{event.preventDefault();const query=$('#community-player-query').value.trim();if(query.length<2){status('Type at least 2 characters to find a player.');return}try{const rows=await request('players',{query});if(rows?.length)$('#community-results').replaceChildren(...rows.map(channel));else{const p=document.createElement('p');p.textContent='No matching players.';$('#community-results').replaceChildren(p)}}catch(error){status(error.message)}};
  $('#community-input').oninput=()=>{$('#community-counter').textContent=$('#community-input').value.length+' / 1,000';resizeComposer();updateComposer()};
  $('#community-input').onkeydown=event=>{if(event.key==='Enter'&&!event.shiftKey&&!event.isComposing){event.preventDefault();$('#community-compose').requestSubmit()}};
- $('#community-compose').onsubmit=async event=>{event.preventDefault();if(sending)return;const text=$('#community-input').value.trim();if(!text)return;const target=peer?.id??null,version=generation,announce=announcements;if(announce&&!isMod()){status('Only active owners and admins can post announcements.');return}sending=true;$('#community-send').disabled=true;status('Sending…');try{await request(announce?'announce':'send',{peer:target,text});if(version===generation&&$('#community-input').value.trim()===text){$('#community-input').value='';$('#community-counter').textContent='0 / 1,000';resizeComposer();followOnReveal=true;last=''}if(!restricted())status('');await refresh();conversations()}catch(error){status(error.message)}finally{sending=false;updateComposer()}};
- function updateComposer(){const readOnly=announcements&&!isMod();$('#community-input').disabled=standalone||restricted()||readOnly;$('#community-send').disabled=sending||standalone||restricted()||readOnly||!$('#community-input').value.trim();$('#community-readonly').hidden=!readOnly}
+ $('#community-compose').onsubmit=async event=>{event.preventDefault();if(sending)return;const text=$('#community-input').value.trim();if(!text)return;const target=peer?.id??null,version=generation,announce=announcements,update=updatesRoom;if(update&&me?.role!=='owner'){status('Only the owner can post updates.');return;}if(announce&&!isMod()){status('Only active owners and admins can post announcements.');return}sending=true;$('#community-send').disabled=true;status('Sending…');try{await request(update?'updates-post':announce?'announce':'send',{peer:target,text});if(version===generation&&$('#community-input').value.trim()===text){$('#community-input').value='';$('#community-counter').textContent='0 / 1,000';resizeComposer();followOnReveal=true;last=''}if(!restricted())status('');await refresh();conversations()}catch(error){status(error.message)}finally{sending=false;updateComposer()}};
+ function updateComposer(){const readOnly=updatesRoom?me?.role!=='owner':announcements&&!isMod();$('#community-readonly').textContent=updatesRoom?'Only the owner and Neon Arcade Bot can post here. Everyone can read updates.':'Only owners and admins can post here. You can read every announcement.';$('#community-input').disabled=standalone||restricted()||readOnly;$('#community-send').disabled=sending||standalone||restricted()||readOnly||!$('#community-input').value.trim();$('#community-readonly').hidden=!readOnly}
  function isMod(){return ['owner','admin'].includes(me?.role)&&!restricted()}
  function restricted(){return !!me?.banned||Date.parse(me?.muted_until)>Date.now()}
  async function loadSelf(){

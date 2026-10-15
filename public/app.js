@@ -1,3 +1,5 @@
+import {themeEmbeddedFrame} from './embedded-appearance.js';
+import {createBrowserTabs} from './browser-tabs.js';
 import {musicStartup} from './music-startup.js';
 import {initHacks} from './hacks.js';
 import {reportArcadeLoading,finishArcadeLoading,failArcadeLoading} from './loading-sequence.js';
@@ -27,7 +29,7 @@ const $=s=>document.querySelector(s);
 const store={get(k,f){try{return JSON.parse(localStorage.getItem('neon-'+k))??f}catch{return f}},set(k,v){try{localStorage.setItem('neon-'+k,JSON.stringify(v))}catch{}}};
 let remoteAccess,hacksAccess;
 let libraryRendered=false;
-let catalog,selectedGame,previousFocus,controllerPromise,webFrame,gameMinimized=false;
+let catalog,selectedGame,previousFocus,controllerPromise,gameMinimized=false;
 const keptGame=document.createElement('section');keptGame.id='kept-game';keptGame.hidden=true;keptGame.setAttribute('aria-label','Game kept open');
 const keptTitle=document.createElement('strong'),keptHint=document.createElement('span');keptHint.textContent='Your game stays open on this tab. Online matches continue.';
 const resumeButton=document.createElement('button');resumeButton.type='button';resumeButton.textContent='Resume game';resumeButton.onclick=resumeGame;
@@ -77,12 +79,9 @@ window.addEventListener('message',event=>{
 document.addEventListener('keydown',e=>{if(e.key==='Escape'&&!document.fullscreenElement&&!$('#player').hidden)closeGame();if(e.key==='/'&&$('#games').hidden===false&&!['INPUT','TEXTAREA'].includes(document.activeElement.tagName)){e.preventDefault();$('#game-filter').focus()}if(e.key==='Tab'&&!$('#player').hidden&&!$('#player').classList.contains('with-side-tab')){const controls=[...new Set([...$('#player').querySelectorAll('button'),...($('#music-dock').hidden?[]:$('#music-dock').querySelectorAll('button')),...(document.querySelector('#message-notifications')?.querySelectorAll('button,textarea')||[])])].filter(b=>b.getClientRects().length&&!b.disabled&&getComputedStyle(b).visibility!=='hidden'),first=controls[0],last=controls.at(-1);if(e.shiftKey&&document.activeElement===first){e.preventDefault();last.focus()}else if(!e.shiftKey&&document.activeElement===last){e.preventDefault();first.focus()}}});
 function normalizeUrl(text){text=text.trim();if(!text)return null;if(/^[a-z][a-z\d+.-]*:/i.test(text)&&!/^https?:/i.test(text))throw new Error('Please enter an http or https address.');if(/^https?:\/\//i.test(text))return new URL(text).href;if(!text.includes(' ')&&/^[\w-]+(?:\.[\w-]+)+(?:[/:?#]|$)/.test(text))return new URL('https://'+text).href;return 'https://www.google.com/search?q='+encodeURIComponent(text)}
 async function getController(){if(!controllerPromise)controllerPromise=(async()=>{if(!window.isSecureContext||!navigator.serviceWorker)throw new Error('Open Neon Arcade using localhost or HTTPS to use search.');if(typeof initBootstrap!=='function')throw new Error('The search server is unavailable. Restart Neon Arcade.');const controller=await initBootstrap(transport=>musicStartup.wrap(transport));await controller.wait();return controller})().catch(e=>{controllerPromise=null;throw e});return controllerPromise}
-let navigationId=0;
-const youtubeSearch=createYouTubeSearch({host:$('#web-frames'),navigate:url=>browse(url)});
-async function browse(text){const requestId=++navigationId;try{const url=normalizeUrl(text);if(!url)return;$('#search-status').textContent='Connecting…';$('#web-error').hidden=true;const controller=await getController();if(requestId!==navigationId)return;if(!webFrame){webFrame=controller.createFrame();watchFrame(webFrame,showSearchError);webFrame.element.title='Neon Arcade web browser';webFrame.element.allowFullscreen=true;youtubeSearch.connect(webFrame,controller);$('#web-frames').append(webFrame.element)}webFrame.go(url);youtubeSearch.opened(url);$('#address').value=url;$('#search-start').hidden=true;$('#web-frames').hidden=false;$('#search-status').textContent=''}catch(e){$('#search-status').textContent='';showSearchError('Search couldn’t connect. '+e.message)}}
+const browserTabs=createBrowserTabs({page:$('#search'),getController,watchFrame,createYouTubeSearch,normalizeUrl,toast});
+const browse=text=>browserTabs.browse(text);
 $('#search-form').onsubmit=e=>{e.preventDefault();browse($('#query').value)};$('#address-form').onsubmit=e=>{e.preventDefault();browse($('#address').value)};document.querySelectorAll('[data-url]').forEach(b=>b.onclick=()=>browse(b.dataset.url));
-function searchHome(){navigationId++;youtubeSearch.hide();$('#search-start').hidden=false;$('#web-frames').hidden=true;$('#web-error').hidden=true;$('#address').value='';$('#search-status').textContent='';$('#query').focus()}
-$('#web-home').onclick=searchHome;$('#new-search').onclick=searchHome;$('#web-back').onclick=()=>webFrame?.back();$('#web-forward').onclick=()=>webFrame?.forward();$('#web-reload').onclick=()=>webFrame?.reload();$('#web-full').onclick=()=>{const target=$('#web-frames').hidden?$('#search'):$('#web-frames');target.requestFullscreen?.().catch(()=>toast('Fullscreen is unavailable in this browser.'))};
 const loadingStarted=performance.now();
 function loadingStage(message,step){reportArcadeLoading(step);$('#loading-message').textContent=message;$('#loading-step').textContent=String(step).padStart(2,'0')+' / 03';$('#loading-fill').style.width=(step/3*100)+'%'}
 async function start(){let ready=false;try{const response=await fetch('/catalog.json');if(!response.ok)throw new Error('Game catalog unavailable');catalog=await response.json();initNeonDashboard({catalog,openGame,chooseCategory:category=>{$('#game-category').value=category;$('#game-filter').value='';$('#favorites-filter').setAttribute('aria-pressed','false');$('#favorites-filter').textContent='☆ Favorites';renderGames();showPage('games')}});renderRecent();$('#home-game-total').textContent=catalog.games.filter(g=>!g.unavailable).length.toLocaleString()+' games to get lost in';loadingStage('Setting the scene…',2);for(const w of catalog.wallpapers){const b=document.createElement('button');b.className='wallpaper-choice glass';b.dataset.url=w.url;b.setAttribute('aria-pressed','false');const img=document.createElement('img');img.loading='lazy';img.decoding='async';img.src=w.preview||w.url;img.alt='';const label=document.createElement('span');label.textContent=w.name;const quality=document.createElement('small');quality.textContent=(w.quality||'4K')+' · Live';b.append(img,label,quality);b.onclick=()=>wallpaper(w.url);$('#wallpaper-grid').append(b)}const defaultWallpaper=catalog.wallpapers.find(w=>w.url.includes('relaxing-fireplace'))||catalog.wallpapers[0];const saved=store.get('wallpaper',defaultWallpaper.url);if(saved==='custom')setWallpaperMedia(defaultWallpaper.url,defaultWallpaper.poster||defaultWallpaper.preview||'');else wallpaper(catalog.wallpapers.some(w=>w.url===saved||w.legacyUrl===saved)?saved:defaultWallpaper.url);const appearance=initAppearance({store,wallpaper,fallback:defaultWallpaper.url});if(saved==='custom')await Promise.race([appearance,new Promise(resolve=>setTimeout(resolve,200))]);loadingStage('Preparing your wallpaper…',2);await whenWallpaperVisible(200);showPage(location.hash.slice(1)||'home');ready=true;loadingStage('Your arcade is ready.',3)}catch(e){failArcadeLoading();$('#loading-message').textContent='Could not load the arcade. Please try again.';$('#loading-retry').hidden=false;$('#loading-retry').onclick=()=>location.reload();console.error(e)}finally{if(ready&&!finishArcadeLoading())setTimeout(()=>{$('#loading').classList.add('done');setTimeout(()=>$('#loading').hidden=true,150)},0)}}start();
@@ -99,7 +98,7 @@ async function openSports(reset=false){
     const controller=await getController();
     if(!sportsFrame){
       sportsFrame=controller.createFrame();
-      sportsFrame.element.title='Sports — TheTVApp';
+      sportsFrame.element.title='Neon Sports';themeEmbeddedFrame(sportsFrame,'sports');
       watchFrame(sportsFrame,message=>{status.textContent=message+' Use Reload above to retry.'});
       sportsFrame.element.allow='autoplay; fullscreen; picture-in-picture';
       sportsFrame.element.allowFullscreen=true;
@@ -127,7 +126,7 @@ async function openMovies(reset=false){
     if(!moviesFrame){
       moviesFrame=controller.createFrame();
       protectMoviesFrame(moviesFrame,window.$scramjet.Tap.tap);
-      moviesFrame.element.title='Movies — Gaiaflix';
+      moviesFrame.element.title='Neon Movies';themeEmbeddedFrame(moviesFrame,'movies');
       watchFrame(moviesFrame,message=>{status.textContent=message+' Use Reload above to retry.'},()=>{status.textContent=''});
       moviesFrame.element.allow='autoplay; encrypted-media; fullscreen; picture-in-picture';
       moviesFrame.element.allowFullscreen=true;
@@ -155,9 +154,6 @@ function renderRecent(){
   }));
 }
 
-function showSearchError(message){$('#search-status').textContent='';$('#web-error-text').textContent=message;$('#web-error').hidden=false}
-$('#web-retry').onclick=()=>browse($('#address').value||$('#query').value);
-$('#web-dismiss').onclick=()=>$('#web-error').hidden=true;
 function bookmarks(){const value=store.get('bookmarks',[]);return Array.isArray(value)?value.filter(b=>b&&typeof b.name==='string'&&typeof b.url==='string'):[]}
 function renderBookmarks(){const items=bookmarks();$('#bookmarks-empty').hidden=items.length>0;$('#bookmarks').replaceChildren(...items.map(item=>{const card=document.createElement('div');card.className='bookmark-card glass';const open=document.createElement('button');open.className='bookmark-open';open.textContent=item.name;open.title=item.url;open.onclick=()=>browse(item.url);const remove=document.createElement('button');remove.textContent='×';remove.setAttribute('aria-label','Remove bookmark '+item.name);remove.onclick=()=>{store.set('bookmarks',bookmarks().filter(b=>b.url!==item.url));renderBookmarks();$('#add-bookmark').focus()};card.append(open,remove);return card}))}
 $('#add-bookmark').onclick=()=>{$('#bookmark-form').hidden=false;$('#bookmark-name').focus()};
@@ -165,7 +161,7 @@ $('#bookmark-cancel').onclick=()=>{$('#bookmark-form').hidden=true;$('#bookmark-
 $('#bookmark-form').onsubmit=e=>{e.preventDefault();try{const url=bookmarkUrl($('#bookmark-url').value);const name=$('#bookmark-name').value.trim();if(!name)throw new Error('Give your bookmark a name.');const items=bookmarks().filter(b=>b.url!==url);if(items.length>=24)throw new Error('You can save up to 24 bookmarks. Remove one first.');store.set('bookmarks',[...items,{name,url}]);renderBookmarks();e.target.reset();$('#bookmark-form').hidden=true;$('#bookmark-error').textContent='';$('#add-bookmark').focus()}catch(error){$('#bookmark-error').textContent=error.message}};
 renderBookmarks();
 
-initShell({navigate:showPage,search:text=>{showPage("search");browse(text)},reload:()=>{const page=location.hash.slice(1);if(page==="search"&&webFrame)webFrame.reload();else if(page==="sports"&&sportsFrame)sportsFrame.reload();else if(page==="movies"&&moviesFrame)moviesFrame.reload();else if(page==="cloud")document.querySelector("#cloud-reload").click();else if(page==="music")document.querySelector("#music-reload").click();else location.reload()}});
+initShell({navigate:showPage,search:text=>{showPage("search");browse(text)},reload:()=>{const page=location.hash.slice(1);if(page==="search")browserTabs.reload();else if(page==="sports"&&sportsFrame)sportsFrame.reload();else if(page==="movies"&&moviesFrame)moviesFrame.reload();else if(page==="cloud")document.querySelector("#cloud-reload").click();else if(page==="music")document.querySelector("#music-reload").click();else location.reload()}});
 
 remoteAccess=initRemoteAccess({navigate:showPage});
 hacksAccess=initHacks({navigate:showPage,getController});

@@ -1,0 +1,9 @@
+export function validConversations(value){return Array.isArray(value)?value.filter(c=>c&&typeof c.id==='string'&&Array.isArray(c.messages)).map(c=>({...c,messages:c.messages.filter(m=>m&&['user','assistant'].includes(m.role)&&typeof m.content==='string')})):[];}
+export function createConversationStorage({database=globalThis.indexedDB,storage=globalThis.localStorage}={}){
+ const key='neon-ai-conversations';let connection=null,queue=Promise.resolve();
+ function legacy(){try{return validConversations(JSON.parse(storage.getItem(key)||'[]'));}catch{return [];}}
+ function open(){return connection||=(new Promise((resolve,reject)=>{if(!database)return reject(Error('Unavailable'));const request=database.open('neon-ai-history',1);request.onupgradeneeded=()=>request.result.createObjectStore('history');request.onsuccess=()=>resolve(request.result);request.onerror=()=>reject(request.error);request.onblocked=()=>reject(Error('Storage busy'));}));}
+ async function read(){try{if(storage.getItem('neon-ai-history-fallback')==='1')return legacy();const db=await open();const data=await new Promise((resolve,reject)=>{const r=db.transaction('history').objectStore('history').get('conversations');r.onsuccess=()=>resolve(r.result);r.onerror=()=>reject(r.error);});return data===undefined?legacy():validConversations(data);}catch{return legacy();}}
+ function write(chats){const data=chats.map(c=>({...c,messages:c.messages.map(({images,...message})=>message)}));queue=queue.catch(()=>{}).then(async()=>{try{const db=await open();await new Promise((resolve,reject)=>{const tx=db.transaction('history','readwrite');tx.objectStore('history').put(data,'conversations');tx.oncomplete=resolve;tx.onerror=()=>reject(tx.error);tx.onabort=()=>reject(tx.error);});storage.removeItem?.('neon-ai-history-fallback');}catch{storage.setItem(key,JSON.stringify(data));storage.setItem('neon-ai-history-fallback','1');}});return queue;}
+ return {read,write,legacy};
+}

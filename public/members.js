@@ -16,7 +16,7 @@ export function initMembers(){
   publishOnlineSnapshot({members,observed,connected});
   list.replaceChildren();if(!connected)return;
   if(Date.now()-observed>75000){status.textContent='Online status is unavailable. Reconnecting…';return}
-  status.textContent=`${members.length} online · refreshes every 30 seconds`;
+  status.textContent=`${members.length} online · live connection updates`;
   for(const member of members){list.append(createMemberRow(member));
   }
  };

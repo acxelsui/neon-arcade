@@ -1,3 +1,4 @@
+import {themeKahootMenu} from './embedded-appearance.js';
 // Move controls without touching, resizing or restarting the embedded client.
 export function attachHacksDrag(panel,handle,{win=window,bounds=()=>({left:8,top:8,right:win.innerWidth-8,bottom:win.innerHeight-8}),label='Move Hacks controls. Drag or use arrow keys.'}={}){
  let x=0,y=0,drag=null;const previous={translate:panel.style.translate,label:handle.getAttribute('aria-label'),tab:handle.getAttribute('tabindex'),title:handle.title,cursor:handle.style.cursor,touch:handle.style.touchAction};
@@ -13,7 +14,7 @@ export function attachHacksDrag(panel,handle,{win=window,bounds=()=>({left:8,top
  return {reveal:clamp,reset(){finish();x=y=0;paint();clamp();},destroy(){finish();for(const [name,fn] of Object.entries(handlers))handle.removeEventListener(name,fn,true);win.removeEventListener('resize',clamp);panel.style.translate=previous.translate;for(const [name,value] of [['aria-label',previous.label],['tabindex',previous.tab]])value===null?handle.removeAttribute(name):handle.setAttribute(name,value);handle.title=previous.title;handle.style.cursor=previous.cursor;handle.style.touchAction=previous.touch;}};
 }
 export function attachEmbeddedHacksMenu(doc){
- const win=doc?.defaultView;if(!doc?.body||!win)return ()=>{};let floating=null,observer=null,menuWatch=null,cleanupToggle=()=>{},stopped=false;const observed=new WeakSet();
+ const win=doc?.defaultView;if(!doc?.body||!win)return ()=>{};let floating=null,observer=null,menuWatch=null,cleanupToggle=()=>{},cleanupTheme=()=>{},stopped=false;const observed=new WeakSet();
  function find(){
   if(stopped||floating)return;
   const roots=[doc];for(let i=0;i<roots.length;i++)for(const el of roots[i].querySelectorAll('*'))if(el.shadowRoot)roots.push(el.shadowRoot);
@@ -26,7 +27,7 @@ export function attachEmbeddedHacksMenu(doc){
   // Preserve the client's own controls. Only its title becomes the drag handle.
   panel.style.setProperty('max-width','calc(100vw - 16px)','important');panel.style.setProperty('max-height','calc(100vh - 16px)','important');
   floating=attachHacksDrag(panel,header,{win,label:'Move '+(brand?'KahootX':title.textContent.trim())+' menu. Drag or use arrow keys.'});floating.reveal();observer?.disconnect();
-  if(brand){
+  if(brand){cleanupTheme=themeKahootMenu(kahoot.getRootNode());
    const launcher=kahoot.getRootNode().querySelector('#hm-launcher'),previousHidden=panel.getAttribute('aria-hidden'),previousInert=panel.inert;
    const update=()=>{const hidden=panel.classList.contains('hidden');panel.inert=hidden;panel.setAttribute('aria-hidden',String(hidden));header.tabIndex=hidden?-1:0;if(!hidden)floating.reveal();};
    menuWatch=new win.MutationObserver(update);menuWatch.observe(panel,{attributes:true,attributeFilter:['class']});update();
@@ -34,5 +35,5 @@ export function attachEmbeddedHacksMenu(doc){
   }
  }
  observer=new win.MutationObserver(find);find();
- return ()=>{stopped=true;observer?.disconnect();menuWatch?.disconnect();cleanupToggle();floating?.destroy();};
+ return ()=>{stopped=true;observer?.disconnect();menuWatch?.disconnect();cleanupToggle();cleanupTheme();floating?.destroy();};
 }

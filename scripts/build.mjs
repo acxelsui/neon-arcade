@@ -26,6 +26,7 @@ for (const game of catalog.games) {
   if (!game.url.startsWith('/') && new URL(game.url).protocol !== 'https:') throw new Error(`Invalid game address: ${game.name}`);
 }
 const required = [
+  'browser-tabs.js', 'window-glass.css', 'embedded-appearance.js', 'chat-recovery.js', 'chat-storage.js', 'community-updates.js', 'blooket-transport.js',
   'hacks.js', 'hacks-access.js', 'hacks-layout.js', 'hacks.css', 'artwork/hacks/blooket.svg', 'artwork/hacks/kahoot.svg', 'artwork/cartoon/hacks.svg', 'artwork/cartoon/transparent/hacks.svg',
   'music-search.js', 'playlist-search.js', 'music-startup.js',
   'minecraft-source.js', 'artwork/minecraft.webp', 'buildnow-sdk.js', 'game-performance.js', 'owner-player-activity.js', 'player-activity-model.js',

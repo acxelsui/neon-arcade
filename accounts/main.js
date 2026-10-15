@@ -1,3 +1,4 @@
+import {createInstantPresence} from './instant-presence.js';
 import {createAccountLoading} from './loading-sequence.js';
 import {createChatPopout} from './chat-popout.js';
 import {createRemoteBridge} from './remote-bridge.js';
@@ -20,6 +21,8 @@ const accountLoading=createAccountLoading({overlay:$('#welcome'),status:$('#boot
 const client=createClient(PROJECT,KEY,{auth:{persistSession:true,autoRefreshToken:true,detectSessionInUrl:false,storageKey:'neon-member-session'}});
 const requestedPlaylist=readPlaylistToken(new URLSearchParams(location.search).get('playlist'));
 const tabId=crypto.randomUUID();let profile=null,mode='signup',game=null,busy=false,epoch=0,booting=true,avatarCache=new Map(),accessPass=null,deviceKey=null,activityTimer=null,syncQueued=false;
+let leaveToken=null;
+const instantPresence=createInstantPresence({client,tabId,refresh:()=>sync(),leave:()=>{if(!profile||!leaveToken)return;fetch(PROJECT+'/rest/v1/rpc/neon_leave',{method:'POST',keepalive:true,headers:{apikey:KEY,Authorization:'Bearer '+leaveToken,'Content-Type':'application/json'},body:JSON.stringify({tab_id:tabId})}).catch(()=>{});}});
 function getBrowserKey(){return deviceKey||=browserIdentity();}
 function bannedGate(status={}){gate();selectMode('login');message('Access is banned until an owner unbans the account.'+(status.reason?' Reason: '+status.reason:''));}
 const screenPopout=createChatPopout({opened:opened=>send('ai-popout-opened',{opened}),action:(action,question)=>send('ai-popout-action',{action,question})});
@@ -28,7 +31,7 @@ const pollFriendRequests=initFriendNotifications({rpc,send,getProfile:()=>profil
 const checkSiteAccess=createSiteAccessMonitor({rpc,getProfile:()=>profile,getDeviceKey:getBrowserKey,onBanned:bannedGate});
 const handleRemoteAccess=createRemoteBridge({getProfile:()=>profile,getSession:()=>client.auth.getSession(),send});
 const handleHacks=createHacksBridge({getProfile:()=>profile,getSession:()=>client.auth.getSession(),send});
-const handleChat=initChatBridge({rpc,send,getProfile:()=>profile,decorateRows:async rows=>{
+const handleChat=initChatBridge({rpc,send,getProfile:()=>profile,postUpdate:async text=>{const owner=profile?.id,session=await client.auth.getSession();if(profile?.id!==owner)throw Error('Your account changed.');const token=session.data?.session?.access_token;if(!token)throw Error('Sign in again.');const response=await fetch('/api/updates-post',{method:'POST',headers:{Authorization:'Bearer '+token,'Content-Type':'application/json'},body:JSON.stringify({text}),cache:'no-store',redirect:'error',signal:AbortSignal.timeout(15000)});const result=await response.json();if(!response.ok)throw Error(result.error||'Update could not be posted.');return result;},decorateRows:async rows=>{
  const ids=[...new Set(rows.map(row=>row.sender_id))];const decoration=await decorations(ids);
  const missing=ids.filter(id=>!avatarCache.has(id)||avatarCache.get(id).expires<Date.now());
  if(missing.length){const {data}=await client.storage.from('neon-avatars').createSignedUrls(missing.map(id=>id+'/avatar'),600);missing.forEach((id,i)=>avatarCache.set(id,{url:data?.[i]?.signedUrl||null,expires:Date.now()+240000}));}
@@ -43,7 +46,7 @@ const handleSocial=initSocialBridge({rpc,send,getProfile:()=>profile,avatars:asy
 function send(type,extra={}){frame.contentWindow?.postMessage({channel:'neon-members-v1',type,...extra},contentOrigin)}
 function message(text){$('#auth-status').textContent=text}
 function selectMode(next){mode=next;const setup=next==='profile';$('#auth-tabs').hidden=setup;$('#password-label').hidden=setup;$('#password').required=!setup;$('#password').autocomplete=next==='login'?'current-password':'new-password';$('#signup-note').hidden=next==='login';$('#gate-title').textContent=setup?'Choose your player name.':next==='login'?'Welcome back.':'Welcome to Neon.';$('#gate-description').textContent=setup?'One last step before you enter the arcade.':next==='login'?'Your next adventure is waiting.':'Create your player profile and make yourself at home.';$('#submit-auth').textContent=setup?'Save username ↗':next==='login'?'Sign in ↗':'Create account ↗';$('#choose-signup').setAttribute('aria-pressed',String(next==='signup'));$('#choose-login').setAttribute('aria-pressed',String(next==='login'));$('#gate-signout').hidden=!setup;message('')}
-function gate(){accountLoading.finish();screenPopout.close();epoch++;profile=null;game=null;accessPass=null;frame.hidden=true;frame.removeAttribute('src');$('#gate').hidden=false;$('#profile-dialog').close()}
+function gate(){instantPresence.stop();leaveToken=null;accountLoading.finish();screenPopout.close();epoch++;profile=null;game=null;accessPass=null;frame.hidden=true;frame.removeAttribute('src');$('#gate').hidden=false;$('#profile-dialog').close()}
 async function rpc(name,args){const {data,error}=await client.rpc(name,args);if(error)throw error;return data}
 async function decorations(ids){try{const rows=await rpc('neon_decorations',{player_ids:ids});return new Map(rows.map(row=>[row.id,row.decoration]));}catch{return new Map();}}
 async function enter(){
@@ -56,6 +59,7 @@ async function enter(){
  $('#gate').hidden=true;$('#profile-name').textContent=profile.username;$('#avatar-preview').textContent=profile.username[0].toUpperCase();
  if(!frame.getAttribute('src')){const requestedGame=new URLSearchParams(location.search).get('game')||'',gameOnly=/^[a-zA-Z0-9_-]{1,80}$/.test(requestedGame);if(gameOnly)accountLoading.finish();else accountLoading.start();frame.src=contentOrigin+'/neon-access'+(gameOnly?'#game='+requestedGame:'');}frame.hidden=false;
  await sync();
+ const session=await client.auth.getSession();leaveToken=session.data.session?.access_token||null;instantPresence.start();
 }
 async function sync(){
  if(!profile)return;if(busy){syncQueued=true;return;}busy=true;const current=epoch;
@@ -133,7 +137,7 @@ window.addEventListener('message',event=>{
  }
 });
 // Auth events never run async Supabase operations inside the SDK callback lock.
-client.auth.onAuthStateChange(event=>{if(event==='SIGNED_OUT'&&!booting){gate();selectMode('login')}});
+client.auth.onAuthStateChange((event,session)=>{leaveToken=session?.access_token||null;if(event==='SIGNED_OUT'&&!booting){gate();selectMode('login')}});
 setInterval(sync,30000);window.addEventListener('online',sync);
 setInterval(()=>checkSiteAccess().catch(()=>{}),15000);
 window.addEventListener('focus',()=>checkSiteAccess().catch(()=>{}));

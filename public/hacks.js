@@ -1,7 +1,8 @@
-import {blooketTransport,attachBlooketSocket} from './blooket-transport.js';
+import {themeEmbeddedFrame} from './embedded-appearance.js';
 import {createHacksAccess} from './hacks-access.js';
 import {watchFrame} from './proxy-feedback.js';
 import {attachHacksDrag,attachEmbeddedHacksMenu} from './hacks-layout.js';
+import {blooketTransport,attachBlooketSocket} from './blooket-transport.js';
 const launchers={blooket:{name:'Blooket',url:'https://x-client.x-network.lol/play'},kahoot:{name:'Kahoot',url:'https://kahootx-client.x-network.lol/'}};
 export function validHackEntry(entry){return !!entry&&Object.hasOwn(launchers,entry.id)&&entry.url===launchers[entry.id].url;}
 export function createHacksGate({check,changed}){
@@ -29,6 +30,7 @@ export function initHacks({getController,navigate,doc=document,win=window,access
    disposeTransport();disposeTransport=()=>{};cleanupMenu();cleanupMenu=()=>{};if(frame){const index=controller.frames?.indexOf(frame);if(index>=0)controller.frames.splice(index,1);frame.element.remove();}
    frame=controller.createFrame();frame.element.title=launchers[id].name+' · Neon Hacks';frame.element.allow='autoplay; fullscreen; gamepad';frame.element.allowFullscreen=true;frame.element.setAttribute('sandbox','allow-scripts allow-same-origin allow-forms allow-pointer-lock');
    if(id==='blooket'){const adapter=blooketTransport(controller.transport);disposeTransport=()=>adapter.dispose();frame.fetchHandler.client.transport=adapter;attachBlooketSocket(frame,adapter,win.$scramjet.Tap.tap);}
+   if(id==='kahoot')themeEmbeddedFrame(frame,'kahoot');
    const owned=frame;watchFrame(frame,error=>{if(frame===owned)status.textContent=error+' Use Reload to retry.';},()=>{if(frame===owned)status.textContent='';});
    frame.element.addEventListener('load',()=>{if(frame!==owned)return;cleanupMenu();try{cleanupMenu=attachEmbeddedHacksMenu(frame.element.contentDocument);}catch{cleanupMenu=()=>{};}});
    host.replaceChildren(frame.element);page.querySelector('.hacks-now').textContent=launchers[id].name;session.hidden=false;library.hidden=true;page.classList.add('has-session');floating.reset();frame.go(result.entry.url);session.scrollIntoView({block:'start'});
