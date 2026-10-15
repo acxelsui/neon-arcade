@@ -1,4 +1,5 @@
 import {themeBrowserScrollbars} from './embedded-appearance.js';
+import {revealTab} from './ui-motion.js';
 // Each tab owns its frame. Switching tabs never navigates or recreates it.
 export function createBrowserTabs({page,getController,watchFrame,createYouTubeSearch,normalizeUrl,toast,doc=document}){
  const start=page.querySelector('#search-start'),frames=page.querySelector('#web-frames'),error=page.querySelector('#web-error'),address=page.querySelector('#address'),status=page.querySelector('#search-status');
@@ -12,7 +13,7 @@ export function createBrowserTabs({page,getController,watchFrame,createYouTubeSe
   for(const tab of tabs){const selected=active===tab;tab.button.setAttribute('aria-selected',String(selected));tab.button.tabIndex=selected?0:-1;tab.pane.hidden=!selected||tab.home;tab.button.title=label(tab);tab.button.setAttribute('aria-label','Tab '+(tabs.indexOf(tab)+1)+' - '+label(tab));tab.button.textContent=String(tabs.indexOf(tab)+1);}
   start.hidden=!active.home;frames.hidden=active.home;address.value=active.home?'':active.url;status.textContent=active.status||'';error.hidden=!active.error;page.querySelector('#web-error-text').textContent=active.error||'';close.disabled=tabs.length===1;
  }
- function select(tab,focus=false){if(!tabs.includes(tab))return;active=tab;paint();const surface=tab.home?start:tab.pane;surface.getAnimations?.().forEach(a=>a.cancel());if(!matchMedia('(prefers-reduced-motion: reduce)').matches)surface.animate?.([{opacity:.2,transform:'translateX(10px)'},{opacity:1,transform:'translateX(0)'}],{duration:220,easing:'cubic-bezier(.2,.8,.2,1)'});if(focus)tab.button.focus();}
+ function select(tab,focus=false){if(!tabs.includes(tab))return;const previous=active,direction=tabs.indexOf(tab)>=tabs.indexOf(previous)?1:-1;active=tab;paint();if(previous!==tab)revealTab(tab.home?start:tab.pane,direction,tab.home);if(focus)tab.button.focus();}
  function newTab(){const id='browser-pane-'+(++serial),tab={url:'',home:true,revision:0,status:'',error:'',frame:null,controller:null};tab.pane=doc.createElement('section');tab.pane.className='browser-tab-pane';tab.pane.id=id;tab.pane.setAttribute('role','tabpanel');tab.button=doc.createElement('button');tab.button.type='button';tab.button.className='browser-orbit';tab.button.id=id+'-tab';tab.button.setAttribute('role','tab');tab.button.setAttribute('aria-controls',id);tab.pane.setAttribute('aria-labelledby',tab.button.id);tab.button.onclick=()=>select(tab);
   const host=doc.createElement('div');host.className='browser-tab-frame';tab.pane.append(host);frames.append(tab.pane);tab.youtube=createYouTubeSearch({host,navigate:url=>browse(url,tab),doc});list.append(tab.button);tabs.push(tab);select(tab);return tab;
  }

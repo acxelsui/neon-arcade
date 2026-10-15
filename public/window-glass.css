@@ -29,13 +29,13 @@
 .mac-ui #games .game-open img{display:block;width:100%;height:auto;aspect-ratio:4/3;object-fit:cover}
 .mac-ui #games .game-card .game-name{font-size:10px;padding:8px;background:#0c16253b}
 .mac-ui #games .favorite-star{width:25px;height:25px;font-size:15px;right:5px;top:5px}
-.mac-ui .mac-window:not([hidden]){animation:neon-window-reveal .24s cubic-bezier(.2,.8,.2,1)}
-.mac-ui .mac-panel:not([hidden]),dialog[open],#web-error:not([hidden]){animation:neon-menu-reveal .18s ease-out}
-.mac-ui button{transition:background-color .16s,border-color .16s,box-shadow .16s,transform .16s}
-.mac-ui button:active:not(:disabled){transform:scale(.95)}
+.mac-ui .mac-window:not([hidden]){animation:neon-window-reveal .38s cubic-bezier(.16,1,.3,1)}
+.mac-ui .mac-panel:not([hidden]),dialog[open],#web-error:not([hidden]){animation:neon-menu-reveal .28s cubic-bezier(.16,1,.3,1);transform-origin:50% 15%}
+.mac-ui button{transition:background-color .2s,border-color .2s,box-shadow .24s,transform .28s cubic-bezier(.16,1,.3,1)}
+.mac-ui button:active:not(:disabled){transform:translateY(1px) scale(.975);transition-duration:.08s}
 .mac-ui .mac-task-button:hover,.mac-ui .mac-shortcut:hover{transform:translateY(-3px)}
-@keyframes neon-window-reveal{from{opacity:.1;transform:translateY(9px) scale(.993)}to{opacity:1;transform:none}}
-@keyframes neon-menu-reveal{from{opacity:0;transform:translateY(5px)}to{opacity:1;transform:none}}
+@keyframes neon-window-reveal{from{opacity:0;transform:translateY(18px) scale(.982)}to{opacity:1;transform:none}}
+@keyframes neon-menu-reveal{from{opacity:0;transform:translateY(-6px) scale(.975)}to{opacity:1;transform:none}}
 @media(max-width:600px){.mac-ui .mac-window .page#search{grid-template-columns:52px minmax(0,1fr)}#search>.browser-orbits{padding:12px 4px}.browser-orbit,.browser-orbit-add,.browser-orbit-close{width:34px;height:34px}#search>.browser .browser-toolbar{gap:0;padding:6px 3px}#search #address-form{padding:4px 8px;gap:4px}#search #address-form input{min-width:0;font-size:12px}#search>#search-start{padding:28px 16px}#search-start .quick-grid{grid-template-columns:repeat(2,1fr)}}
 @media(prefers-reduced-motion:reduce){.mac-ui .mac-window,.mac-ui .mac-panel,.mac-ui dialog,.mac-ui #web-error{animation:none!important}.mac-ui button,.browser-orbit,.browser-orbit-add,#search-start .quick-grid button{transition:none!important}.mac-ui button:active,.mac-ui .mac-task-button:hover,.mac-ui .mac-shortcut:hover{transform:none!important}}
 
@@ -50,3 +50,12 @@
 .mac-ui :is(input,textarea,select):focus-visible{box-shadow:0 0 0 3px #9ecaff20}
 @media(hover:hover){.mac-ui :is(.game-card,.bookmark-card,.hacks-card):hover{transform:translateY(-3px);border-color:#c3ddff80;box-shadow:0 8px 22px #0003}}
 @media(prefers-reduced-motion:reduce){.mac-ui :is(.game-card,.bookmark-card,.hacks-card,input,textarea,select){transition:none!important}.mac-ui :is(.game-card,.bookmark-card,.hacks-card):hover{transform:none}}
+.neon-click-pulse{position:fixed;z-index:2147483646;pointer-events:none;border-radius:50%;border:1px solid #c3e0ffb0;background:radial-gradient(circle,#acd7ff22,transparent 70%);contain:strict}
+.mac-ui .browser-orbit{position:relative;transition:background-color .22s,border-color .22s,box-shadow .32s,transform .32s cubic-bezier(.16,1,.3,1)}
+.browser-orbit::after{content:'';position:absolute;inset:-4px;border:1px solid #c4daff80;border-radius:50%;opacity:0;transform:scale(.85);transition:opacity .28s,transform .32s cubic-bezier(.16,1,.3,1);pointer-events:none}
+.browser-orbit[aria-selected=true]::after{opacity:.65;transform:scale(1)}
+.mac-ui :is(.game-card,.bookmark-card,.hacks-card){transition:transform .36s cubic-bezier(.16,1,.3,1),border-color .24s,box-shadow .3s}
+.mac-ui #games .game-open{overflow:hidden;border-radius:12px}
+.mac-ui #games .game-open img{transition:transform .45s cubic-bezier(.16,1,.3,1)}
+@media(hover:hover){.mac-ui :is(.game-card,.bookmark-card,.hacks-card):hover{transform:translateY(-5px)}.mac-ui #games .game-open:hover img{transform:scale(1.035)}.mac-ui #mac-taskbar button:hover{transition-duration:.32s}}
+@media(prefers-reduced-motion:reduce){.neon-click-pulse{display:none}.browser-orbit::after,.mac-ui #games .game-open img{transition:none!important}.mac-ui #games .game-open:hover img{transform:none}.mac-ui :is(.game-card,.bookmark-card,.hacks-card):hover{transform:none}.mac-ui #mac-taskbar button:hover{transition:none}}

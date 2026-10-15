@@ -7,6 +7,7 @@ import {initGameSaveBridge} from './game-save-bridge.js';
 import {initGameCredits} from './game-credits.js';
 import {initIconColors} from './icon-colors.js';
 import {defaultDesktopApps,appList,dockApps} from './desktop-apps.js';
+import {installClickFeedback} from './ui-motion.js';
 
 const apps={home:['Neon Home','home'],games:['Games','games'],search:['Browser','browser'],sports:['Sports','sports'],movies:['Movies','movies'],friends:['Friends','friends'],profile:['Your profile','profile'],playlists:['Playlists','playlists'],community:['Arcade Chat','chat'],ai:['Neon AI','ai'],music:['Music','music'],cloud:['Cloud gaming','cloud'],weather:['Weather','weather'],settings:['Settings','settings'],remote:['Remote access','remote'],owner:['Owner toolkit','owner'],hacks:['Hacks','hacks']};
 const paths=Object.fromEntries([...Object.values(apps).map(([,name])=>[name,true]),['launchpad',true]]);
@@ -21,6 +22,7 @@ export function initMacDesktop({navigate,search,reload}) {
  const main=document.querySelector('main'),shell=document.querySelector('.app-shell'),state=createWindowState(),views=new Map();
  document.querySelector('#music').append(document.querySelector('#music-dock'));
  document.body.classList.add('mac-ui');
+ installClickFeedback();
  const iconColors=initIconColors();
  const colorSettings=iconColors.mount(document.querySelector('#settings'));document.querySelector('#settings').prepend(colorSettings);
  initGameSaveBridge();
