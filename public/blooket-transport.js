@@ -1,6 +1,9 @@
 const origin='https://x-client.x-network.lol';
 const playerRoute=/^\/[a-f0-9]{24}\/play\/([a-f0-9]{24})$/i;
 const goodSession=value=>typeof value==='string'&&value.length>0&&!['undefined','null'].includes(value)&&/^[a-zA-Z0-9._~-]{1,500}$/.test(value);
+// Scramjet's CSS import rewriter expects whitespace after the at-keyword.
+// Preserve quoted values and comments; normalize only actual compact imports.
+export function normalizeBlooketCss(css){return css.replace(/\/\*[\s\S]*?\*\/|"(?:\\.|[^"\\])*"|'(?:\\.|[^'\\])*'|@import(?=["'])/gi,token=>token.toLowerCase()==='@import'?'@import ':token);}
 // Session data stays inside this frame and is never logged or cached.
 export function blooketTransport(transport){
  const request=transport.request.bind(transport),methods=new Map();let player=null,session=null,page=null;
@@ -10,6 +13,7 @@ export function blooketTransport(transport){
   if(/\/play\/undefined$/.test(remote.pathname)&&page&&remote.pathname.split('/')[1]===new URL(page).pathname.split('/')[1]){remote=new URL(page);}
   if(method==='POST'&&/^\/matchmake\/joinById\//.test(remote.pathname)&&player){headers=headers.map(pair=>[...pair]).filter(([key])=>key.toLowerCase()!=='x-xclient-session-id');headers.push(['X-Xclient-Session-Id',session||player]);const authorization=headers.find(([key])=>key.toLowerCase()==='authorization');if(authorization&&/^(?:Bearer )?(?:undefined|null)$/i.test(authorization[1]))authorization[1]='Bearer '+player;}
   const response=await request(remote,method,body,headers,signal);remember(remote,response);
+  if(method==='GET'&&remote.pathname.startsWith('/_b/ac.blooket.com/')&&remote.pathname.endsWith('.css')&&response.status===200&&new Headers(response.headers).get('content-type')?.startsWith('text/css')&&response.body){const css=normalizeBlooketCss(await new Response(response.body).text());return {...response,body:new Blob([css],{type:'text/css'}).stream()};}
   if(method!=='POST'||remote.pathname!=='/play'||!new Headers(response.headers).get('content-type')?.startsWith('text/x-component')||!response.body)return response;
   const bytes=new Uint8Array(await new Response(response.body).arrayBuffer());
   if(bytes.length<=10000)for(const line of new TextDecoder().decode(bytes).split('\n')){const match=/^\d+:(\{.*\})$/.exec(line);if(!match)continue;try{const result=JSON.parse(match[1]);if(result.status!=='SUCCESS'||typeof result.message!=='string')continue;const url=new URL(result.message,origin),route=playerRoute.exec(url.pathname);if(url.origin===origin&&route){player=route[1];page=url.href;const candidate=url.searchParams.get('session');if(goodSession(candidate))session=candidate;}}catch{}}

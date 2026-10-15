@@ -1,9 +1,23 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import {blooketTransport,attachBlooketSocket} from '../public/blooket-transport.js';
+import {blooketTransport,attachBlooketSocket,normalizeBlooketCss} from '../public/blooket-transport.js';
 const host='https://x-client.x-network.lol',room='1'.repeat(24),player='2'.repeat(24),route='/'+room+'/play/'+player;
 function fixture(message=route){const seen=[];const transport={marker:7,ready:true,request:async(url,method,body,headers)=>{seen.push({url,method,body,headers});return {status:200,headers:method==='POST'&&url.pathname==='/play'?[['content-type','text/x-component']]:[],body:method==='POST'&&url.pathname==='/play'?new Blob(['0:["$@1",[]]\n1:'+JSON.stringify({status:'SUCCESS',message})+'\n']).stream():null};},connect(){return this.marker;}};return {seen,adapter:blooketTransport(transport)};}
 async function join(adapter){const response=await adapter.request(new URL(host+'/play'),'POST','form',[],undefined);assert.equal((await new Response(response.body).text()).includes('SUCCESS'),true);}
+test('compact shared-style imports become recognizable without changing strings, comments or standard imports',()=>{
+ const css='@import"https://ac.blooket.com/components/core.css";@IMPORT\'https://fonts.example/font.css\';@import url("other.css");/* @import"comment" */.x{content:"@import\\\"text\\\"";background:url("data:image/svg+xml,@import\'image\'")}';
+ const result=normalizeBlooketCss(css);
+ assert.ok(result.startsWith('@import "https://ac.blooket.com/components/core.css";@import \'https://fonts.example/font.css\';'));
+ assert.equal(result.slice(result.indexOf('@import url')),css.slice(css.indexOf('@import url')));
+ assert.equal(normalizeBlooketCss(result),result);
+});
+test('only successful stylesheet responses from the exact Blooket gateway are normalized',async()=>{
+ const css='@import"https://ac.blooket.com/components/core.css";';
+ const adapter=blooketTransport({request:async()=>({status:200,headers:[['Content-Type','text/css']],body:new Blob([css]).stream()})});
+ for(const [url,expected] of [[host+'/_b/ac.blooket.com/gold/build/assets/index.css','@import "'],['https://foreign.example/_b/ac.blooket.com/index.css','@import"'],[host+'/_b/other.example/index.css','@import"'],[host+'/private.css','@import"']]){
+  const response=await adapter.request(new URL(url),'GET',null,[]);assert.ok((await new Response(response.body).text()).startsWith(expected));
+ }
+});
 test('successful nickname route repairs undefined navigation and only the failed credential placeholders',async()=>{
  const {adapter,seen}=fixture();await join(adapter);const broken=new URL(host+'/'+room+'/play/undefined');assert.equal(adapter.repairPage(broken),host+route);await adapter.request(broken,'GET',null,[]);assert.equal(seen.at(-1).url.href,host+route);
  const headers=[['Authorization','Bearer undefined']];await adapter.request(new URL(host+'/matchmake/joinById/'+room),'POST','{}',headers);assert.equal(seen.at(-1).headers.find(([k])=>k==='Authorization')[1],'Bearer '+player);assert.equal(seen.at(-1).headers.find(([k])=>k==='X-Xclient-Session-Id')[1],player);assert.equal(headers[0][1],'Bearer undefined');
