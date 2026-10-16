@@ -35,7 +35,7 @@ export function dismissMusicSignup(doc){
 }
 // Change presentation only; URLs, form values, account records and playback
 // identifiers remain exactly as supplied by the provider.
-export function themeSoundCloud(doc,onAccountPrompt=()=>{}){
+export function themeSoundCloud(doc,onAccountPrompt=()=>{},onDiscover=()=>{}){
  if(!doc?.head||!doc.body)return ()=>{};
  const style=doc.createElement('style');style.id='neon-music-catalog-theme';
  style.textContent=`
@@ -115,15 +115,17 @@ export function themeSoundCloud(doc,onAccountPrompt=()=>{}){
   }
  }
  const loaded=event=>{if(event.target?.tagName==='IFRAME')brand();};
+ const discover=event=>{if(event.button!==0||event.metaKey||event.ctrlKey||event.shiftKey||event.altKey||!event.target?.closest?.('.header__logoLink'))return;event.preventDefault();event.stopImmediatePropagation();onDiscover();};
+ doc.addEventListener('click',discover,true);
  doc.addEventListener('load',loaded,true);
  labels(doc.body);brand();const observer=new doc.defaultView.MutationObserver(records=>{for(const record of records){if(record.type==='childList')for(const node of record.addedNodes)labels(node);else labels(record.target);}brand();});observer.observe(doc.body,{childList:true,subtree:true,characterData:true,attributes:true,attributeFilter:['aria-label','title','alt','placeholder','aria-description','src','srcset']});
- return ()=>{observer.disconnect();doc.removeEventListener('load',loaded,true);style.remove();};
+ return ()=>{observer.disconnect();doc.removeEventListener('click',discover,true);doc.removeEventListener('load',loaded,true);style.remove();};
 }
 
 export function createSoundCloudMusic(getController,host,status){
  let frame,controller,pending,themedDoc,version=0,cleanup=()=>{};
  const document=()=>{try{return frame?.element.contentDocument}catch{return null}};
- function refreshTheme(){const doc=document();if(doc?.body&&doc!==themedDoc){cleanup();cleanup=themeSoundCloud(doc,()=>status('This song or action requires a provider account. Choose another song to keep listening.'));themedDoc=doc;}}
+ function refreshTheme(){const doc=document();if(doc?.body&&doc!==themedDoc){cleanup();cleanup=themeSoundCloud(doc,()=>status('This song or action requires a provider account. Choose another song to keep listening.'),()=>frame?.go(SOUNDCLOUD_MUSIC_URL));themedDoc=doc;}}
  function state(){refreshTheme();const doc=document(),control=doc?.querySelector('.playControls .playControl'),ready=!!control&&!control.classList.contains('disabled')&&!control.disabled;return {active:!!frame,ready,playing:ready&&/pause/i.test(control.getAttribute('title')||control.getAttribute('aria-label')||''),title:doc?.querySelector('.playbackSoundBadge__titleLink')?.getAttribute('title')||'Choose a song',song:null};}
  function action(name){const doc=document(),selector={toggle:'.playControls .playControl',previous:'.skipControl__previous',next:'.skipControl__next'}[name],control=selector&&doc?.querySelector(selector);if(!control||control.disabled||control.classList.contains('disabled'))return false;control.click();return true;}
  function pause(){if(state().playing)action('toggle');}

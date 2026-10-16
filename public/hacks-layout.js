@@ -14,7 +14,7 @@ export function attachHacksDrag(panel,handle,{win=window,bounds=()=>({left:8,top
  return {reveal:clamp,reset(){finish();x=y=0;paint();clamp();},destroy(){finish();for(const [name,fn] of Object.entries(handlers))handle.removeEventListener(name,fn,true);win.removeEventListener('resize',clamp);panel.style.translate=previous.translate;for(const [name,value] of [['aria-label',previous.label],['tabindex',previous.tab]])value===null?handle.removeAttribute(name):handle.setAttribute(name,value);handle.title=previous.title;handle.style.cursor=previous.cursor;handle.style.touchAction=previous.touch;}};
 }
 export function attachEmbeddedHacksMenu(doc){
- const win=doc?.defaultView;if(!doc?.body||!win)return ()=>{};let floating=null,observer=null,menuWatch=null,cleanupToggle=()=>{},cleanupTheme=()=>{},stopped=false;const observed=new WeakSet();
+ const win=doc?.defaultView;if(!doc?.body||!win)return ()=>{};let floating=null,observer=null,menuWatch=null,cleanupToggle=()=>{},cleanupTheme=()=>{},cleanupSwitches=()=>{},stopped=false;const observed=new WeakSet();
  function find(){
   if(stopped||floating)return;
   const roots=[doc];for(let i=0;i<roots.length;i++)for(const el of roots[i].querySelectorAll('*'))if(el.shadowRoot)roots.push(el.shadowRoot);
@@ -27,7 +27,7 @@ export function attachEmbeddedHacksMenu(doc){
   // Preserve the client's own controls. Only its title becomes the drag handle.
   panel.style.setProperty('max-width','calc(100vw - 16px)','important');panel.style.setProperty('max-height','calc(100vh - 16px)','important');
   floating=attachHacksDrag(panel,header,{win,label:'Move '+(brand?'KahootX':title.textContent.trim())+' menu. Drag or use arrow keys.'});floating.reveal();observer?.disconnect();
-  if(brand){cleanupTheme=themeKahootMenu(kahoot.getRootNode());
+  if(brand){cleanupTheme=themeKahootMenu(kahoot.getRootNode());cleanupSwitches=attachQuizMenuKeyboard(kahoot);
    const launcher=kahoot.getRootNode().querySelector('#hm-launcher'),previousHidden=panel.getAttribute('aria-hidden'),previousInert=panel.inert;
    const update=()=>{const hidden=panel.classList.contains('hidden');panel.inert=hidden;panel.setAttribute('aria-hidden',String(hidden));header.tabIndex=hidden?-1:0;if(!hidden)floating.reveal();};
    menuWatch=new win.MutationObserver(update);menuWatch.observe(panel,{attributes:true,attributeFilter:['class']});update();
@@ -35,5 +35,14 @@ export function attachEmbeddedHacksMenu(doc){
   }
  }
  observer=new win.MutationObserver(find);find();
- return ()=>{stopped=true;observer?.disconnect();menuWatch?.disconnect();cleanupToggle();cleanupTheme();floating?.destroy();};
+ return ()=>{stopped=true;observer?.disconnect();menuWatch?.disconnect();cleanupToggle();cleanupTheme();cleanupSwitches();floating?.destroy();};
+}
+// The supplied client uses clickable divs for switches. Keep its own click
+// handlers while giving the same controls labels and keyboard activation.
+export function attachQuizMenuKeyboard(panel){
+ const original=new Map(),win=panel.ownerDocument.defaultView;
+ function sync(){for(const row of panel.querySelectorAll('[data-hm-item="toggle"]')){const label=row.querySelector('.hm-row-label')?.textContent?.trim();if(!label)continue;if(!original.has(row))original.set(row,['role','tabindex','aria-label'].map(name=>row.getAttribute(name)));row.setAttribute('role','button');row.setAttribute('tabindex','0');row.setAttribute('aria-label',label);}}
+ const key=event=>{const row=event.target.closest?.('[data-hm-item="toggle"]');if(!row||event.target!==row||!['Enter',' '].includes(event.key))return;event.preventDefault();event.stopPropagation();row.click();};
+ const observer=new win.MutationObserver(sync);observer.observe(panel,{childList:true,subtree:true});panel.addEventListener('keydown',key);sync();
+ return ()=>{observer.disconnect();panel.removeEventListener('keydown',key);for(const [row,values] of original)for(const [i,name] of ['role','tabindex','aria-label'].entries())values[i]===null?row.removeAttribute(name):row.setAttribute(name,values[i]);original.clear();};
 }
