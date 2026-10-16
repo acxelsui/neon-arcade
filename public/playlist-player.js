@@ -1,3 +1,4 @@
+import {isGoPlusTrack,soundcloudSongURL} from './soundcloud-tracks.js';
 export const musicArtworkOrigin='https://cirrusbk6l.planet35.com';
 export function songArtwork(value){
  for(const item of [value?.thumb,value?.thumbnail,value?.cover]){
@@ -7,7 +8,9 @@ export function songArtwork(value){
  return '';
 }
 export function playlistSong(value){
+ if(isGoPlusTrack(value))throw Error('Go+ songs cannot be added to Neon playlists.');
  if(!value||typeof value.id!=='string'||!/^[a-zA-Z0-9:_-]{1,160}$/.test(value.id)||typeof value.title!=='string'||!value.title.trim()||value.title.length>200)throw Error('Choose a song in Neon Arcade Music first.');
+ if(value.id.startsWith('sc:')&&!soundcloudSongURL(value))throw Error('This song has an invalid music link.');
  const artist=String(value.artist||'').slice(0,200),duration=Math.max(0,Math.min(999999,Math.floor(Number(value.duration)||0))),thumb=songArtwork(value);
  return {id:value.id,title:value.title.trim(),artist,duration,thumb};
 }

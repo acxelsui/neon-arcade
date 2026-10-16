@@ -1,4 +1,7 @@
+import {applyMusicDocumentAppearance} from './music-appearance.js';
 import {watchFrame} from './proxy-feedback.js';
+import {musicClockSeconds} from './music-playlist-queue.js';
+import {soundcloudSongFromCard,soundcloudSongURL,hasGoPlusBadge} from './soundcloud-tracks.js';
 
 export const SOUNDCLOUD_MUSIC_URL='https://soundcloud.com/discover';
 // Match dedicated ad services, never entire music/CDN domains or arbitrary
@@ -35,7 +38,7 @@ export function dismissMusicSignup(doc){
 }
 // Change presentation only; URLs, form values, account records and playback
 // identifiers remain exactly as supplied by the provider.
-export function themeSoundCloud(doc,onAccountPrompt=()=>{},onDiscover=()=>{}){
+export function themeSoundCloud(doc,onAccountPrompt=()=>{},onDiscover=()=>{},{addSong=()=>{},openLibrary=()=>{},skip=()=>false,ended=()=>{}}={}){
  if(!doc?.head||!doc.body)return ()=>{};
  const style=doc.createElement('style');style.id='neon-music-catalog-theme';
  style.textContent=`
@@ -81,6 +84,23 @@ export function themeSoundCloud(doc,onAccountPrompt=()=>{},onDiscover=()=>{}){
  *{scrollbar-width:thin;scrollbar-color:#b6c9e066 transparent}::-webkit-scrollbar{width:6px;height:6px}::-webkit-scrollbar-track{background:transparent}::-webkit-scrollbar-thumb{background:#b6c9e066;border-radius:99px}
  @media(prefers-reduced-motion:reduce){button,a{transition:none}}`;
  doc.head.append(style);
+ const sidebar=doc.createElement('aside');sidebar.className='neon-music-sidebar';sidebar.innerHTML='<button class="neon-music-wordmark" data-neon-nav="home">N↗ <span>Neon Music</span></button><button data-neon-nav="home">⌂ Home</button><button data-neon-nav="search">⌕ Search</button><div class="neon-library-label">YOUR LIBRARY <span>＋</span></div><button data-neon-nav="library">♫ Your playlists</button><div class="neon-library-card"><b>Your music. Your space.</b><p>Find a song, hit +, and build your next playlist.</p><button data-neon-nav="library">Create playlist</button></div><small>Made for your soundtrack</small>';doc.body.append(sidebar);
+ const polish=doc.createElement('style');polish.textContent=`
+ .fullListenHero,.fullHero{background:transparent!important;background-image:none!important}body{padding-left:216px!important;box-sizing:border-box}.neon-music-sidebar{position:fixed;left:12px;top:14px;bottom:68px;width:180px;padding:12px 8px;z-index:1000;display:flex;flex-direction:column;gap:9px;color:#fff;font:14px system-ui;border-right:1px solid #ffffff1c;background:transparent}.neon-music-sidebar>.neon-music-wordmark{display:flex;gap:9px;align-items:center;font-size:19px;margin:7px 0 28px}.neon-music-sidebar button{border:0;border-radius:10px;color:#e5e8ee;background:transparent;text-align:left;padding:12px;font:600 13px system-ui;cursor:pointer}.neon-music-sidebar button:hover{background:#ffffff16;color:#fff}.neon-library-label{display:flex;justify-content:space-between;font-size:10px;letter-spacing:.15em;color:#b5bbc8;margin:28px 12px 8px}.neon-library-card{padding:14px;margin-top:12px;border:1px solid #ffffff18;border-radius:14px;background:#10182024;line-height:1.5;font-size:12px}.neon-library-card p{color:#c9ced8}.neon-library-card button{border:1px solid #ffffff55;border-radius:99px;padding:9px 13px;background:#ffffff0c}.neon-music-sidebar>small{margin-top:auto;padding:12px;color:#adb6c5;font-size:10px}.header{left:216px!important;width:calc(100% - 216px)!important}.header__logo,.header__navMenu{display:none!important}.header__search input{border-radius:99px!important;background:#10182042!important;border:1px solid #ffffff30!important;padding-left:20px!important}.header__inner{max-width:none!important}.l-sidebar,.l-footer{display:none!important}.l-main{width:100%!important;margin-right:0!important}.mixedSelectionModule{border:0!important;padding:12px 0 24px!important}.mixedSelectionModule__title,.searchTitle__text{font:750 26px system-ui!important;letter-spacing:-.04em}.playableTile{border-radius:14px!important;padding:12px!important;background:#10182015!important;transition:background .2s,transform .2s}.playableTile:hover{background:#10182065!important;transform:translateY(-3px)}.playableTile__artwork{border-radius:12px!important;overflow:hidden}.soundList__item{border:0!important}.sound{border-radius:15px;padding:16px!important;background:#10182015!important;margin-bottom:8px}.sound:hover{background:#10182038!important}.neon-add-song{margin-top:10px!important;border:1px solid #ffffff45!important;border-radius:99px!important;padding:7px 13px!important;background:#10182028!important;color:white!important;font:600 11px system-ui!important;cursor:pointer}.neon-add-song:hover{background:#a3f0be!important;color:#081b10!important;border-color:#a3f0be!important}.neon-go-plus-track,.sound:has([class*="GoPlus"]:not(.sc-hidden)),.playableTile:has([class*="GoPlus"]:not(.sc-hidden)){display:none!important}.playControls{border-top:1px solid #ffffff22!important}.playControls__wrapper{padding:7px 15px!important}.playControl{border-radius:50%!important}.playbackTimeline__progressBackground{border-radius:99px!important}@media(max-width:760px){body{padding-left:0!important;padding-top:54px!important}.neon-music-sidebar{position:fixed;top:0;left:0;right:0;bottom:auto;width:auto;height:42px;flex-direction:row;align-items:center;border-right:0;border-bottom:1px solid #ffffff20;margin:0 12px;padding:8px;gap:4px}.neon-music-sidebar>.neon-music-wordmark{font-size:16px;margin:0 10px 0 0}.neon-music-sidebar>.neon-music-wordmark span,.neon-library-label,.neon-library-card,.neon-music-sidebar>small{display:none}.neon-music-sidebar button{padding:9px;font-size:11px}.header{left:0!important;width:100%!important;position:relative!important}.playableTile{padding:6px!important}}@media(prefers-reduced-motion:reduce){.playableTile{transition:none!important;transform:none!important}}`;
+ polish.textContent+=`
+ .searchOptions__navigation-high_tier{display:none!important}
+ .sound__body{display:grid!important;grid-template-columns:112px minmax(0,1fr)!important;gap:16px!important}.sound__artwork{position:relative!important;float:none!important;width:112px!important;height:112px!important;margin:0!important}.sound__coverArt{display:block!important;width:100%!important;height:100%!important}.sound__artwork .image,.sound__artwork .image__full{width:100%!important;height:100%!important;border-radius:12px!important}.sound__content{margin:0!important;width:auto!important;min-width:0!important}.sound__header{padding:0!important;min-width:0!important}.soundTitle__usernameTitleContainer{min-width:0!important}
+ @media(min-width:801px){.l-search>.l-main{width:calc(100% - 220px)!important;margin-left:220px!important}.l-search>.l-fixed-left,.searchOptions{width:200px!important}}
+ @media(max-width:800px){.l-search>.l-fixed-left,.searchOptions{height:auto!important;min-height:44px!important}.searchOptions__scrollable,.searchOptions__scrollableInner,.searchOptions__container{position:static!important;height:auto!important;max-height:none!important;overflow:visible!important;width:auto!important}.searchOptions__filtersTitle,.searchOptions__filterWrapper,.searchOptions .searchTags,.searchOptions__footer{display:none!important}.searchOptions__navigation{margin:8px 0!important}.sound__body{grid-template-columns:80px minmax(0,1fr)!important;gap:14px!important}.sound__artwork{width:80px!important;height:80px!important}.soundTitle__title{font-size:14px!important}.soundTitle__username{font-size:11px!important}}
+ .neon-music-sidebar,.neon-library-card,.neon-library-card button,.neon-music-sidebar button,.neon-music-sidebar button:hover,.header__search input,.playableTile,.playableTile:hover,.sound,.sound:hover,.neon-add-song,.neon-add-song:hover{background:transparent!important;background-image:none!important;backdrop-filter:none!important;-webkit-backdrop-filter:none!important;box-shadow:none!important}
+ .neon-add-song:hover{color:#c5ffdc!important}.neon-music-sidebar,.soundTitle__title,.soundTitle__username,.mixedSelectionModule__title{text-shadow:0 1px 5px #0009}
+ .commentsList,.listenDetails__comments,.fullHero__uploadTime{display:none!important}.playControls,.playControls__inner{min-width:0!important;width:100%!important}.fullListenHero{height:auto!important;min-height:260px!important;margin:0!important}.fullListenHero>div{height:auto!important}.backgroundGradient,.fullHero__info,.fullHero__playerArea,.fullHero__waveform{display:none!important}
+ .fullHero__foreground{position:relative!important;inset:auto!important;width:100%!important;box-sizing:border-box!important;display:grid!important;grid-template-columns:190px minmax(0,1fr)!important;gap:26px!important;align-items:center!important;padding:28px!important}
+ .fullHero__artwork{position:relative!important;inset:auto!important;float:none!important;width:190px!important;height:190px!important;margin:0!important;grid-column:1;grid-row:1}.fullHero__artwork .listenArtworkWrapper,.fullHero__artwork .listenArtworkWrapper__artwork,.fullHero__artwork .sc-artwork{width:100%!important;height:100%!important;border-radius:16px!important;overflow:hidden}
+ .fullHero__title{position:static!important;width:auto!important;min-width:0!important;grid-column:2;grid-row:1}.fullHero__title .soundTitle__titleContainer{display:flex!important;gap:16px!important;align-items:center!important}.fullHero .soundTitle__playButton{float:none!important;flex-shrink:0!important}.fullHero .soundTitle__usernameTitleContainer{min-width:0!important;margin:0!important}.fullHero h1.soundTitle__title{width:auto!important;max-width:100%!important;font:750 30px/1.15 system-ui!important;letter-spacing:-.045em!important;white-space:normal!important;overflow-wrap:anywhere!important}.fullHero h1 span,.fullHero .soundTitle__usernameHeroContainer span{background:transparent!important;box-shadow:none!important}.fullHero .soundTitle__additionalContainer{display:none!important}.fullHero .neon-add-song{margin-top:18px!important}
+ @media(max-width:760px){.l-container.l-content{padding-top:0!important}.l-main{padding-top:16px!important}.fullHero__foreground{grid-template-columns:100px minmax(0,1fr)!important;gap:16px!important;padding:18px 12px!important}.fullHero__artwork{width:100px!important;height:100px!important}.fullHero__title .soundTitle__titleContainer{flex-direction:column-reverse!important;align-items:flex-start!important;gap:12px!important}.fullHero h1.soundTitle__title{font-size:21px!important}.fullHero .playButton{width:44px!important;height:44px!important}.fullListenHero{min-height:210px!important}.fullHero .soundTitle__username{font-size:12px!important}}
+ `;
+ doc.head.append(polish);
  function labels(root){
   function text(node){if(node.nodeType===3&&!node.parentElement?.closest('script,style,noscript,textarea,input,[contenteditable]')){const value=neonMusicLabel(node.nodeValue);if(value!==node.nodeValue)node.nodeValue=value;}}
   if(root.nodeType===3){text(root);return;}
@@ -88,7 +108,14 @@ export function themeSoundCloud(doc,onAccountPrompt=()=>{},onDiscover=()=>{}){
   const walker=doc.createTreeWalker(root,4);let node;while(node=walker.nextNode())text(node);
   for(const el of [root,...root.querySelectorAll('[aria-label],[title],[alt],[placeholder],[aria-description]')])for(const attr of ['aria-label','title','alt','placeholder','aria-description']){const value=el.getAttribute(attr);if(value!==null){const branded=neonMusicLabel(value);if(branded!==value)el.setAttribute(attr,branded);}}
  }
+ let lastPlaybackAttempt=0;
  function brand(){
+  for(const card of doc.querySelectorAll('.sound,.playableTile,.listenHero,.fullListenHero')){
+   if(hasGoPlusBadge(card)){card.classList.add('neon-go-plus-track');continue;}
+   if(card.querySelector('.neon-add-song'))continue;
+   let song;try{song=soundcloudSongFromCard(card);}catch{continue;}if(!song)continue;
+   const add=doc.createElement('button');add.type='button';add.className='neon-add-song';add.textContent='＋ Add to playlist';add.setAttribute('aria-label','Add '+song.title+' to playlist');(card.querySelector('.sound__content')||card.querySelector('.fullHero__title')||card).append(add);
+  }
   if(/soundcloud/i.test(doc.title))doc.title=neonMusicLabel(doc.title);
   for(const el of doc.querySelectorAll('img,svg[aria-label],[role="img"][aria-label],.image__full[title],.image__full[aria-label],.sc-artwork[title],[style*="avatars-69H9MhsAT5XDDltu-1X6yHw"],[style*="avatars-uBhncEiJEB6wuWPC-hwlXng"],.sc-logo,.soundcloudLogo,.soundcloud-logo,.sc-button-soundcloud')){
    if(el.closest('.header__logoLink'))continue;
@@ -106,7 +133,7 @@ export function themeSoundCloud(doc,onAccountPrompt=()=>{},onDiscover=()=>{}){
    for(const image of link.querySelectorAll('.image__full,.sc-artwork'))if(!image.classList.contains('neon-music-replaced-logo')){image.classList.add('neon-music-replaced-logo');image.setAttribute('aria-label','Neon Music');}
   }
   for(const el of doc.querySelectorAll('header button,header a'))if(/^(sign[ -]?in|log[ -]?in|create (?:an? )?(?:neon music )?account|sign[ -]?up|upload)$/i.test(el.textContent.trim()))el.classList.add('neon-music-account-promo');
-  if(dismissMusicSignup(doc))onAccountPrompt();
+  if(dismissMusicSignup(doc)&&Date.now()-lastPlaybackAttempt<6000)onAccountPrompt();
   for(const link of doc.querySelectorAll('.header__logoLink')){
    if(link.getAttribute('aria-label')!=='Neon Music')link.setAttribute('aria-label','Neon Music');
    if(link.getAttribute('title')!=='Neon Music')link.setAttribute('title','Neon Music');
@@ -115,18 +142,27 @@ export function themeSoundCloud(doc,onAccountPrompt=()=>{},onDiscover=()=>{}){
   }
  }
  const loaded=event=>{if(event.target?.tagName==='IFRAME')brand();};
- const discover=event=>{if(event.button!==0||event.metaKey||event.ctrlKey||event.shiftKey||event.altKey||!event.target?.closest?.('.header__logoLink'))return;event.preventDefault();event.stopImmediatePropagation();onDiscover();};
+ const discover=event=>{
+  if(event.button!==0||event.metaKey||event.ctrlKey||event.shiftKey||event.altKey)return;
+  if(event.target?.closest?.('.playButton,.playControl'))lastPlaybackAttempt=Date.now();
+  const target=event.target,nav=target?.closest?.('[data-neon-nav]'),add=target?.closest?.('.neon-add-song,.sc-button-addtoset'),logo=target?.closest?.('.header__logoLink'),next=target?.closest?.('.skipControl__next,.skipControl__previous');
+  if(next&&skip(next.matches('.skipControl__next')?'next':'previous')){event.preventDefault();event.stopImmediatePropagation();return;}
+  if(!nav&&!add&&!logo)return;event.preventDefault();event.stopImmediatePropagation();
+  if(add){try{const song=soundcloudSongFromCard(add.closest('.sound,.playableTile,.listenHero,.fullListenHero')||doc.querySelector('.listenHero,.fullListenHero'));if(song)addSong(song);}catch{onAccountPrompt();}return;}
+  if(logo||nav?.dataset.neonNav==='home')onDiscover();else if(nav?.dataset.neonNav==='library')openLibrary();else doc.querySelector('.header__search input')?.focus();
+ };
  doc.addEventListener('click',discover,true);
  doc.addEventListener('load',loaded,true);
+ doc.addEventListener('ended',ended,true);
  labels(doc.body);brand();const observer=new doc.defaultView.MutationObserver(records=>{for(const record of records){if(record.type==='childList')for(const node of record.addedNodes)labels(node);else labels(record.target);}brand();});observer.observe(doc.body,{childList:true,subtree:true,characterData:true,attributes:true,attributeFilter:['aria-label','title','alt','placeholder','aria-description','src','srcset']});
- return ()=>{observer.disconnect();doc.removeEventListener('click',discover,true);doc.removeEventListener('load',loaded,true);style.remove();};
+ return ()=>{observer.disconnect();doc.removeEventListener('click',discover,true);doc.removeEventListener('load',loaded,true);doc.removeEventListener('ended',ended,true);style.remove();polish.remove();sidebar.remove();};
 }
 
-export function createSoundCloudMusic(getController,host,status){
- let frame,controller,pending,themedDoc,version=0,cleanup=()=>{};
+export function createSoundCloudMusic(getController,host,status,options={}){
+ let frame,controller,pending,themedDoc,version=0,cleanup=()=>{},pendingPlay=null;
  const document=()=>{try{return frame?.element.contentDocument}catch{return null}};
- function refreshTheme(){const doc=document();if(doc?.body&&doc!==themedDoc){cleanup();cleanup=themeSoundCloud(doc,()=>status('This song or action requires a provider account. Choose another song to keep listening.'),()=>frame?.go(SOUNDCLOUD_MUSIC_URL));themedDoc=doc;}}
- function state(){refreshTheme();const doc=document(),control=doc?.querySelector('.playControls .playControl'),ready=!!control&&!control.classList.contains('disabled')&&!control.disabled;return {active:!!frame,ready,playing:ready&&/pause/i.test(control.getAttribute('title')||control.getAttribute('aria-label')||''),title:doc?.querySelector('.playbackSoundBadge__titleLink')?.getAttribute('title')||'Choose a song',song:null};}
+ function refreshTheme(){const doc=document();if(doc?.body&&doc!==themedDoc){cleanup();cleanup=themeSoundCloud(doc,()=>status('This song or action requires a provider account. Choose another song to keep listening.'),()=>frame?.go(SOUNDCLOUD_MUSIC_URL),options);themedDoc=doc;}}
+ function state(){refreshTheme();if(options.appearance)applyMusicDocumentAppearance(document(),options.appearance());const doc=document(),control=doc?.querySelector('.playControls .playControl'),ready=!!control&&!control.classList.contains('disabled')&&!control.disabled;let song=null;try{song=soundcloudSongFromCard(doc?.querySelector('.playbackSoundBadge'));}catch{}if(pendingPlay&&doc?.body){const hero=doc.querySelector('.listenHero,.fullListenHero');if(hero&&hasGoPlusBadge(hero)){pendingPlay=null;status('Go+ songs are excluded from Neon playlists.');options.unavailable?.();}else if(Date.now()>pendingPlay.until){pendingPlay=null;status('Song loaded. Press Play to start listening.');}else{const play=hero?.querySelector('.playButton,.sc-button-play');if(play&&soundcloudSongFromCard(hero)?.id===pendingPlay.id){const label=play.getAttribute('title')||play.getAttribute('aria-label')||'';if(/unavailable/i.test(label)){pendingPlay=null;status('This song is unavailable from the provider. Choose another track.');options.unavailable?.();}else if(!play.classList.contains('sc-button-disabled')&&play.getAttribute('aria-disabled')!=='true'){pendingPlay=null;if(!/pause/i.test(label))play.click();}}}}return {active:!!frame,ready,playing:ready&&/pause/i.test(control.getAttribute('title')||control.getAttribute('aria-label')||''),title:doc?.querySelector('.playbackSoundBadge__titleLink')?.getAttribute('title')||'Choose a song',song,elapsed:musicClockSeconds(doc?.querySelector('.playbackTimeline__timePassed [aria-hidden]')?.textContent),duration:musicClockSeconds(doc?.querySelector('.playbackTimeline__duration [aria-hidden]')?.textContent)};}
  function action(name){const doc=document(),selector={toggle:'.playControls .playControl',previous:'.skipControl__previous',next:'.skipControl__next'}[name],control=selector&&doc?.querySelector(selector);if(!control||control.disabled||control.classList.contains('disabled'))return false;control.click();return true;}
  function pause(){if(state().playing)action('toggle');}
  function open(reset=false){
@@ -139,6 +175,6 @@ export function createSoundCloudMusic(getController,host,status){
    host.replaceChildren(frame.element);frame.go(SOUNDCLOUD_MUSIC_URL);return frame;
   }catch(error){status('Music could not connect. '+error.message);return null}})();pending=task;task.finally(()=>{if(pending===task)pending=null});return task;
  }
- function stop(){version++;pending=null;themedDoc=null;cleanup();cleanup=()=>{};if(frame){const index=controller?.frames?.indexOf(frame);if(index>=0)controller.frames.splice(index,1);frame.element.remove();frame=null;}host.replaceChildren();}
- return {open,state,action,pause,stop,reload:()=>frame?frame.reload():open()};
+ function stop(){version++;pendingPlay=null;pending=null;themedDoc=null;cleanup();cleanup=()=>{};if(frame){const index=controller?.frames?.indexOf(frame);if(index>=0)controller.frames.splice(index,1);frame.element.remove();frame=null;}host.replaceChildren();}
+ return {open,state,action,pause,stop,async search(query){await open();frame.go('https://soundcloud.com/search/sounds?q='+encodeURIComponent(String(query).slice(0,120)));},async play(song){const url=soundcloudSongURL(song);if(!url)throw Error('This playlist song has an invalid music link.');await open();pendingPlay={id:song.id,until:Date.now()+20000};frame.go(url);},reload:()=>frame?frame.reload():open()};
 }
