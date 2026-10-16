@@ -9,7 +9,7 @@ import {initIconColors} from './icon-colors.js';
 import {defaultDesktopApps,appList,dockApps} from './desktop-apps.js';
 import {installClickFeedback} from './ui-motion.js';
 
-const apps={home:['Neon Home','home'],games:['Games','games'],search:['Browser','browser'],sports:['Sports','sports'],movies:['Movies','movies'],friends:['Friends','friends'],profile:['Your profile','profile'],playlists:['Playlists','playlists'],community:['Arcade Chat','chat'],ai:['Neon AI','ai'],music:['Music','music'],cloud:['Cloud gaming','cloud'],weather:['Weather','weather'],settings:['Settings','settings'],remote:['Remote access','remote'],owner:['Owner toolkit','owner'],hacks:['Hacks','hacks']};
+const apps={home:['Neon Home','home'],games:['Games','games'],search:['Browser','browser'],sports:['Sports','sports'],movies:['Movies','movies'],friends:['Friends','friends'],profile:['Your profile','profile'],playlists:['Playlists','playlists'],community:['Arcade Chat','chat'],ai:['Neon AI','ai'],music:['Neon Music','music'],cloud:['Cloud gaming','cloud'],weather:['Weather','weather'],settings:['Settings','settings'],remote:['Remote access','remote'],owner:['Owner toolkit','owner'],hacks:['Hacks','hacks']};
 const paths=Object.fromEntries([...Object.values(apps).map(([,name])=>[name,true]),['launchpad',true]]);
 function icon(name){const image=document.createElement('img');image.src='/artwork/cartoon/'+(document.body.classList.contains('mac-icons-transparent')?'transparent/':'')+(paths[name]?name:'home')+'.svg';image.alt='';image.draggable=false;image.className='mac-cartoon-icon';return image;}
 function button(label,fn,cls=''){const el=document.createElement('button');el.type='button';el.className=cls;el.title=label;el.setAttribute('aria-label',label);el.onclick=fn;return el;}

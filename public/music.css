@@ -6,4 +6,10 @@
 @media(max-width:600px){.music-view #music-dock{left:calc(var(--rail,44px) + 8px);right:8px;top:calc(var(--chrome,90px) + 8px);bottom:8px}.music-welcome{padding:25px 15px}.music-dock-heading{padding:9px 12px}#music-dock{right:10px}}
 
 /* Keep the media document mounted, with controls in the top bar away from Music. */
+#music-cloud-frame{width:100%;height:100%;min-height:0;background:transparent}
+#music-cloud-frame[hidden],#music-playlist-engine{display:none!important}
+.music-dock-footer{align-items:center;flex-wrap:wrap;background:transparent!important;gap:8px}
+.music-dock-footer button{border:1px solid #c8ddff50;background:transparent;border-radius:99px;padding:8px 15px;color:#edf5ff;transition:background .18s,border-color .18s}
+.music-dock-footer button[aria-pressed=true]{background:transparent;border-color:#c4e0ffcc}
+.music-dock-footer button:hover{background:#a0ceff28}
 body:not(.music-view) #music-dock{left:-10000px;right:auto;bottom:auto;top:0;width:1px;height:1px;overflow:hidden;visibility:hidden;pointer-events:none}
