@@ -3,7 +3,9 @@
 export function moviePage(value, base, decode = value => value) {
   try {
     const url = new URL(decode(String(value)), base);
-    if (url.origin !== 'https://gaiaflix.live' || url.username || url.password || url.pathname !== '/') return null;
+    if (url.username || url.password) return null;
+    if (url.origin === 'https://cno.to') return /^\/(?:$|(?:movies|tv|browse|search|list|coming-soon|halloween|settings|profiles)(?:\/|$)|(?:movie|show|watch|genre|topic|collection|person|lists)\/)[\w/.-]*$/.test(url.pathname) ? url.href : null;
+    if (url.origin !== 'https://gaiaflix.live' || url.pathname !== '/') return null;
     if (url.hash && !/^#\/(?:$|(?:movies|series|anime|cartoons|sports|explore|favorites)(?:[/?]|$)|(?:watch|detail)\/)/.test(url.hash)) return null;
     return url.href;
   } catch { return null; }
@@ -23,6 +25,14 @@ export function protectMoviesFrame(frame, tap, runtime = globalThis.$scramjet) {
     }
   });
   tap(frame.hooks.init.post, ({client, window: win, isTopLevel}) => {
+    // Routers may update history state without supplying a URL. The pinned
+    // proxy coerces that optional argument to /undefined; retain this document.
+    for (const method of ['History.prototype.replaceState','History.prototype.pushState']) {
+      client.Proxy(method,{apply(context){
+        if(context.args[2]==null)context.args[2]=client.url.href;
+        context.call();
+      }});
+    }
     const decode = value => client.unrewriteUrl(value);
     const navigate = value => {
       const url = isTopLevel && moviePage(value, client.url.href, decode);

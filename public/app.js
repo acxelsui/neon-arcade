@@ -24,6 +24,7 @@ import './chat.js';
 import { watchFrame } from './proxy-feedback.js';
 import {protectMoviesFrame} from './movies-navigation.js';
 import {createMovieRecovery} from './movie-recovery.js';
+import {createMovieServers} from './movie-servers.js';
 import {protectSportsFrame} from './sports-navigation.js';
 import { filterLibrary, bookmarkUrl } from './library-tools.js';
 import { initAppearance } from './appearance.js';
@@ -116,8 +117,8 @@ $('#sports-home').onclick=()=>openSports(true);
 $('#sports-reload').onclick=()=>sportsFrame?sportsFrame.reload():openSports();
 $('#sports-full').onclick=()=>$('#sports-frames').requestFullscreen?.().catch(()=>toast('Fullscreen is unavailable in this browser.'));
 
-const MOVIES_URL='https://gaiaflix.live/';
 let moviesFrame, moviesLoading=false;
+const movieServers=createMovieServers($('#movies'),()=>openMovies(true));
 const moviesRecovery=createMovieRecovery($('#movies-frames'),$('#movies-status'),()=>openMovies(true));
 async function openMovies(reset=false){
   if(moviesLoading)return;
@@ -137,7 +138,7 @@ async function openMovies(reset=false){
       moviesFrame.element.addEventListener('load',()=>{if(status.textContent==='Connecting to movies…')status.textContent='' });
       $('#movies-frames').append(moviesFrame.element);
     }
-    moviesFrame.go(MOVIES_URL);
+    moviesFrame.go(movieServers.current().url);
   }catch(error){moviesRecovery.failed();console.error('Movies connection failed',error);}
   finally{moviesLoading=false}
 }

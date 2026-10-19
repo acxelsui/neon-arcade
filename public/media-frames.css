@@ -1,4 +1,9 @@
 /* Give the media itself the space previously occupied by its duplicate header. */
+.movie-servers{display:flex;align-items:center;gap:8px;flex-wrap:wrap;padding:10px 14px;border-bottom:1px solid #ba9bec20;background:#0e0e1b;flex:none}
+.movie-servers strong{font-size:12px;color:#e5d9fc;margin-right:auto}.movie-servers button{padding:8px 12px;border:1px solid #b19ce72b;border-radius:99px;background:#9381c80e;color:#a99abb;font-size:11px;cursor:pointer;transition:background .2s,color .2s}
+.movie-servers button[aria-pressed=true]{background:linear-gradient(120deg,#5576df30,#9d69cc30);border-color:#ac91e467;color:#f2eaff}.movie-servers button:hover{background:#9883e42a;color:white}.movie-servers button:focus-visible{outline:2px solid #bfa3fb;outline-offset:3px}.movie-servers .movie-history-backup{font-size:10px}.movie-backup-status:not(:empty){width:100%;font-size:11px;color:#aea2c1}
+@media(max-width:600px){.movie-servers strong{width:100%}.movie-servers .movie-history-backup{margin-left:auto}}
+@media(prefers-reduced-motion:reduce){.movie-servers button{transition:none}}
 #movies-frames{position:relative}
 #movies-frames.movie-disconnected>iframe{display:none!important}
 .movie-recovery{position:absolute;inset:0;display:flex;align-items:center;justify-content:center;flex-direction:column;gap:18px;padding:30px;text-align:center;background:radial-gradient(ellipse at 50% 35%,#32204a55,transparent 65%),#0b0c17;color:#f2edff}

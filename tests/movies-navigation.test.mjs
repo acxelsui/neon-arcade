@@ -30,6 +30,16 @@ test('script pop-ups do not create windows, while movie pop-ups navigate in plac
   f.handlers['window.open'].apply({args:['https://neon.test/proxy/https://gaiaflix.live/#/watch/movie/129','_blank'],return:value=>returned=value});
   assert.deepEqual(f.navigations,['https://gaiaflix.live/#/watch/movie/129']);assert.equal(returned,null);
 });
+
+test('router state-only history updates retain the current URL instead of navigating to undefined',()=>{
+ const f=fixture();
+ for(const method of ['History.prototype.replaceState','History.prototype.pushState']){
+  const args=[{index:0},''];let called=false;
+  f.handlers[method].apply({args,call(){called=true}});
+  assert.equal(args[2],'https://gaiaflix.live/#/movies');assert.equal(called,true);
+  const explicit=[{},'','/movies'];f.handlers[method].apply({args:explicit,call(){}});assert.equal(explicit[2],'/movies');
+ }
+});
 test('catalog links, new-tab, top-frame and modified clicks stay in Movies', () => {
   for (const extra of [{target:'_blank'},{target:'_top'},{target:'_parent'},{target:'movie-player'},{ctrlKey:true},{metaKey:true},{shiftKey:true},{type:'auxclick',button:1}]) {
     const {target, ...modifiers}=extra;
