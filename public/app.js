@@ -23,6 +23,7 @@ import {initMusic} from './music.js';
 import './chat.js';
 import { watchFrame } from './proxy-feedback.js';
 import {protectMoviesFrame} from './movies-navigation.js';
+import {protectSportsFrame} from './sports-navigation.js';
 import { filterLibrary, bookmarkUrl } from './library-tools.js';
 import { initAppearance } from './appearance.js';
 const $=s=>document.querySelector(s);
@@ -98,6 +99,7 @@ async function openSports(reset=false){
     const controller=await getController();
     if(!sportsFrame){
       sportsFrame=controller.createFrame();
+      protectSportsFrame(sportsFrame,window.$scramjet.Tap.tap);
       sportsFrame.element.title='Neon Sports';themeEmbeddedFrame(sportsFrame,'sports');
       watchFrame(sportsFrame,message=>{status.textContent=message+' Use Reload above to retry.'});
       sportsFrame.element.allow='autoplay; fullscreen; picture-in-picture';

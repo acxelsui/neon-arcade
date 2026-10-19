@@ -1,1 +1,1 @@
-Original Neon Arcade monochrome app icons. Black rounded tiles, crisp white symbols, and subtle glass borders. SVG artwork created for Neon; no third-party icon pack.
+Original Neon Arcade outline app icons. Consistent 24px viewBox, 1.5px rounded strokes, transparent backgrounds, and no filled tiles. The compatibility transparent/ variants use the same symbols. SVG artwork created for Neon; no third-party icon pack.
