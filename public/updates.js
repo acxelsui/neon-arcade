@@ -1,5 +1,6 @@
 // Keep newest first. Dates describe when the change was added, not when a visitor opened Home.
 export const updates = [
+ {date:'2026-10-19',title:'Simpler Movies controls',text:'Neon Movies removes the Server 2 header Sign In button and the Gaiaflix history backup button, while retaining the server selector and movie browsing controls.'},
  {date:'2026-10-19',title:'A second Movies server',text:'Neon Movies adds a saved Server 1 / Server 2 selector, with the new server selected initially and matching Neon branding. Gaiaflix remains available as Server 1 without clearing its browser storage. A history backup button exports recognized watch-data keys from this browser; it does not transfer account history or playback progress to the second service.'},
  {date:'2026-10-19',title:'Movies connection recovery',text:'When the movie service cannot connect, Neon Movies hides the broken browser frame and shows an in-app Try again panel. The external movie service must be available for the catalog and playback to load.'},
  {date:'2026-10-18',title:'A cleaner Sports player',text:'Sports hides the long matchup article and site footer below the player and blocks pop-up windows and unrelated navigation from the Sports page and its embedded players. League and game links stay inside Neon Sports.'},
