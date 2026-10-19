@@ -1,6 +1,7 @@
 import {tubeAdRequest,tubeDestination} from './neon-tube-model.js';
 import {tubeSearchResults} from './neon-tube-results.js';
-export function protectTubeFrame(frame,{tap,runtime,onNavigate,onBlocked,onVerification,onResults=()=>{}}){
+import {observeTubePlayback} from './tube-playback-observer.js';
+export function protectTubeFrame(frame,{tap,runtime,onNavigate,onBlocked,onVerification,onResults=()=>{},onPlayback=()=>{}}){
  frame.element.setAttribute('sandbox','allow-scripts allow-same-origin allow-forms allow-presentation');
  frame.element.allow='autoplay; encrypted-media; fullscreen; picture-in-picture';frame.element.allowFullscreen=true;
  tap(frame.hooks.fetch.request,({parsed},props)=>{if(tubeAdRequest(parsed.url.href)){onBlocked();props.earlyResponse=runtime.BareResponse.fromNativeResponse(new Response(null,{status:204}));}});
@@ -17,6 +18,7 @@ export function protectTubeFrame(frame,{tap,runtime,onNavigate,onBlocked,onVerif
   };
   win.document.addEventListener('click',click,true);win.document.addEventListener('auxclick',click,true);
   const decorate=()=>{if(!win.document.head||win.document.getElementById('neon-tube-style'))return;
+   if(isTopLevel)observeTubePlayback(win,{onVerification,onPlayback});
    const style=win.document.createElement('style');style.id='neon-tube-style';style.textContent=`html,body,ytd-app,ytd-page-manager{background:#090b17!important;color:#eeeaff!important;color-scheme:dark}ytd-masthead,#masthead-container,ytd-mini-guide-renderer,tp-yt-app-drawer,ytd-guide-renderer,ytd-ad-slot-renderer,ytd-promoted-sparkles-web-renderer,ytd-promoted-video-renderer,ytd-display-ad-renderer,ytd-in-feed-ad-layout-renderer,ytd-engagement-panel-section-list-renderer[target-id="engagement-panel-ads"],#player-ads,#masthead-ad,a[href*="accounts.google.com"],ytd-button-renderer:has(a[href*="ServiceLogin"]){display:none!important}ytd-page-manager{margin-top:0!important;margin-left:0!important}ytd-app{--ytd-masthead-height:0px;--yt-spec-base-background:#090b17;--yt-spec-text-primary:#eeeaff}*{scrollbar-width:thin;scrollbar-color:#8e7ab34d transparent}ytd-search{padding-top:12px!important}`;
    win.document.head.append(style);
    const url=client.url;

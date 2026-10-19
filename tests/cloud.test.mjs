@@ -4,16 +4,16 @@ import {initCloud,cloudGames} from '../public/cloud.js';
 import {achromaGames,achromaLauncher} from '../public/cloud-sources.js';
 
 function fixture(getController,response={status:200}){
- const previous=Object.getOwnPropertyDescriptor(globalThis,'document'),nodes=new Map(),routes=[],frames=[];
+ const previous=Object.getOwnPropertyDescriptor(globalThis,'document'),nodes=new Map(),routes=[],frames=[],choices=[];
  class Element{
   constructor(){this.dataset={};this.events={};this.hidden=true;this.children=[];this.attributes={};}
   setAttribute(key,value){this.attributes[key]=value;}addEventListener(type,fn){this.events[type]=fn;}replaceChildren(...children){this.children=children;}scrollIntoView(){}remove(){this.removed=true;}focus(){this.focused=true;}
  }
  const tiles=Object.keys(cloudGames).map(id=>{const tile=new Element();tile.dataset.cloudGame=id;return tile;});
- const document={querySelector:key=>{if(!nodes.has(key))nodes.set(key,new Element());return nodes.get(key);},querySelectorAll:()=>tiles};
+ const document={createElement:()=>new Element(),querySelector:key=>{if(!nodes.has(key))nodes.set(key,new Element());return nodes.get(key);},querySelectorAll:()=>tiles};
  const transport={request:async()=>response};const controller={transport,frames,createFrame(){const frame={element:new Element(),fetchHandler:{client:{transport},handleFetch:async()=>response},go:url=>routes.push(url),reload(){this.reloaded=true;}};frames.push(frame);return frame;}};
- Object.defineProperty(globalThis,'document',{value:document,configurable:true});initCloud(getController||(()=>Promise.resolve(controller)));
- return{nodes,tiles,routes,controller,restore(){if(previous)Object.defineProperty(globalThis,'document',previous);else delete globalThis.document;}};
+ Object.defineProperty(globalThis,'document',{value:document,configurable:true});initCloud(getController||(()=>Promise.resolve(controller)),{chooseLauncher:async()=>choices.shift()||{source:"original"}});
+ return{nodes,tiles,routes,controller,choices,restore(){if(previous)Object.defineProperty(globalThis,'document',previous);else delete globalThis.document;}};
 }
 test('Stumble Guys uses the game-only launcher in a registered arcade proxy frame; switching games and reload stay in that frame',async()=>{
  const f=fixture();try{
@@ -64,7 +64,7 @@ test('Roblox lets players choose either server, relaunches in its existing proxy
 });
 test('closing while the shared proxy connects prevents a late game from opening and restores all tiles',async()=>{
  let release;const f=fixture(()=>new Promise(resolve=>release=resolve));try{
-  const opening=f.tiles[1].onclick();assert.ok(f.tiles.every(tile=>tile.disabled));f.nodes.get('#cloud-stop').onclick();release(f.controller);await opening;assert.equal(f.controller.frames.length,0);assert.equal(f.routes.length,0);assert.ok(f.tiles.every(tile=>!tile.disabled));
+  const opening=f.tiles[1].onclick();await Promise.resolve();assert.ok(f.tiles.every(tile=>tile.disabled));f.nodes.get('#cloud-stop').onclick();release(f.controller);await opening;assert.equal(f.controller.frames.length,0);assert.equal(f.routes.length,0);assert.ok(f.tiles.every(tile=>!tile.disabled));
  }finally{f.restore();}
 });
 test('launcher connection errors expose reload recovery outside the game frame',async()=>{
@@ -75,20 +75,20 @@ test('launcher connection errors expose reload recovery outside the game frame',
  try{await failed.tiles[1].onclick();assert.match(failed.nodes.get('#cloud-status').textContent,/Stumble Guys.*Relay unavailable/);assert.ok(failed.tiles.every(tile=>!tile.disabled));}finally{failed.restore();}
 });
 
-test('Achroma selection launches only matching game embeds through the existing controller and retains Original servers',async()=>{
+test('the game chooser launches Achroma only for its matching game and keeps Original servers',async()=>{
  const f=fixture();try{
-  const source=f.nodes.get('#cloud-source'),server=f.nodes.get('#cloud-server');
-  server.value='2';await server.onchange();
-  source.value='achroma';await source.onchange();assert.equal(f.routes.length,0);assert.equal(f.nodes.get('#cloud-server-choice').hidden,true);
+  const server=f.nodes.get('#cloud-server');server.value='2';await server.onchange();
   let frame;
   for(const id of Object.keys(achromaGames)){
-   await f.tiles.find(tile=>tile.dataset.cloudGame===id).onclick();frame ||= f.controller.frames[0];assert.equal(f.controller.frames[0],frame);assert.equal(f.controller.frames.length,1);
-   assert.equal(f.routes.at(-1),achromaLauncher(id));assert.match(frame.element.title,/Achroma cloud launcher/);
+   f.choices.push({source:'achroma'});await f.tiles.find(tile=>tile.dataset.cloudGame===id).onclick();frame ||= f.controller.frames[0];assert.equal(f.controller.frames[0],frame);assert.equal(f.routes.at(-1),achromaLauncher(id));assert.match(frame.element.title,/Achroma cloud launcher/);
   }
-  source.value='original';await source.onchange();assert.equal(f.routes.at(-1),cloudGames.gtav.url);
   await f.tiles[0].onclick();assert.equal(server.value,'2');assert.match(frame.element.title,/Server 2/);
-  source.value='not-a-provider';await source.onchange();assert.equal(source.value,'original');
-  source.value='achroma';await source.onchange();await f.tiles.find(tile=>tile.dataset.cloudGame==='madden').onclick();assert.equal(source.value,'original');assert.equal(f.routes.at(-1),cloudGames.madden.url);assert.equal(f.nodes.get('#cloud-source-achroma').disabled,true);assert.match(f.nodes.get('#cloud-source-note').textContent,/does not list Madden NFL 24/);
-  source.value='achroma';await source.onchange();assert.equal(source.value,'original');
+  f.choices.push({source:'achroma'});await f.tiles.find(tile=>tile.dataset.cloudGame==='madden').onclick();assert.equal(f.routes.at(-1),cloudGames.roblox.url);
+ }finally{f.restore();}
+});
+test('CloudMoon uses only a validated game player iframe and closes it before changing providers',async()=>{
+ const f=fixture();try{
+  const url='https://www.cloudmoonapp.com/run-site/?sid=abcdefghijklmnopqrstuv&quality=SD';f.choices.push({source:'cloudmoon',url});await f.tiles[0].onclick();const element=f.nodes.get('#cloud-frame').children[0];assert.equal(element.src,url);assert.equal(element.attributes.credentialless,'');assert.equal(f.controller.frames.length,0);assert.match(element.title,/CloudMoon/);
+  await f.tiles[1].onclick();assert.equal(element.removed,true);assert.equal(f.controller.frames.length,1);assert.equal(f.routes.at(-1),cloudGames.stumble.url);
  }finally{f.restore();}
 });

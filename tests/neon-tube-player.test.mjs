@@ -14,6 +14,8 @@ test('standard playback uses a direct identified embed and ignores callbacks aft
   const player=createDirectTubePlayer({append:el=>assert.equal(el,element)},{id:'jNQXAC9IVRw',player:'https://www.youtube-nocookie.com/embed/jNQXAC9IVRw?start=4'},{onReady:()=>events.push('ready'),onState:state=>events.push(state),onError:message=>events.push(message)});
   await Promise.resolve();const url=new URL(element.src);assert.equal(url.origin,'https://www.youtube-nocookie.com');assert.equal(url.searchParams.get('origin'),'https://neon.example');assert.equal(url.searchParams.get('enablejsapi'),'1');assert.equal(element.referrerPolicy,'strict-origin-when-cross-origin');assert.ok(Object.hasOwn(attributes,'credentialless'));assert.ok(!attributes.sandbox.includes('allow-popups'));
   handlers.onReady();handlers.onStateChange({data:1});assert.deepEqual(events,['ready',1]);
-  player.destroy();handlers.onError({data:100});assert.equal(destroyed,true);assert.equal(element.removed,true);assert.equal(events.length,2);
+  handlers.onError({data:150});assert.match(events.at(-1),/does not allow/);const failedCount=events.length;handlers.onReady();handlers.onStateChange({data:-1});assert.equal(events.length,failedCount);
+  player.reload();handlers.onReady();assert.equal(events.at(-1),'ready');
+  player.destroy();const closedCount=events.length;handlers.onError({data:100});assert.equal(destroyed,true);assert.equal(element.removed,true);assert.equal(events.length,closedCount);
  }finally{for(const [key,descriptor] of originals)descriptor?Object.defineProperty(globalThis,key,descriptor):delete globalThis[key];}
 });

@@ -1,3 +1,4 @@
+import {chooseCloudLauncher,cloudMoonPlayer,cloudMoonGames} from './cloud-choice.js';
 import {watchFrame} from './proxy-feedback.js';
 import {cloudTransport,robloxServers} from './cloud-transport.js';
 import {achromaGames,achromaLauncher,achromaTransport} from './cloud-sources.js';
@@ -19,17 +20,21 @@ export const cloudGames={
  eurotruck:{name:'Euro Truck Simulator 2',embedId:'as0656',url:'https://astra-education.top/embed/truffled/as0656'},
  gtav:{name:'Grand Theft Auto V',embedId:'as9053',url:'https://astra-education.top/embed/truffled/as9053'}
 };
-export function initCloud(getController){
+export function initCloud(getController,{chooseLauncher=chooseCloudLauncher}={}){
  const $=s=>document.querySelector(s),tiles=[...document.querySelectorAll('[data-cloud-game]')];let frame,controller,version=0,loading=false,activeGame='roblox',activeUrl=cloudGames.roblox.url,server='1',source='original';
  const status=text=>$('#cloud-status').textContent=text;
- const busy=value=>{tiles.forEach(tile=>tile.disabled=value);$('#cloud-server').disabled=value;$('#cloud-source').disabled=value;};
- function removeFrame(){if(frame){const index=controller.frames?.indexOf(frame);if(index>=0)controller.frames.splice(index,1);frame.element.remove();frame=null;}}
- function selection(){const name=cloudGames[activeGame].name,label=source==='achroma'?name+' · Achroma':activeGame==='roblox'?name+' · '+robloxServers[server].label:name;$('#cloud-selected').textContent=name;$('#cloud-session-title').textContent='Neon Cloud Gaming · '+label;$('#cloud-server-choice').hidden=activeGame!=='roblox'||source!=='original';$('#cloud-server').value=server;$('#cloud-source').value=source;$('#cloud-source-achroma').disabled=!Object.hasOwn(achromaGames,activeGame);$('#cloud-source-note').textContent=Object.hasOwn(achromaGames,activeGame)?'Both launchers use Neon’s proxy. Cloud queues and session limits depend on the source.':'Achroma does not list Madden NFL 24 Mobile. The original launcher is available.';tiles.forEach(tile=>tile.setAttribute('aria-pressed',String(tile.dataset.cloudGame===activeGame)));if(frame)frame.element.title=label+' cloud launcher';}
+ const busy=value=>{tiles.forEach(tile=>tile.disabled=value);$('#cloud-server').disabled=value;};
+ function removeFrame(){if(frame){const index=controller?.frames?.indexOf(frame);if(index>=0)controller.frames.splice(index,1);frame.element.remove();frame=null;}}
+ function selection(){const name=cloudGames[activeGame].name,label=name+(source==='achroma'?' \u00b7 Achroma':source==='cloudmoon'?' \u00b7 CloudMoon':activeGame==='roblox'?' \u00b7 '+robloxServers[server].label:'');$('#cloud-selected').textContent=name;$('#cloud-session-title').textContent='Neon Cloud Gaming \u00b7 '+label;$('#cloud-server-choice').hidden=activeGame!=='roblox'||source!=='original';$('#cloud-server').value=server;tiles.forEach(tile=>tile.setAttribute('aria-pressed',String(tile.dataset.cloudGame===activeGame)));if(frame)frame.element.title=label+' cloud launcher';}
  async function open(game=activeGame){
-  if(loading||!Object.hasOwn(cloudGames,game))return;activeGame=game;if(source==='achroma'&&!Object.hasOwn(achromaGames,game))source='original';activeUrl=source==='achroma'?achromaLauncher(game):cloudGames[game].url;selection();status('Opening '+cloudGames[game].name+' launcher…');
+  if(loading||!Object.hasOwn(cloudGames,game))return;activeGame=game;if(source==='achroma'&&!Object.hasOwn(achromaGames,game))source='original';activeUrl=source==='cloudmoon'?activeUrl:source==='achroma'?achromaLauncher(game):cloudGames[game].url;selection();status('Opening '+cloudGames[game].name+' launcher...');
+  if(!!frame?.native!==(source==='cloudmoon'))removeFrame();
   if(frame){frame.go(activeUrl);$('#cloud-session').scrollIntoView({block:'start'});return;}
   const current=++version;loading=true;busy(true);
-  try{const connected=await getController();if(current!==version)return;controller=connected;
+  try{if(source==='cloudmoon'){
+   const element=document.createElement('iframe');element.setAttribute('credentialless','');element.setAttribute('sandbox','allow-scripts allow-same-origin allow-forms allow-pointer-lock allow-presentation');element.allow='autoplay; fullscreen; encrypted-media; gamepad';element.allowFullscreen=true;
+   frame={native:true,element,go(url){element.src=url},reload(){element.src=activeUrl}};selection();$('#cloud-frame').replaceChildren(element);$('#cloud-session').hidden=false;frame.go(activeUrl);$('#cloud-session').scrollIntoView({block:'start'});status('CloudMoon player opened. If its session has expired, choose the game again and paste a fresh link.');return;
+  }const connected=await getController();if(current!==version)return;controller=connected;
    frame=controller.createFrame();frame.element.allow='autoplay; fullscreen; encrypted-media; gamepad';frame.element.allowFullscreen=true;selection();
    frame.fetchHandler.client.transport=achromaTransport(cloudTransport(controller.transport,()=>source==='original'?cloudGames[activeGame].embedId||null:null,()=>source==='original'&&activeGame==='roblox'?server:null),globalThis.location?.origin||'https://neon.invalid');
    const ownedFrame=frame;
@@ -38,8 +43,7 @@ export function initCloud(getController){
   }catch(error){if(current===version){removeFrame();status('Could not connect to '+cloudGames[game].name+'. '+error.message);}}
   finally{if(current===version){loading=false;busy(false);}}
  }
- tiles.forEach(tile=>tile.onclick=()=>open(tile.dataset.cloudGame));$('#cloud-reload').onclick=()=>frame?frame.reload():open();
- $('#cloud-source').onchange=()=>{const next=$('#cloud-source').value;if(loading||!['original','achroma'].includes(next)||next==='achroma'&&!Object.hasOwn(achromaGames,activeGame)){selection();return;}source=next;selection();if(frame)return open();};
+ tiles.forEach(tile=>tile.onclick=async()=>{if(loading)return;const game=tile.dataset.cloudGame,choice=await chooseLauncher(game,cloudGames[game].name);if(!choice)return;if(!['original','achroma','cloudmoon'].includes(choice.source)||choice.source==='achroma'&&!Object.hasOwn(achromaGames,game)||choice.source==='cloudmoon'&&(!Object.hasOwn(cloudMoonGames,game)||!cloudMoonPlayer(choice.url)))return;source=choice.source;if(source==='cloudmoon')activeUrl=cloudMoonPlayer(choice.url);return open(game);});$('#cloud-reload').onclick=()=>frame?frame.reload():tiles.find(tile=>tile.dataset.cloudGame===activeGame)?.click();
  $('#cloud-server').onchange=()=>{const next=$('#cloud-server').value;if(loading||!Object.hasOwn(robloxServers,next)){selection();return;}server=next;selection();if(frame&&activeGame==='roblox')return open('roblox');};
  $('#cloud-full').onclick=()=>$('#cloud-frame').requestFullscreen?.().catch(()=>status('Fullscreen is unavailable in this browser.'));
  $('#cloud-stop').onclick=()=>{version++;loading=false;removeFrame();busy(false);$('#cloud-frame').replaceChildren();$('#cloud-session').hidden=true;status('');tiles.find(tile=>tile.dataset.cloudGame===activeGame)?.focus();};

@@ -22,16 +22,16 @@ export function createDirectTubePlayer(host,video,{onReady,onError,onState}){
  element.src=url.href;element.title='Neon Tube video player';element.allow='autoplay; encrypted-media; fullscreen; picture-in-picture';element.allowFullscreen=true;element.referrerPolicy='strict-origin-when-cross-origin';
  element.setAttribute('credentialless','');
  element.setAttribute('sandbox','allow-scripts allow-same-origin allow-forms allow-presentation');host.append(element);
- let disposed=false,player,bufferTimer;
- const readyTimer=setTimeout(()=>{if(!disposed)onError('The player did not connect. Try Proxy player or Open on YouTube.')},25000);
- const fail=message=>{clearTimeout(readyTimer);clearTimeout(bufferTimer);if(!disposed)onError(message)};
+ let disposed=false,failed=false,player,bufferTimer;
+ const readyTimer=setTimeout(()=>fail('The player did not connect. Try Proxy player or Open on YouTube.'),25000);
+ const fail=message=>{clearTimeout(readyTimer);clearTimeout(bufferTimer);failed=true;if(!disposed)onError(message)};
  loadPlayerAPI().then(YT=>{
   if(disposed)return;
   player=new YT.Player(element,{events:{
-   onReady:()=>{clearTimeout(readyTimer);if(!disposed)onReady()},
-   onStateChange:event=>{clearTimeout(bufferTimer);if(disposed)return;onState(event.data);if(event.data===3)bufferTimer=setTimeout(()=>fail('The video is still buffering. Try Proxy player or Open on YouTube.'),25000)},
+   onReady:()=>{clearTimeout(readyTimer);if(!disposed&&!failed)onReady()},
+   onStateChange:event=>{clearTimeout(bufferTimer);if(disposed)return;if(event.data===1)failed=false;if(failed)return;onState(event.data);if(event.data===3)bufferTimer=setTimeout(()=>fail('The video is still buffering. Try Proxy player or Open on YouTube.'),25000)},
    onError:event=>fail(tubePlayerError(event.data))
   }});
  }).catch(error=>fail(error.message));
- return {element,reload(){if(player){player.cueVideoById({videoId:video.id,startSeconds:Number(url.searchParams.get('start')||0)})}else element.src=url.href},destroy(){disposed=true;clearTimeout(readyTimer);clearTimeout(bufferTimer);player?.destroy();element.remove()}};
+ return {element,reload(){failed=false;if(player){player.cueVideoById({videoId:video.id,startSeconds:Number(url.searchParams.get('start')||0)})}else element.src=url.href},destroy(){disposed=true;clearTimeout(readyTimer);clearTimeout(bufferTimer);player?.destroy();element.remove()}};
 }

@@ -1,6 +1,8 @@
 // Feed bundled files into Scramjet without asking the relay to access localhost.
 // All other HTTP requests and WebSocket connections remain on libcurl.
 import {withoutBuildNowDemoAds,buildNowSdkAddress} from './buildnow-sdk.js';
+import {cleanBundledGamePage} from './game-page-cleanup.js';
+import {repairConstructGame} from './construct-game-base.js';
 export const GAME_ORIGIN = 'https://games.neon-arcade.invalid';
 export function gameTransport(transport, origin, fetchLocal = fetch) {
   const request = transport.request.bind(transport);
@@ -28,12 +30,24 @@ export function gameTransport(transport, origin, fetchLocal = fetch) {
         }
         return response;
       }
+      if(method==='GET'&&/\/(?:main\d*|c3runtime)\.js$/i.test(remote.pathname)){
+        const response=await request(remote,method,body,headers,signal);
+        if(response.status===200&&response.body){
+          const source=await new Response(response.body).text();
+          return {...response,body:new Blob([repairConstructGame(source)]).stream(),headers:response.headers.filter(([name])=>!['content-length','content-encoding','etag'].includes(name.toLowerCase()))};
+        }
+        return response;
+      }
       return request(remote, method, body, headers, signal);
     }
     const response = await fetchLocal(new URL(remote.pathname + remote.search, origin).href, {
       method, body, signal, redirect: 'manual', credentials: 'same-origin',
       headers: headers.filter(([name]) => ['range', 'accept', 'content-type', 'cache-control', 'pragma'].includes(name.toLowerCase())),
     });
+    if(method==='GET'&&response.status===200&&/\.html$/i.test(remote.pathname)){
+      const html=cleanBundledGamePage(await response.text());
+      return {body:new Blob([html]).stream(),headers:[...response.headers].filter(([name])=>!['content-length','content-encoding','etag'].includes(name.toLowerCase())),status:response.status,statusText:response.statusText};
+    }
     return { body: response.body, headers: [...response.headers], status: response.status, statusText: response.statusText };
   };
   return transport;
