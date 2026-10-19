@@ -1,4 +1,15 @@
 /* Give the media itself the space previously occupied by its duplicate header. */
+#movies-frames{position:relative}
+#movies-frames.movie-disconnected>iframe{display:none!important}
+.movie-recovery{position:absolute;inset:0;display:flex;align-items:center;justify-content:center;flex-direction:column;gap:18px;padding:30px;text-align:center;background:radial-gradient(ellipse at 50% 35%,#32204a55,transparent 65%),#0b0c17;color:#f2edff}
+.movie-recovery[hidden]{display:none}
+.movie-recovery-icon{display:grid;place-items:center;width:54px;height:54px;border:1px solid #a99be350;border-radius:17px;background:linear-gradient(140deg,#667ee52a,#b36be62a);font-size:25px}
+.movie-recovery small{font-size:10px;letter-spacing:.2em;color:#a69bcb}
+.movie-recovery h2{font-size:clamp(21px,3vw,30px);letter-spacing:-.035em;line-height:1.2;margin:0;max-width:430px}
+.movie-recovery p{font-size:13px;line-height:1.7;color:#a5a1bb;max-width:350px;margin:0}
+.movie-recovery button{margin-top:8px;padding:12px 22px;border:1px solid #b2a2ff65;border-radius:99px;background:#8f7cdd24;color:#f3edff;font:inherit;font-size:12px;cursor:pointer;transition:background .2s}
+.movie-recovery button:hover{background:#a693ef40}.movie-recovery button:focus-visible{outline:2px solid #c9baff;outline-offset:4px}
+@media(prefers-reduced-motion:reduce){.movie-recovery button{transition:none}}
 #movies .browser,#sports .browser,.music-view .music-dock-heading{display:none}
 #movies:not([hidden]),#sports:not([hidden]){display:flex;flex-direction:column;height:calc(100svh - var(--chrome) - 24px);min-height:320px}
 #movies-frames,#sports-frames{flex:1;min-height:0;height:auto}

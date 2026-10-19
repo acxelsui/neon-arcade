@@ -23,6 +23,7 @@ import {initMusic} from './music.js';
 import './chat.js';
 import { watchFrame } from './proxy-feedback.js';
 import {protectMoviesFrame} from './movies-navigation.js';
+import {createMovieRecovery} from './movie-recovery.js';
 import {protectSportsFrame} from './sports-navigation.js';
 import { filterLibrary, bookmarkUrl } from './library-tools.js';
 import { initAppearance } from './appearance.js';
@@ -117,30 +118,31 @@ $('#sports-full').onclick=()=>$('#sports-frames').requestFullscreen?.().catch(()
 
 const MOVIES_URL='https://gaiaflix.live/';
 let moviesFrame, moviesLoading=false;
+const moviesRecovery=createMovieRecovery($('#movies-frames'),$('#movies-status'),()=>openMovies(true));
 async function openMovies(reset=false){
   if(moviesLoading)return;
   if(moviesFrame&&!reset)return;
   moviesLoading=true;
   const status=$('#movies-status');
-  status.textContent='Connecting to movies…';
+  moviesRecovery.loading();
   try{
     const controller=await getController();
     if(!moviesFrame){
       moviesFrame=controller.createFrame();
       protectMoviesFrame(moviesFrame,window.$scramjet.Tap.tap);
       moviesFrame.element.title='Neon Movies';themeEmbeddedFrame(moviesFrame,'movies');
-      watchFrame(moviesFrame,message=>{status.textContent=message+' Use Reload above to retry.'},()=>{status.textContent=''});
+      watchFrame(moviesFrame,()=>moviesRecovery.failed(),()=>moviesRecovery.ready());
       moviesFrame.element.allow='autoplay; encrypted-media; fullscreen; picture-in-picture';
       moviesFrame.element.allowFullscreen=true;
       moviesFrame.element.addEventListener('load',()=>{if(status.textContent==='Connecting to movies…')status.textContent='' });
       $('#movies-frames').append(moviesFrame.element);
     }
     moviesFrame.go(MOVIES_URL);
-  }catch(error){status.textContent='Movies could not connect. '+error.message+' Use Reload to try again.'}
+  }catch(error){moviesRecovery.failed();console.error('Movies connection failed',error);}
   finally{moviesLoading=false}
 }
 $('#movies-home').onclick=()=>openMovies(true);
-$('#movies-reload').onclick=()=>{if(moviesFrame){$('#movies-status').textContent='Connecting to movies…';moviesFrame.reload()}else openMovies()};
+$('#movies-reload').onclick=()=>{if(moviesFrame){moviesRecovery.loading();moviesFrame.reload()}else openMovies()};
 $('#movies-full').onclick=()=>$('#movies-frames').requestFullscreen?.().catch(()=>toast('Fullscreen is unavailable in this browser.'));
 
 function recentIds(){const ids=store.get('recent-games',[]);return Array.isArray(ids)?ids.filter(id=>typeof id==='string'):[]}
