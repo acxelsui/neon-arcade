@@ -9,3 +9,5 @@ The launcher now opens the regular Kahoot player through the existing proxy and 
 Observed in the browser: official Kahoot PIN entry, KahootX Menu version 1.2.6, Answers controls (Auto Answer, Always Correct, ESP, Show Answers on Device, Grab Answers), and the original movable menu. Retrieve Answers visibly requires an X-Network account. No feature switches, bot controls, spam controls, or answer submissions were activated. Closing the player returned to the launcher library.
 
 534 automated tests and the production build pass. The tests use a harmless evaluator stub; they do not execute the uploaded source. The real browser run confirmed menu startup only. No live answer accuracy, service authorization, or PIN-only answer retrieval was verified. Saved locally; not published.
+
+The supplied KahootX menu uses its own appearance rather than the older Neon glass skin. Its locked content remains locked; no authorization overlay, feature check, or Plus restriction was removed. Dragging and keyboard accessibility are retained.

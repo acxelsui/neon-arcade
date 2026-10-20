@@ -33,7 +33,7 @@ export function initHacks({getController,navigate,doc=document,win=window,access
    if(id==='blooket'){const adapter=blooketTransport(controller.transport);disposeTransport=()=>adapter.dispose();frame.fetchHandler.client.transport=adapter;attachBlooketSocket(frame,adapter,win.$scramjet.Tap.tap);}
    if(id==='kahoot')disposeTransport=attachSuppliedKahoot(frame,{source:supplied,tap:win.$scramjet.Tap.tap,clock:win,onStatus:message=>{if(current===version)status.textContent=message;}});
    const owned=frame;watchFrame(frame,error=>{if(frame===owned)status.textContent=error+' Use Reload to retry.';},()=>{if(frame===owned)status.textContent='';});
-   frame.element.addEventListener('load',()=>{if(frame!==owned)return;cleanupMenu();try{cleanupMenu=attachEmbeddedHacksMenu(frame.element.contentDocument);}catch{cleanupMenu=()=>{};}});
+   frame.element.addEventListener('load',()=>{if(frame!==owned)return;cleanupMenu();try{cleanupMenu=attachEmbeddedHacksMenu(frame.element.contentDocument,{appearance:id!=='kahoot'});}catch{cleanupMenu=()=>{};}});
    host.replaceChildren(frame.element);page.querySelector('.hacks-now').textContent=launchers[id].name;session.hidden=false;library.hidden=true;page.classList.add('has-session');floating.reset();frame.go(result.entry.url);session.scrollIntoView({block:'start'});
   }catch(error){if(current===version)status.textContent=error.message||'Could not open this launcher.';}
   finally{if(current===version){busy=false;buttons.forEach(button=>button.disabled=!gate.isAllowed());}}

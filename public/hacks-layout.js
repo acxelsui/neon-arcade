@@ -13,7 +13,7 @@ export function attachHacksDrag(panel,handle,{win=window,bounds=()=>({left:8,top
  handle.setAttribute('tabindex','0');handle.setAttribute('aria-label',label);handle.title='Drag to move. Arrow keys also move this menu.';handle.style.cursor='grab';handle.style.touchAction='none';for(const [name,fn] of Object.entries(handlers))handle.addEventListener(name,fn,true);win.addEventListener('resize',clamp);
  return {reveal:clamp,reset(){finish();x=y=0;paint();clamp();},destroy(){finish();for(const [name,fn] of Object.entries(handlers))handle.removeEventListener(name,fn,true);win.removeEventListener('resize',clamp);panel.style.translate=previous.translate;for(const [name,value] of [['aria-label',previous.label],['tabindex',previous.tab]])value===null?handle.removeAttribute(name):handle.setAttribute(name,value);handle.title=previous.title;handle.style.cursor=previous.cursor;handle.style.touchAction=previous.touch;}};
 }
-export function attachEmbeddedHacksMenu(doc){
+export function attachEmbeddedHacksMenu(doc,{appearance=true}={}){
  const win=doc?.defaultView;if(!doc?.body||!win)return ()=>{};let floating=null,observer=null,menuWatch=null,cleanupToggle=()=>{},cleanupTheme=()=>{},cleanupSwitches=()=>{},stopped=false;const observed=new WeakSet();
  function find(){
   if(stopped||floating)return;
@@ -27,7 +27,7 @@ export function attachEmbeddedHacksMenu(doc){
   // Preserve the client's own controls. Only its title becomes the drag handle.
   panel.style.setProperty('max-width','calc(100vw - 16px)','important');panel.style.setProperty('max-height','calc(100vh - 16px)','important');
   floating=attachHacksDrag(panel,header,{win,label:'Move '+(brand?'KahootX':title.textContent.trim())+' menu. Drag or use arrow keys.'});floating.reveal();observer?.disconnect();
-  if(brand){cleanupTheme=themeKahootMenu(kahoot.getRootNode());cleanupSwitches=attachQuizMenuKeyboard(kahoot);
+  if(brand){cleanupTheme=appearance?themeKahootMenu(kahoot.getRootNode()):()=>{};cleanupSwitches=attachQuizMenuKeyboard(kahoot);
    const launcher=kahoot.getRootNode().querySelector('#hm-launcher'),previousHidden=panel.getAttribute('aria-hidden'),previousInert=panel.inert;
    const update=()=>{const hidden=panel.classList.contains('hidden');panel.inert=hidden;panel.setAttribute('aria-hidden',String(hidden));header.tabIndex=hidden?-1:0;if(!hidden)floating.reveal();};
    menuWatch=new win.MutationObserver(update);menuWatch.observe(panel,{attributes:true,attributeFilter:['class']});update();
