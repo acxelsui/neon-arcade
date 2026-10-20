@@ -27,7 +27,7 @@ for (const game of catalog.games) {
 }
 const required = [
   'browser-tabs.js', 'ui-motion.js', 'window-glass.css', 'embedded-appearance.js', 'chat-recovery.js', 'chat-storage.js', 'community-updates.js', 'blooket-transport.js',
-  'hacks.js', 'kahoot-auto.js', 'kahoot-auto-model.js', 'hacks-access.js', 'hacks-layout.js', 'hacks.css', 'artwork/hacks/blooket.svg', 'artwork/hacks/kahoot.svg', 'artwork/cartoon/hacks.svg', 'artwork/cartoon/transparent/hacks.svg',
+  'hacks.js', 'kahoot-auto.js', 'kahoot-auto-model.js', 'kahoot-supplied.js', 'vendor/kahootx-supplied-20261020.js', 'hacks-access.js', 'hacks-layout.js', 'hacks.css', 'artwork/hacks/blooket.svg', 'artwork/hacks/kahoot.svg', 'artwork/cartoon/hacks.svg', 'artwork/cartoon/transparent/hacks.svg',
   'music-search.js', 'playlist-search.js', 'music-startup.js',
   'minecraft-source.js', 'artwork/minecraft.webp', 'buildnow-sdk.js', 'game-performance.js', 'owner-player-activity.js', 'player-activity-model.js',
   'wallpaper-loop.js',

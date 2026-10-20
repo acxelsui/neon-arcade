@@ -2,7 +2,7 @@ import {createHacksAccess} from './hacks-access.js';
 import {watchFrame} from './proxy-feedback.js';
 import {attachHacksDrag,attachEmbeddedHacksMenu} from './hacks-layout.js';
 import {blooketTransport,attachBlooketSocket} from './blooket-transport.js';
-import {createKahootAuto} from './kahoot-auto.js';
+import {loadSuppliedKahoot,attachSuppliedKahoot} from './kahoot-supplied.js';
 const launchers={blooket:{name:'Blooket',url:'https://x-client.x-network.lol/play'},kahoot:{name:'Kahoot',url:'https://kahoot.it/'}};
 export function validHackEntry(entry){return !!entry&&Object.hasOwn(launchers,entry.id)&&entry.url===launchers[entry.id].url;}
 export function createHacksGate({check,changed}){
@@ -14,9 +14,9 @@ export function initHacks({getController,navigate,doc=document,win=window,access
  const page=doc.createElement('section');page.id='hacks';page.className='page hacks-page';page.hidden=true;
  page.innerHTML='<header class="hacks-heading"><div><span class="eyebrow">NEON / PRIVATE COLLECTION</span><h1>Hacks<span>.</span></h1><p>Blooket and Kahoot. One place to launch.</p></div><span class="hacks-badge">ADMIN + OWNER</span></header><div class="hacks-library"><div class="hacks-library-heading"><h2>Your launchers</h2><span>02 APPS</span></div><div class="hacks-grid"></div><p class="hacks-note">Join with your game PIN. Each client stays inside Neon.</p></div><p class="hacks-status" role="status" aria-live="polite"></p><section class="hacks-session" hidden aria-label="Hacks player"><div class="hacks-controls"><span class="hacks-neon" aria-hidden="true">N</span><strong class="hacks-now"></strong><button type="button" data-hack-action="back" aria-label="Back to Hacks">← Library</button><button type="button" data-hack-action="reload">↻ Reload</button><button type="button" data-hack-action="fullscreen">⛶ Fullscreen</button><button type="button" data-hack-action="close">× Close</button></div><div class="hacks-frame"></div></section>';
  main.append(page);const grid=page.querySelector('.hacks-grid'),library=page.querySelector('.hacks-library'),session=page.querySelector('.hacks-session'),host=page.querySelector('.hacks-frame'),status=page.querySelector('.hacks-status'),buttons=[];
- let frame=null,controller=null,version=0,busy=false,account=null,cleanupMenu=()=>{},disposeTransport=()=>{},kahootAuto=null;
+ let frame=null,controller=null,version=0,busy=false,account=null,cleanupMenu=()=>{},disposeTransport=()=>{};
  const floating=attachHacksDrag(page.querySelector('.hacks-controls'),page.querySelector('.hacks-neon'),{win,bounds:()=>{const box=session.getBoundingClientRect();return {left:box.left+8,top:box.top+8,right:box.right-8,bottom:box.bottom-8};}});
- function stop(){version++;busy=false;kahootAuto?.destroy();kahootAuto=null;disposeTransport();disposeTransport=()=>{};cleanupMenu();cleanupMenu=()=>{};buttons.forEach(button=>button.disabled=!gate.isAllowed());if(frame){const index=controller?.frames?.indexOf(frame);if(index>=0)controller.frames.splice(index,1);frame.element.remove();frame=null;}host.replaceChildren();session.hidden=true;library.hidden=false;page.classList.remove('has-session');if(doc.fullscreenElement===session)doc.exitFullscreen().catch(()=>{});}
+ function stop(){version++;busy=false;disposeTransport();disposeTransport=()=>{};cleanupMenu();cleanupMenu=()=>{};buttons.forEach(button=>button.disabled=!gate.isAllowed());if(frame){const index=controller?.frames?.indexOf(frame);if(index>=0)controller.frames.splice(index,1);frame.element.remove();frame=null;}host.replaceChildren();session.hidden=true;library.hidden=false;page.classList.remove('has-session');if(doc.fullscreenElement===session)doc.exitFullscreen().catch(()=>{});}
  const gate=createHacksGate({check:()=>access.request(),changed:allowed=>{nav.hidden=!allowed;buttons.forEach(button=>button.disabled=!allowed);if(!allowed){stop();if(!page.hidden)navigate('home');}win.dispatchEvent(new CustomEvent('neon-hacks-access',{detail:allowed}));}});
  for(const [id,{name}] of Object.entries(launchers)){
   const tile=doc.createElement('button');tile.type='button';tile.className='hacks-card';tile.setAttribute('aria-label','Open '+name);tile.disabled=true;
@@ -27,12 +27,14 @@ export function initHacks({getController,navigate,doc=document,win=window,access
   try{
    const result=await access.request(id);if(current!==version||owner!==access.self())return;if(!validHackEntry(result.entry))throw Error('This launcher is unavailable.');
    const connected=await getController();if(current!==version||!gate.isAllowed()||owner!==access.self())return;controller=connected;
-   kahootAuto?.destroy();kahootAuto=null;disposeTransport();disposeTransport=()=>{};cleanupMenu();cleanupMenu=()=>{};if(frame){const index=controller.frames?.indexOf(frame);if(index>=0)controller.frames.splice(index,1);frame.element.remove();}
+   disposeTransport();disposeTransport=()=>{};cleanupMenu();cleanupMenu=()=>{};if(frame){const index=controller.frames?.indexOf(frame);if(index>=0)controller.frames.splice(index,1);frame.element.remove();}
+   const supplied=id==='kahoot'?await loadSuppliedKahoot():null;if(current!==version||!gate.isAllowed()||owner!==access.self())return;
    frame=controller.createFrame();frame.element.title=launchers[id].name+' · Neon Hacks';frame.element.allow='autoplay; fullscreen; gamepad';frame.element.allowFullscreen=true;frame.element.setAttribute('sandbox','allow-scripts allow-same-origin allow-forms allow-pointer-lock');
    if(id==='blooket'){const adapter=blooketTransport(controller.transport);disposeTransport=()=>adapter.dispose();frame.fetchHandler.client.transport=adapter;attachBlooketSocket(frame,adapter,win.$scramjet.Tap.tap);}
+   if(id==='kahoot')disposeTransport=attachSuppliedKahoot(frame,{source:supplied,tap:win.$scramjet.Tap.tap,clock:win,onStatus:message=>{if(current===version)status.textContent=message;}});
    const owned=frame;watchFrame(frame,error=>{if(frame===owned)status.textContent=error+' Use Reload to retry.';},()=>{if(frame===owned)status.textContent='';});
-   frame.element.addEventListener('load',()=>{if(frame!==owned)return;cleanupMenu();try{if(id==='kahoot')kahootAuto?.setDocument(frame.element.contentDocument);else cleanupMenu=attachEmbeddedHacksMenu(frame.element.contentDocument);}catch{cleanupMenu=()=>{};}});
-   host.replaceChildren(frame.element);if(id==='kahoot')kahootAuto=createKahootAuto({host:session,transport:controller.transport,doc,win});page.querySelector('.hacks-now').textContent=launchers[id].name;session.hidden=false;library.hidden=true;page.classList.add('has-session');floating.reset();frame.go(result.entry.url);session.scrollIntoView({block:'start'});
+   frame.element.addEventListener('load',()=>{if(frame!==owned)return;cleanupMenu();try{cleanupMenu=attachEmbeddedHacksMenu(frame.element.contentDocument);}catch{cleanupMenu=()=>{};}});
+   host.replaceChildren(frame.element);page.querySelector('.hacks-now').textContent=launchers[id].name;session.hidden=false;library.hidden=true;page.classList.add('has-session');floating.reset();frame.go(result.entry.url);session.scrollIntoView({block:'start'});
   }catch(error){if(current===version)status.textContent=error.message||'Could not open this launcher.';}
   finally{if(current===version){busy=false;buttons.forEach(button=>button.disabled=!gate.isAllowed());}}
  }
