@@ -1,0 +1,52 @@
+{
+  "date": "2026-10-19",
+  "scope": "Repairs to the 69 entries flagged in the first catalog asset scan. Asset availability is separate from gameplay.",
+  "catalogEntries": 836,
+  "initialAssets": 1624,
+  "directHttpFailures": [
+    {
+      "url": "https://wasmarcade.com/eaglercraft/1.8.8/app.html",
+      "status": 403,
+      "error": "HTTP Error 403: Forbidden"
+    }
+  ],
+  "additionalRuntimeAssetsChecked": 108,
+  "runtimeAssetFailures": [],
+  "browserChecks": [
+    {
+      "gameId": "164",
+      "name": "Crazy Cattle 3D",
+      "observed": "Main menu, Ireland selection, running match and elimination screen."
+    },
+    {
+      "gameId": "376",
+      "name": "Build a Big Army",
+      "observed": "Level 1 Start screen, running level and loss/retry screen."
+    },
+    {
+      "gameId": "523",
+      "name": "Touhou Mother",
+      "observed": "Original title screen and New Game menu after restored data was loaded."
+    },
+    {
+      "gameId": "204",
+      "name": "Five Nights at Winston's",
+      "observed": "Original title screen and New Game / Continue menu."
+    },
+    {
+      "gameId": "181",
+      "name": "Minecraft",
+      "observed": "WASM loader completed, sound gesture accepted, original profile screen displayed. The direct HTTP 403 above is not reproduced through the game relay."
+    },
+    {
+      "gameId": "212",
+      "name": "Cut the Rope",
+      "observed": "Title screen and Play control responded without the deleted mobile redirect helper."
+    }
+  ],
+  "limits": [
+    "These observations are startup/short gameplay checks, not full playthroughs.",
+    "Other titles have repaired and checked assets but are not all individually gameplay-tested.",
+    "External hosts and multiplayer/account services can change availability."
+  ]
+}
