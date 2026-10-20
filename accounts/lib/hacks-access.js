@@ -1,7 +1,7 @@
 const PROJECT='https://xfwjzxjeessduxuuqeop.supabase.co',KEY='sb_publishable_5xjkSLY22XORDMqM1Qp4HQ_J8Ez86mX';
 export const hackLaunchers=Object.freeze({
  blooket:{id:'blooket',name:'Blooket',cover:'/artwork/hacks/blooket.svg',url:'https://x-client.x-network.lol/play'},
- kahoot:{id:'kahoot',name:'Kahoot',cover:'/artwork/hacks/kahoot.svg',url:'https://kahootx-client.x-network.lol/'}
+ kahoot:{id:'kahoot',name:'Kahoot',cover:'/artwork/hacks/kahoot.svg',url:'https://kahoot.it/'}
 });
 export class HacksError extends Error{constructor(message,status){super(message);this.status=status;}}
 export function allowedHackRole(row,now=Date.now()){
