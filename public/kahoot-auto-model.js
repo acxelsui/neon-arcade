@@ -1,6 +1,10 @@
 // Adapted from kahoot-auto's ParseQuizInformation by Peter Stenger (@reteps).
 // Original project: https://github.com/unixpickle/kahoot-hack (BSD-2-Clause).
-export const kahootText=value=>String(value??'').replace(/<[^>]*>/g,' ').replace(/&nbsp;/g,' ').replace(/&amp;/g,'&').replace(/\s+/g,' ').trim();
+const entities={nbsp:' ',amp:'&',lt:'<',gt:'>',quot:'"',apos:"'",rsquo:'\u2019',lsquo:'\u2018',ndash:'\u2013',mdash:'\u2014'};
+export const kahootText=value=>String(value??'').replace(/<\/?[a-z][^>]*>/gi,' ').replace(/&(#x[0-9a-f]+|#\d+|[a-z]+);/gi,(whole,name)=>{
+ if(name[0]!=='#')return entities[name.toLowerCase()]??whole;
+ const number=name[1]?.toLowerCase()==='x'?parseInt(name.slice(2),16):Number(name.slice(1));return number>0&&number<=0x10ffff?String.fromCodePoint(number):whole;
+}).normalize('NFKC').replace(/\s+/g,' ').trim();
 const key=value=>kahootText(value).toLowerCase();
 export function kahootQuizId(input){
  const value=String(input).trim(),uuid=/^[a-f0-9]{8}(?:-[a-f0-9]{4}){3}-[a-f0-9]{12}$/i;
@@ -55,6 +59,11 @@ export function matchKahootAnswer(quiz,prompt,labels){
  if(matches.length!==1)return null;
  const question=matches[0],index=live.indexOf(key(question.answers[question.correct[0]]));
  return index>=0?{question,index,answer:question.answers[question.correct[0]]}:null;
+}
+export function matchKahootScreen(quiz,prompts,labels){
+ const results=new Map();
+ for(const prompt of prompts){const result=matchKahootAnswer(quiz,prompt,labels);if(result)results.set(result.question.index,result);}
+ return results.size===1?[...results.values()][0]:null;
 }
 export async function fetchPublicKahoot(transport,input,signal){
  const id=kahootQuizId(input);if(!id)throw Error('Paste a public Kahoot quiz link or quiz ID.');

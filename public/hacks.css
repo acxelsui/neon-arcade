@@ -9,3 +9,5 @@
 .kahoot-auto .ka-discovery{display:flex;gap:7px;align-items:center;margin-top:10px;color:#b8c2df}
 
 .kahoot-auto .ka-compact{margin:0;padding:10px 15px;border-bottom:1px solid #9aabff24;font-size:11px;line-height:1.5;color:#c4cdeb;background:#090c1b55}.kahoot-auto[data-answer-ready=true] .ka-compact{color:#d9cdff;background:#8a6fff1c}.kahoot-auto header{position:sticky;top:0;z-index:1;background:#191d39}
+
+.kahoot-auto header:focus-visible{outline:2px solid #b8c7ff;outline-offset:-3px}.kahoot-auto[data-moving] header{cursor:grabbing!important}.kahoot-auto .ka-reviewed{margin:10px 0;color:#d2d9ff}

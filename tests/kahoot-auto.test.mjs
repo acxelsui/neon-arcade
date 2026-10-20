@@ -1,6 +1,6 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import {kahootQuizId,parseKahootQuiz,matchKahootAnswer,fetchPublicKahoot,exposedKahootQuizId,kahootJoinDetails,kahootMetadataReferences} from '../public/kahoot-auto-model.js';
+import {kahootQuizId,parseKahootQuiz,matchKahootAnswer,matchKahootScreen,kahootText,fetchPublicKahoot,exposedKahootQuizId,kahootJoinDetails,kahootMetadataReferences} from '../public/kahoot-auto-model.js';
 const id='aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa';
 const data={uuid:id,title:'Math',questions:[{type:'quiz',question:'2 + 2?',choices:[{answer:'3'},{answer:'4',correct:true},{answer:'5'},{answer:'6'}]}]};
 const perms=values=>values.length?values.flatMap((value,i)=>perms(values.filter((_,j)=>i!==j)).map(rest=>[value,...rest])):[[]];
@@ -69,4 +69,13 @@ test('true/false choices match by text; the shape-only player screen cannot impl
   assert.equal(matchKahootAnswer(quiz,'The sky is blue.',labels),null);
   assert.equal(matchKahootAnswer(quiz,'',labels),null);
  }
+});
+
+test('screen matching normalizes case and encoded text, and refuses ambiguous headings',()=>{
+ const quiz=parseKahootQuiz({questions:[{question:'<b>Tom&#39;s &amp; Jerry&#x27;s score?</b>',choices:[{answer:'&lt; 5',correct:true},{answer:'&gt; 5'}]}]});
+ assert.equal(matchKahootScreen(quiz,["TOM'S & JERRY'S SCORE?"],['> 5','< 5']).index,1);
+ assert.equal(kahootText('2 < 4 and 6 > 3'),'2 < 4 and 6 > 3');
+ const second=parseKahootQuiz({questions:[...data.questions,{...data.questions[0],question:'Another question?',choices:[{answer:'3',correct:true},{answer:'4'},{answer:'5'},{answer:'6'}]}]});
+ assert.equal(matchKahootScreen(second,['2 + 2?','Another question?'],['3','4','5','6']),null);
+ assert.equal(matchKahootScreen(second,['Quiz','2 + 2?'],['3','4','5','6']).answer,'4');
 });

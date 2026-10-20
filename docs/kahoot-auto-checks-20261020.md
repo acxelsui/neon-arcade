@@ -25,3 +25,11 @@ Live verification: the panel submitted PIN 211004 and the nickname NeonPlayer th
 Simulation verification: an explicitly labeled local fixture supplied a public quiz reference as page metadata. The new script discovered the reference, loaded the public key, highlighted the correct reordered choice, selected it once when enabled, and kept its counter at one. The same fixture stayed idle with no answer key. This is a simulated question, not a live scored round.
 
 530 automated tests pass; the final compact UI also passed its focused tests and browser check. The production build succeeds. These changes are saved locally and have not been published.
+
+## Movable panel and faster matching
+
+Added header dragging using the existing bounded pointer and keyboard controller, with cleanup on closing the launcher. The preview moved from left 214/top 65 to left 198/top 81 using its arrow-key handle. The same controller's pointer movement, bounds, and cleanup tests pass. Expanded/collapsed panel bounds are rechecked.
+
+Selection delay defaults to 100 ms, with 100 ms screen checks. This is a scheduling target, not a measured end-to-end network latency. Encoded quiz text and case differences are normalized, while conflicting prompts and missing choice mappings remain manual. A question selector can review the loaded answer key without mapping or clicking a shape-only screen.
+
+The simulated reordered question still selects the correct answer once. No new live correctness or PIN-only answer discovery was verified. The user declined to provide the failing quiz link, so its specific failure remains unreproduced. No 95–100 percent live accuracy claim is supported.
