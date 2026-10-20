@@ -1,6 +1,6 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import {kahootQuizId,parseKahootQuiz,matchKahootAnswer,fetchPublicKahoot} from '../public/kahoot-auto-model.js';
+import {kahootQuizId,parseKahootQuiz,matchKahootAnswer,fetchPublicKahoot,exposedKahootQuizId,kahootJoinDetails,kahootMetadataReferences} from '../public/kahoot-auto-model.js';
 const id='aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa';
 const data={uuid:id,title:'Math',questions:[{type:'quiz',question:'2 + 2?',choices:[{answer:'3'},{answer:'4',correct:true},{answer:'5'},{answer:'6'}]}]};
 const perms=values=>values.length?values.flatMap((value,i)=>perms(values.filter((_,j)=>i!==j)).map(rest=>[value,...rest])):[[]];
@@ -40,4 +40,24 @@ test('wrapped quiz exports are accepted and a missing prompt cannot arm automati
  const quiz=parseKahootQuiz({questions:[{...data.questions[0],question:''}]});
  assert.equal(quiz.questions[0].supported,false);
  assert.equal(matchKahootAnswer(quiz,'',['3','4','5','6']),null);
+});
+
+test('quiz detection only accepts one explicit public quiz reference, never PINs or unrelated UUIDs',()=>{
+ assert.equal(exposedKahootQuizId(['https://kahoot.it/?pin=211004']),null);
+ assert.equal(exposedKahootQuizId(['https://kahoot.it/?quizId='+id]),id);
+ assert.equal(exposedKahootQuizId(['https://create.kahoot.it/details/'+id]),id);
+ assert.equal(exposedKahootQuizId(['https://evil.test/?quizId='+id,'https://kahoot.it/?sessionId='+id]),null);
+ assert.equal(exposedKahootQuizId(['https://create.kahoot.it/details/'+id,'https://create.kahoot.it/details/bbbbbbbb-bbbb-4bbb-8bbb-bbbbbbbbbbbb']),null);
+});
+test('join details validate the real PIN and nickname without guessing a quiz ID',()=>{
+ assert.deepEqual(kahootJoinDetails('211 004',' NeonPlayer '),{pin:'211004',nickname:'NeonPlayer'});
+ for(const pin of ['123','abc211004','https://kahoot.it'])assert.throws(()=>kahootJoinDetails(pin,'NeonPlayer'),/PIN/);
+ for(const name of ['','abcdefghijklmnop'])assert.throws(()=>kahootJoinDetails('211004',name),/nickname/);
+});
+
+test('public quiz discovery reads explicit metadata keys and ignores session identifiers',()=>{
+ assert.equal(exposedKahootQuizId(kahootMetadataReferences({props:{pageProps:{quizId:id}}})),id);
+ assert.equal(exposedKahootQuizId(kahootMetadataReferences({kahoot:{uuid:id}})),id);
+ assert.deepEqual(kahootMetadataReferences({sessionId:id,uuid:id,pin:'211004'}),[]);
+ const circular={};circular.self=circular;assert.deepEqual(kahootMetadataReferences(circular),[]);
 });

@@ -9,6 +9,34 @@ export function kahootQuizId(input){
   const candidate=url.pathname.split('/').filter(Boolean).find(part=>uuid.test(part))||url.hash.split('/').find(part=>uuid.test(part));return candidate?.toLowerCase()||null;
  }catch{return null;}
 }
+// Only explicit quiz references count: a session PIN or arbitrary UUID is not a key.
+export function exposedKahootQuizId(references){
+ const ids=new Set();
+ for(const ref of references){
+  try{const url=new URL(ref);if(url.protocol!=='https:'||url.username||url.password||!['kahoot.it','play.kahoot.it','create.kahoot.it'].includes(url.hostname))continue;
+   const id=url.hostname==='create.kahoot.it'?kahootQuizId(url.href):kahootQuizId(url.searchParams.get('quizId')||url.searchParams.get('kahootId')||'');
+   if(id)ids.add(id);
+  }catch{}
+ }
+ return ids.size===1?[...ids][0]:null;
+}
+export function kahootJoinDetails(pin,nickname){
+ const game=String(pin).replace(/\s/g,''),name=String(nickname).trim();
+ if(!/^\d{6,10}$/.test(game))throw Error('Enter a game PIN with 6–10 digits.');
+ if(!name||name.length>15)throw Error('Use a nickname with 1–15 characters.');
+ return {pin:game,nickname:name};
+}
+export function kahootMetadataReferences(data){
+ const refs=[];let visited=0;
+ function visit(value,depth){if(!value||typeof value!=='object'||depth>8||++visited>1000)return;
+  for(const [name,item] of Object.entries(value)){
+   if(['quizId','kahootId'].includes(name)&&typeof item==='string'&&kahootQuizId(item))refs.push('https://create.kahoot.it/details/'+kahootQuizId(item));
+   if(name==='kahoot'&&item&&typeof item==='object'){const id=kahootQuizId(item.uuid||item.id||'');if(id)refs.push('https://create.kahoot.it/details/'+id);}
+   if(item&&typeof item==='object')visit(item,depth+1);
+  }
+ }
+ visit(data,0);return refs;
+}
 export function parseKahootQuiz(data){
  if(!data?.questions&&data?.kahoot?.questions)data=data.kahoot;
  if(!data||!Array.isArray(data.questions)||!data.questions.length||data.questions.length>1000)throw Error('This file does not contain a supported Kahoot quiz.');

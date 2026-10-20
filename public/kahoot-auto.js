@@ -1,36 +1,62 @@
-import {kahootText,parseKahootQuiz,matchKahootAnswer,fetchPublicKahoot} from './kahoot-auto-model.js';
+import {kahootText,parseKahootQuiz,matchKahootAnswer,fetchPublicKahoot,exposedKahootQuizId,kahootJoinDetails,kahootMetadataReferences} from './kahoot-auto-model.js';
 
 export function createKahootAuto({host,transport,doc=document,win=window}){
  const panel=doc.createElement('aside');panel.className='kahoot-auto';panel.setAttribute('aria-label','Neon Kahoot Auto');
- panel.innerHTML='<header><strong>Neon Kahoot Auto</strong><button type="button" aria-label="Collapse Kahoot panel" aria-expanded="true">−</button></header><div class="ka-body"><form><label>Public quiz link<input type="url" placeholder="https://create.kahoot.it/details/…" aria-label="Public Kahoot quiz link"></label><button type="submit">Load quiz</button></form><label class="ka-import">Import quiz JSON<input type="file" accept=".json,application/json" aria-label="Import Kahoot quiz JSON"></label><p class="ka-quiz">No quiz loaded</p><label class="ka-toggle"><input type="checkbox"> Auto-select matched answers</label><button type="button" class="ka-answer" disabled>Select matched answer</button><p class="ka-state" role="status">Load the quiz, then join the game on the left.</p><details><summary>Answers</summary><ol class="ka-answers"></ol></details><small>Requires the matching answer key and visible question/answer text. Shape-only screens and unsupported questions stay manual.</small></div>';
+ panel.innerHTML=`<header><span class="ka-logo" aria-hidden="true">N↗</span><div><small>NEON / GAME ASSISTANT</small><strong>Kahoot Auto</strong></div><button type="button" class="ka-collapse" aria-label="Toggle Kahoot panel" aria-expanded="true">−</button></header>
+ <div class="ka-body"><div class="ka-badges"><span class="ka-connection">Player loading</span><span class="ka-key">No answer key</span></div>
+ <details class="ka-join" open><summary>Join a game</summary><form class="ka-join-form"><div class="ka-fields"><label>Game PIN<input name="pin" inputmode="numeric" autocomplete="off" maxlength="14" placeholder="123 456" aria-label="Kahoot game PIN"></label><label>Nickname<input name="nickname" maxlength="15" autocomplete="off" value="NeonPlayer" aria-label="Kahoot nickname"></label></div><button type="submit">Join through Neon</button></form><p class="ka-join-status" role="status">Your game stays inside the Neon proxy.</p></details>
+ <details class="ka-source" open><summary>Answer source</summary><p class="ka-quiz">No quiz loaded</p><form class="ka-quiz-form"><label>Public quiz link or ID<input type="text" placeholder="Paste the quiz link" aria-label="Public Kahoot quiz link"></label><div class="ka-actions"><button type="submit">Load quiz</button><button type="button" class="ka-detect">Detect quiz</button></div></form><label class="ka-discovery"><input type="checkbox" class="ka-discover" checked> Auto-detect public quiz</label><label class="ka-import">Import quiz JSON<input type="file" accept=".json,application/json" aria-label="Import Kahoot quiz JSON"></label></details>
+ <section class="ka-automation"><label class="ka-toggle"><span><strong>Auto-select answers</strong><small>Only when the question and choices match</small></span><input type="checkbox" aria-label="Auto-select matched answers"></label><div class="ka-fields"><label>Answer delay<select aria-label="Answer delay"><option value="700">0.7 seconds</option><option value="1500">1.5 seconds</option><option value="3000">3 seconds</option></select></label><label class="ka-highlight-label"><input type="checkbox" class="ka-highlight" checked> Highlight match</label></div></section>
+ <div class="ka-current"><span class="ka-label">LIVE MATCH</span><strong class="ka-match">Waiting for a question</strong><p class="ka-state" role="status">Load a public quiz or import its answer key.</p><button type="button" class="ka-answer" disabled>Select matched answer</button><small class="ka-count">0 answers selected · results are scored by Kahoot</small></div>
+ <details><summary>Answer key <span class="ka-total"></span></summary><ol class="ka-answers"></ol></details><small class="ka-note">A PIN opens a lobby; it does not reveal private answers. Detect quiz uses a public quiz link if the player exposes one. Shape-only and unsupported questions stay manual.</small></div>`;
  host.append(panel);
- if(win.innerWidth<700){panel.querySelector('.ka-body').hidden=true;panel.querySelector('header button').textContent='+';panel.querySelector('header button').setAttribute('aria-expanded','false');}
  const $=selector=>panel.querySelector(selector),status=text=>$('.ka-state').textContent=text;
- let quiz=null,playerDoc=null,stopped=false,abort=null,match=null,lastTarget=null,lastQuestion=null,armedAt=0,loadVersion=0;
- const visible=element=>element?.isConnected&&!element.disabled&&element.getAttribute('aria-disabled')!=='true'&&element.getClientRects().length>0;
- function install(value){quiz=value;lastTarget=null;$('.ka-quiz').textContent=value.title+' · '+value.questions.filter(q=>q.supported).length+' supported questions';
-  const list=$('.ka-answers');list.replaceChildren();for(const q of quiz.questions){const row=doc.createElement('li');row.textContent=q.question+' — '+(q.supported?q.answers[q.correct[0]]:'Manual question');list.append(row);}status('Quiz loaded. Waiting for a matching live question.');}
- async function load(work){const version=++loadVersion;abort?.abort();abort=new AbortController();quiz=match=null;lastTarget=lastQuestion=null;$('.ka-answer').disabled=true;$('.ka-answers').replaceChildren();$('.ka-quiz').textContent='No quiz loaded';$('.ka-state').textContent='Loading quiz…';const currentAbort=abort;const timeout=win.setTimeout(()=>currentAbort.abort(),15000);try{const value=await work(currentAbort.signal);if(!stopped&&version===loadVersion)install(value);}catch(error){if(!stopped&&version===loadVersion)status(error.name==='AbortError'?'Quiz loading timed out. Try again or import JSON.':error.message||'Could not read this quiz.');}finally{win.clearTimeout(timeout);}}
- $('form').onsubmit=event=>{event.preventDefault();return load(signal=>fetchPublicKahoot(transport,$('input[type="url"]').value,signal));};
+ let quiz=null,playerDoc=null,stopped=false,abort=null,match=null,lastTarget=null,lastQuestion=null,armedAt=0,loadVersion=0,selectedCount=0,loading=false,join=null,highlight=null,style=null,nextDiscovery=0,discoveredIds=new Set();
+ const visible=el=>el?.isConnected&&!el.disabled&&el.getAttribute('aria-disabled')!=='true'&&el.getClientRects().length>0;
+ function collapse(closed){$('.ka-body').hidden=closed;$('.ka-collapse').textContent=closed?'+':'−';$('.ka-collapse').setAttribute('aria-expanded',String(!closed));}
+ collapse(win.innerWidth<700);$('.ka-collapse').onclick=()=>collapse(!$('.ka-body').hidden);
+ function clearHighlight(){highlight?.removeAttribute('data-neon-answer-match');highlight=null;}
+ function install(value){quiz=value;$('.ka-source').open=false;$('.ka-source summary').textContent='Quiz: '+value.title;lastTarget=lastQuestion=null;$('.ka-quiz').textContent=value.title;$('.ka-key').textContent='Answer key loaded';$('.ka-key').classList.add('ready');$('.ka-total').textContent='('+value.questions.length+')';
+  const list=$('.ka-answers');list.replaceChildren();for(const q of quiz.questions){const row=doc.createElement('li');row.textContent=q.question+' — '+(q.supported?q.answers[q.correct[0]]:'Manual question');list.append(row);}status(value.questions.filter(q=>q.supported).length+' supported questions. Waiting for a live match.');}
+ async function load(work){const version=++loadVersion;abort?.abort();abort=new AbortController();quiz=match=null;loading=true;$('.ka-source summary').textContent='Answer source';$('.ka-source').open=true;clearHighlight();lastTarget=lastQuestion=null;$('.ka-answer').disabled=true;$('.ka-answers').replaceChildren();$('.ka-total').textContent='';$('.ka-quiz').textContent='Loading quiz…';$('.ka-key').textContent='Loading key';$('.ka-key').classList.remove('ready');status('Looking up the public quiz.');const currentAbort=abort;const timeout=win.setTimeout(()=>currentAbort.abort(),15000);
+  try{const value=await work(currentAbort.signal);if(!stopped&&version===loadVersion)install(value);}catch(error){if(!stopped&&version===loadVersion){$('.ka-quiz').textContent='No quiz loaded';$('.ka-key').textContent='No answer key';status(error.name==='AbortError'?'Quiz loading timed out. Try again or import JSON.':error.message||'Could not read this quiz.');}}finally{win.clearTimeout(timeout);if(version===loadVersion)loading=false;}}
+ $('.ka-quiz-form').onsubmit=event=>{event.preventDefault();return load(signal=>fetchPublicKahoot(transport,$('.ka-quiz-form input').value,signal));};
  $('input[type="file"]').onchange=()=>{const file=$('input[type="file"]').files?.[0];if(!file)return;return load(async()=>{if(file.size>4*1024*1024)throw Error('Choose a quiz JSON smaller than 4 MB.');return parseKahootQuiz(JSON.parse(await file.text()));});};
- $('header button').onclick=()=>{const body=$('.ka-body');body.hidden=!body.hidden;$('header button').textContent=body.hidden?'+':'−';$('header button').setAttribute('aria-expanded',String(!body.hidden));};
- function submit(){if(!match||!visible(match.target))return;const selected=match;match=null;$('.ka-answer').disabled=true;armedAt=Infinity;selected.target.click();status('Selected '+selected.answer+'. Waiting for the next question.');}
- $('.ka-answer').onclick=submit;
- function check(){if(stopped||!playerDoc||!quiz)return;
-  const buttons=[...playerDoc.querySelectorAll('button[data-functional-selector^="answer-"],button[data-testid^="answer-"]')].filter(el=>/^answer-\d$/.test(el.getAttribute('data-functional-selector')||el.getAttribute('data-testid'))&&visible(el));
-  match=null;$('.ka-answer').disabled=true;if(buttons.length<2){lastTarget=null;return;}
-  const labels=buttons.map(el=>kahootText(el.innerText||el.textContent||el.getAttribute('aria-label')));
-  const prompts=[...playerDoc.querySelectorAll('[data-functional-selector="block-title"],[data-functional-selector="question-title"],[data-functional-selector="question"],h1,h2')].map(el=>kahootText(el.textContent));
-  const body=kahootText(playerDoc.body?.innerText);
-  const candidates=quiz.questions.filter(q=>q.supported&&q.question&&(prompts.includes(q.question)||body.includes(q.question)));
-  const results=[...new Set(candidates.map(q=>q.question))].map(prompt=>matchKahootAnswer(quiz,prompt,labels)).filter(Boolean);
-  if(results.length!==1){status('No unique question/answer match. Choose manually for this screen.');return;}
-  const result=results[0],target=buttons[result.index];if(lastTarget===target&&lastQuestion===result.question&&armedAt===Infinity)return;match={...result,target};$('.ka-answer').disabled=false;
-  if(lastTarget!==target||lastQuestion!==result.question){lastTarget=target;lastQuestion=result.question;armedAt=Date.now();}
-  if(armedAt===Infinity)return;
-  status('Matched: '+result.answer);
-  if($('.ka-toggle input').checked&&Date.now()-armedAt>=700)submit();
+ function detectQuiz(manual=false){
+  if(!playerDoc){if(manual)status('Wait for the Kahoot player to finish loading.');return;}
+  const refs=[playerDoc.URL,...[...playerDoc.querySelectorAll('a[href]')].map(a=>a.getAttribute('scramjet-attr-href')||a.getAttribute('href'))];
+  for(const el of playerDoc.querySelectorAll('script[type="application/json"]')){const text=el.textContent||'';if(text.length>256000)continue;try{refs.push(...kahootMetadataReferences(JSON.parse(text)));}catch{}}
+  const id=exposedKahootQuizId(refs);
+  if(!id){if(manual)status('No unique public quiz reference is exposed by this player. Paste the quiz link or import JSON.');return;}
+  if(!manual&&discoveredIds.has(id))return;discoveredIds.add(id);$('.ka-quiz-form input').value=id;return load(signal=>fetchPublicKahoot(transport,id,signal));
  }
- const timer=win.setInterval(()=>{try{check();}catch{match=null;$('.ka-answer').disabled=true;status('Waiting for a supported question screen.');}},300);
- return {setDocument(value){playerDoc=value;match=null;lastTarget=null;},destroy(){stopped=true;loadVersion++;abort?.abort();win.clearInterval(timer);playerDoc=quiz=match=null;panel.remove();}};
+ $('.ka-detect').onclick=()=>detectQuiz(true);
+ function setInput(el,value){const view=el.ownerDocument.defaultView,setter=Object.getOwnPropertyDescriptor(view.HTMLInputElement.prototype,'value')?.set;setter?setter.call(el,value):el.value=value;el.dispatchEvent(new view.Event('input',{bubbles:true}));el.dispatchEvent(new view.Event('change',{bubbles:true}));}
+ const playerField=selector=>[...playerDoc.querySelectorAll(selector)].find(visible);
+ function advanceJoin(){if(!join||!playerDoc)return;if(Date.now()-join.started>15000){join=null;$('.ka-join-status').textContent='Check the player for the join result, nickname generator, or host instructions.';return;}
+  const pin=playerField('input[data-functional-selector="game-pin-input"],input[name="gameId"],input[id="game-input"]');
+  if(join.stage==='pin'&&pin){setInput(pin,join.pin);const button=pin.closest('form')?.querySelector('button[type="submit"]')||playerField('button[data-functional-selector="join-game-pin"]');if(button&&!button.disabled){join.stage='nickname';button.click();$('.ka-join-status').textContent='PIN submitted. Waiting for the nickname screen.';}return;}
+  const nick=playerField('input[data-functional-selector="nickname"],input[name="nickname"],input[data-functional-selector="username"]');
+  if(nick){setInput(nick,join.nickname);const button=nick.closest('form')?.querySelector('button[type="submit"]')||playerField('button[data-functional-selector="join-button"],button[data-functional-selector="join-game-button"]');if(button&&!button.disabled){join=null;button.click();$('.ka-join-status').textContent='Nickname submitted. Check the player for the lobby.';}}
+ }
+ $('.ka-join-form').onsubmit=event=>{event.preventDefault();try{const details=kahootJoinDetails($('[name="pin"]').value,$('[name="nickname"]').value);if(!playerDoc)throw Error('Wait for the Kahoot player to load.');join={...details,stage:'pin',started:Date.now()};$('.ka-join-status').textContent='Joining in the proxied player…';advanceJoin();}catch(error){$('.ka-join-status').textContent=error.message;}};
+ function submit(){if(!match||!visible(match.target))return;const selected=match;match=null;$('.ka-answer').disabled=true;armedAt=Infinity;selected.target.click();selectedCount++;$('.ka-count').textContent=selectedCount+' answers selected · results are scored by Kahoot';status('Selected '+selected.answer+'. Waiting for the next question.');}
+ $('.ka-answer').onclick=submit;
+ function check(){if(stopped||!playerDoc)return;advanceJoin();if(!quiz){if(!loading&&$('.ka-discover').checked&&Date.now()>=nextDiscovery){nextDiscovery=Date.now()+3000;detectQuiz();}return;}
+  const buttons=[...playerDoc.querySelectorAll('button[data-functional-selector^="answer-"],button[data-testid^="answer-"]')].filter(el=>/^answer-\d$/.test(el.getAttribute('data-functional-selector')||el.getAttribute('data-testid'))&&visible(el));
+  match=null;$('.ka-answer').disabled=true;clearHighlight();if(buttons.length<2){$('.ka-match').textContent='Waiting for a question';status('Answer key ready. Waiting for visible answer choices.');return;}
+  const labels=buttons.map(el=>kahootText(el.innerText||el.textContent||el.getAttribute('aria-label')));
+  const prompts=[...playerDoc.querySelectorAll('[data-functional-selector="block-title"],[data-functional-selector="question-title"],[data-functional-selector="question"],h1,h2')].filter(visible).map(el=>kahootText(el.textContent));
+  const body=kahootText(playerDoc.body?.innerText),candidates=quiz.questions.filter(q=>q.supported&&q.question&&(prompts.includes(q.question)||body.includes(q.question)));
+  const results=[...new Set(candidates.map(q=>q.question))].map(prompt=>matchKahootAnswer(quiz,prompt,labels)).filter(Boolean);
+  if(results.length!==1){$('.ka-match').textContent='Manual answer needed';status('No unique question and answer match. Auto-select is paused for this screen.');return;}
+  const result=results[0],target=buttons[result.index];$('.ka-match').textContent=result.answer;
+  if($('.ka-highlight').checked){target.setAttribute('data-neon-answer-match','');highlight=target;}
+  if(lastTarget===target&&lastQuestion===result.question&&armedAt===Infinity)return;match={...result,target};$('.ka-answer').disabled=false;
+  if(lastTarget!==target||lastQuestion!==result.question){lastTarget=target;lastQuestion=result.question;armedAt=Date.now();}
+  status('Exact match · question '+(result.question.index+1)+' in the loaded key.');
+  if($('.ka-toggle input').checked&&Date.now()-armedAt>=Number($('select').value))submit();
+ }
+ const timer=win.setInterval(()=>{try{check();}catch{match=null;clearHighlight();$('.ka-answer').disabled=true;status('Waiting for a supported question screen.');}},250);
+ return {setDocument(value){clearHighlight();style?.remove();playerDoc=value;match=null;lastTarget=null;$('.ka-connection').textContent=value?'Player connected':'Player loading';$('.ka-connection').classList.toggle('ready',!!value);if(value?.head){style=value.createElement('style');style.textContent='[data-neon-answer-match]{outline:4px solid #a995ff!important;outline-offset:-4px!important;box-shadow:inset 0 0 24px #748bff88!important}';value.head.append(style);}},destroy(){stopped=true;loadVersion++;abort?.abort();win.clearInterval(timer);clearHighlight();style?.remove();playerDoc=quiz=match=join=null;panel.remove();}};
 }

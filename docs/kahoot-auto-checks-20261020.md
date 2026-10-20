@@ -15,3 +15,13 @@ Verified locally:
 - Production build succeeds; its temporary index rewrite was restored.
 
 Not verified: a live hosted round, actual score results, or unsupported question types. No active lobby/key pair was supplied during this check. A simulated question is not evidence of a live game result. The localhost development fixture is excluded from the commit and does not alter the production access gate.
+
+## New custom session panel
+
+The old third-party client is replaced by Neon's own browser script and UI. The session panel was rewritten with PIN/nickname entry, explicit public quiz discovery, highlighting, delay selection, collapsible source controls, and an attempted-selection counter. Public discovery reads official quiz references in links or bounded application/json metadata. It never treats a game PIN or unrelated session UUID as a quiz key.
+
+Live verification: the panel submitted PIN 211004 and the nickname NeonPlayer through the proxied official Kahoot player. The player displayed “You're in!” and NeonPlayer in its waiting lobby. The waiting player exposed no public quiz reference, so no key was obtained from the PIN and no live answer correctness was verified. The preview tab subsequently closed; it was not rejoined.
+
+Simulation verification: an explicitly labeled local fixture supplied a public quiz reference as page metadata. The new script discovered the reference, loaded the public key, highlighted the correct reordered choice, selected it once when enabled, and kept its counter at one. The same fixture stayed idle with no answer key. This is a simulated question, not a live scored round.
+
+530 automated tests pass; the final compact UI also passed its focused tests and browser check. The production build succeeds. These changes are saved locally and have not been published.
