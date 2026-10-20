@@ -2,7 +2,7 @@ import {kahootText,parseKahootQuiz,matchKahootAnswer,fetchPublicKahoot,exposedKa
 
 export function createKahootAuto({host,transport,doc=document,win=window}){
  const panel=doc.createElement('aside');panel.className='kahoot-auto';panel.setAttribute('aria-label','Neon Kahoot Auto');
- panel.innerHTML=`<header><span class="ka-logo" aria-hidden="true">N↗</span><div><small>NEON / GAME ASSISTANT</small><strong>Kahoot Auto</strong></div><button type="button" class="ka-collapse" aria-label="Toggle Kahoot panel" aria-expanded="true">−</button></header>
+ panel.innerHTML=`<header><span class="ka-logo" aria-hidden="true">N↗</span><div><small>NEON / GAME ASSISTANT</small><strong>Kahoot Auto</strong></div><button type="button" class="ka-collapse" aria-label="Toggle Kahoot panel" aria-expanded="true">−</button></header><p class="ka-compact" role="status">No answer key - auto-answer unavailable</p>
  <div class="ka-body"><div class="ka-badges"><span class="ka-connection">Player loading</span><span class="ka-key">No answer key</span></div>
  <details class="ka-join" open><summary>Join a game</summary><form class="ka-join-form"><div class="ka-fields"><label>Game PIN<input name="pin" inputmode="numeric" autocomplete="off" maxlength="14" placeholder="123 456" aria-label="Kahoot game PIN"></label><label>Nickname<input name="nickname" maxlength="15" autocomplete="off" value="NeonPlayer" aria-label="Kahoot nickname"></label></div><button type="submit">Join through Neon</button></form><p class="ka-join-status" role="status">Your game stays inside the Neon proxy.</p></details>
  <details class="ka-source" open><summary>Answer source</summary><p class="ka-quiz">No quiz loaded</p><form class="ka-quiz-form"><label>Public quiz link or ID<input type="text" placeholder="Paste the quiz link" aria-label="Public Kahoot quiz link"></label><div class="ka-actions"><button type="submit">Load quiz</button><button type="button" class="ka-detect">Detect quiz</button></div></form><label class="ka-discovery"><input type="checkbox" class="ka-discover" checked> Auto-detect public quiz</label><label class="ka-import">Import quiz JSON<input type="file" accept=".json,application/json" aria-label="Import Kahoot quiz JSON"></label></details>
@@ -49,7 +49,7 @@ export function createKahootAuto({host,transport,doc=document,win=window}){
   const prompts=[...playerDoc.querySelectorAll('[data-functional-selector="block-title"],[data-functional-selector="question-title"],[data-functional-selector="question"],h1,h2')].filter(visible).map(el=>kahootText(el.textContent));
   const body=kahootText(playerDoc.body?.innerText),candidates=quiz.questions.filter(q=>q.supported&&q.question&&(prompts.includes(q.question)||body.includes(q.question)));
   const results=[...new Set(candidates.map(q=>q.question))].map(prompt=>matchKahootAnswer(quiz,prompt,labels)).filter(Boolean);
-  if(results.length!==1){$('.ka-match').textContent='Manual answer needed';status('No unique question and answer match. Auto-select is paused for this screen.');return;}
+  if(results.length!==1){$('.ka-match').textContent='No verified answer';status(candidates.length===0?'The live question is not identifiable from this screen. Shape-only buttons cannot be matched to the answer key.':'The live answer labels do not uniquely match the key. Auto-select is paused.');return;}
   const result=results[0],target=buttons[result.index];$('.ka-match').textContent=result.answer;
   if($('.ka-highlight').checked){target.setAttribute('data-neon-answer-match','');highlight=target;}
   if(lastTarget===target&&lastQuestion===result.question&&armedAt===Infinity)return;match={...result,target};$('.ka-answer').disabled=false;
@@ -57,6 +57,7 @@ export function createKahootAuto({host,transport,doc=document,win=window}){
   status('Exact match · question '+(result.question.index+1)+' in the loaded key.');
   if($('.ka-toggle input').checked&&Date.now()-armedAt>=Number($('select').value))submit();
  }
- const timer=win.setInterval(()=>{try{check();}catch{match=null;clearHighlight();$('.ka-answer').disabled=true;status('Waiting for a supported question screen.');}},250);
+ function summary(){const text=!playerDoc?'Player loading':loading?'Loading answer key...':!quiz?'No answer key - auto-answer unavailable':armedAt===Infinity?$('.ka-state').textContent:match?($('.ka-toggle input').checked?'Auto ready: ':'Match found - auto off: ')+match.answer:$('.ka-state').textContent;$('.ka-compact').textContent=text;$('.ka-compact').title=text;panel.dataset.answerReady=String(!!match);}
+ const timer=win.setInterval(()=>{try{check();}catch{match=null;clearHighlight();$('.ka-answer').disabled=true;status('Waiting for a supported question screen.');}summary();},250);
  return {setDocument(value){clearHighlight();style?.remove();playerDoc=value;match=null;lastTarget=null;$('.ka-connection').textContent=value?'Player connected':'Player loading';$('.ka-connection').classList.toggle('ready',!!value);if(value?.head){style=value.createElement('style');style.textContent='[data-neon-answer-match]{outline:4px solid #a995ff!important;outline-offset:-4px!important;box-shadow:inset 0 0 24px #748bff88!important}';value.head.append(style);}},destroy(){stopped=true;loadVersion++;abort?.abort();win.clearInterval(timer);clearHighlight();style?.remove();playerDoc=quiz=match=join=null;panel.remove();}};
 }

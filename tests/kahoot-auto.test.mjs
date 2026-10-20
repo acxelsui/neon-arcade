@@ -61,3 +61,12 @@ test('public quiz discovery reads explicit metadata keys and ignores session ide
  assert.deepEqual(kahootMetadataReferences({sessionId:id,uuid:id,pin:'211004'}),[]);
  const circular={};circular.self=circular;assert.deepEqual(kahootMetadataReferences(circular),[]);
 });
+
+test('true/false choices match by text; the shape-only player screen cannot imply a correct answer',()=>{
+ const quiz=parseKahootQuiz({questions:[{type:'true_false',question:'The sky is blue.',choices:[{answer:'True',correct:true},{answer:'False',correct:false}]}]});
+ assert.equal(matchKahootAnswer(quiz,'The sky is blue.',['False','True']).index,1);
+ for(const labels of [['',''],['Diamond','Triangle'],['Answer 0','Answer 1']]){
+  assert.equal(matchKahootAnswer(quiz,'The sky is blue.',labels),null);
+  assert.equal(matchKahootAnswer(quiz,'',labels),null);
+ }
+});
