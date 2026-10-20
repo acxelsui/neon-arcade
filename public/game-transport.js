@@ -4,8 +4,20 @@ import {withoutBuildNowDemoAds,buildNowSdkAddress} from './buildnow-sdk.js';
 import {cleanBundledGamePage} from './game-page-cleanup.js';
 import {repairConstructGame} from './construct-game-base.js';
 export const GAME_ORIGIN = 'https://games.neon-arcade.invalid';
+// GitHub serves raw repository files as plain text. These are game assets,
+// requested inside the isolated game runner, rather than navigable web pages.
+export function gameAssetHeaders(url,headers,status){
+  if(status!==200||url.hostname!=='raw.githubusercontent.com')return headers;
+  const type=/\.js$/i.test(url.pathname)?'application/javascript':/\.css$/i.test(url.pathname)?'text/css':/\.wasm$/i.test(url.pathname)?'application/wasm':null;
+  return type?[...headers.filter(([name])=>name.toLowerCase()!=='content-type'),['content-type',type]]:headers;
+}
 export function gameTransport(transport, origin, fetchLocal = fetch) {
-  const request = transport.request.bind(transport);
+  const upstream = transport.request.bind(transport);
+  const request = async (...args) => {
+    const response=await upstream(...args);
+    const headers=gameAssetHeaders(new URL(args[0]),response.headers,response.status);
+    return headers===response.headers?response:{...response,headers};
+  };
   transport.request = async (remote, method, body, headers, signal) => {
     // libcurl's custom HEAD method expects a response body and rejects valid
     // split-file headers as a partial transfer. Probe public game chunks with a

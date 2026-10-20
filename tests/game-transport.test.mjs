@@ -1,6 +1,23 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import { gameTransport } from '../public/game-transport.js';
+import { gameTransport,gameAssetHeaders } from '../public/game-transport.js';
+
+test('raw repository game assets retain bytes and error responses while receiving usable media types',async()=>{
+ const headers=[['Content-Type','text/plain'],['x-content-type-options','nosniff'],['content-length','18']];
+ for(const [file,type] of [['engine.js','application/javascript'],['style.css','text/css'],['engine.wasm','application/wasm']]){
+  const url=new URL('https://raw.githubusercontent.com/author/game/revision/'+file);
+  const body=new Uint8Array([0,97,115,109]);
+  const transport={request:async()=>({status:200,headers,body})};
+  gameTransport(transport,'https://neon.example');
+  const result=await transport.request(url,'GET',null,[]);
+  assert.equal(result.body,body);
+  assert.equal(result.headers.find(([key])=>key.toLowerCase()==='content-type')[1],type);
+  assert.ok(result.headers.some(([key,value])=>key==='x-content-type-options'&&value==='nosniff'));
+  assert.equal(gameAssetHeaders(url,headers,404),headers);
+ }
+ assert.equal(gameAssetHeaders(new URL('https://other.example/engine.js'),headers,200),headers);
+ assert.equal(gameAssetHeaders(new URL('https://raw.githubusercontent.com/author/game/revision/index.html'),headers,200),headers);
+});
 
 test('split game probes keep the proxy route and cancel a one-byte GET instead of broken HEAD',async()=>{
  let captured,cancelled=false;const signal=new AbortController().signal;

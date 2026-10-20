@@ -1,0 +1,8 @@
+Touhou Mother by S-tele and collaborators. English translation by vgperson.
+Game assets from the translator's official download:
+https://vgperson.com/games/touhoumother.htm
+https://vgperson.com/games/TouhouMother.zip
+Retrieved 2026-10-19. Original credits and in-game notices retained.
+Playback uses the externally hosted, unmodified official EasyRPG web player:
+https://easyrpg.org/play/
+https://github.com/EasyRPG/Player
