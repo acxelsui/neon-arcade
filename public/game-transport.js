@@ -1,3 +1,4 @@
+import {noahAssetAddress,isNoahGamePage,cleanNoahGamePage} from './noah-game-sources.js';
 // Feed bundled files into Scramjet without asking the relay to access localhost.
 // All other HTTP requests and WebSocket connections remain on libcurl.
 import {withoutBuildNowDemoAds,buildNowSdkAddress} from './buildnow-sdk.js';
@@ -14,7 +15,12 @@ export function gameAssetHeaders(url,headers,status){
 export function gameTransport(transport, origin, fetchLocal = fetch) {
   const upstream = transport.request.bind(transport);
   const request = async (...args) => {
+    const original=new URL(args[0]);args[0]=noahAssetAddress(original);
     const response=await upstream(...args);
+    if(args[1]==='GET'&&response.status===200&&response.body&&isNoahGamePage(original)&&new Headers(response.headers).get('content-type')?.includes('text/html')){
+      const html=cleanNoahGamePage(original,await new Response(response.body).text());
+      return {...response,body:new Blob([html]).stream(),headers:response.headers.filter(([name])=>!['content-length','content-encoding','etag'].includes(name.toLowerCase()))};
+    }
     const headers=gameAssetHeaders(new URL(args[0]),response.headers,response.status);
     return headers===response.headers?response:{...response,headers};
   };

@@ -9,7 +9,7 @@ import {installLolRenderer} from '../public/lol-mod-renderer.js';
 
 test('Minecraft uses only the selected game frame through the existing relay, with a WASM GC fallback',async()=>{
  const catalog=JSON.parse(readFileSync(new URL('../public/catalog.json',import.meta.url)));
- const entries=catalog.games.filter(g=>/minecraft|eaglercraft/i.test(g.name));assert.equal(entries.length,1);assert.equal(entries[0].name,'Minecraft');assert.equal(entries[0].url,minecraftFrames.wasm);
+ const entries=catalog.games.filter(g=>/^(?:minecraft|eaglercraft)$/i.test(g.name));assert.equal(entries.length,1);assert.equal(entries[0].name,'Minecraft');assert.equal(entries[0].url,minecraftFrames.wasm);
  assert.equal(minecraftFrame({validate:()=>true}),minecraftFrames.wasm);assert.equal(minecraftFrame({validate:()=>false}),minecraftFrames.javascript);assert.equal(minecraftFrame({validate(){throw Error();}}),minecraftFrames.javascript);
  const calls=[],transport=gameTransport({request:async(...args)=>{calls.push(args);return {status:200};}},'https://arcade.example',()=>{throw Error('must proxy');});
  await transport.request(new URL(entries[0].url),'GET',null,[],undefined);assert.equal(calls[0][0].href,minecraftFrames.wasm);

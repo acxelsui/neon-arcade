@@ -1,0 +1,2596 @@
+{
+  "date": "2026-10-20",
+  "source": "https://noahstutoring.academy/",
+  "sourceCount": 453,
+  "counts": {
+    "imported": 101,
+    "duplicates": 340,
+    "unavailable": 12,
+    "resourceProbes": 388,
+    "engineChecks": 50
+  },
+  "imported": [
+    {
+      "id": "866",
+      "name": "Minecraft Story Mode",
+      "source": "https://noahstutoring.academy/games/510.html",
+      "game": "https://noahstutoring.academy/games/510.html",
+      "status": 200
+    },
+    {
+      "id": "867",
+      "name": "Muddy Heights",
+      "source": "https://noahstutoring.academy/games/509.html",
+      "game": "https://noahstutoring.academy/games/509.html",
+      "status": 200
+    },
+    {
+      "id": "868",
+      "name": "Hill Climb Racing",
+      "source": "https://noahstutoring.academy/games/508.html",
+      "game": "https://noahstutoring.academy/games/508.html",
+      "status": 200
+    },
+    {
+      "id": "869",
+      "name": "Night of the Consumers",
+      "source": "https://noahstutoring.academy/games/507.html",
+      "game": "https://noahstutoring.academy/games/507.html",
+      "status": 200
+    },
+    {
+      "id": "870",
+      "name": "Skate 3 Fan Game",
+      "source": "https://noahstutoring.academy/games/505.html",
+      "game": "https://noahstutoring.academy/games/505.html",
+      "status": 200
+    },
+    {
+      "id": "871",
+      "name": "Hotline Miami 2",
+      "source": "https://noahstutoring.academy/games/504.html",
+      "game": "https://noahstutoring.academy/games/504.html",
+      "status": 200
+    },
+    {
+      "id": "872",
+      "name": "Crashout Crew",
+      "source": "https://noahstutoring.academy/games/502.html",
+      "game": "https://noahstutoring.academy/games/502.html",
+      "status": 200
+    },
+    {
+      "id": "873",
+      "name": "Gamble With Your Friends",
+      "source": "https://noahstutoring.academy/games/501.html",
+      "game": "https://noahstutoring.academy/games/501.html",
+      "status": 200
+    },
+    {
+      "id": "874",
+      "name": "Don't Bite Me Bro!",
+      "source": "https://noahstutoring.academy/games/500.html",
+      "game": "https://noahstutoring.academy/games/500.html",
+      "status": 200
+    },
+    {
+      "id": "875",
+      "name": "NoomiClone",
+      "source": "https://noahstutoring.academy/games/499.html",
+      "game": "https://noahstutoring.academy/games/499.html",
+      "status": 200
+    },
+    {
+      "id": "876",
+      "name": "Deltarune",
+      "source": "https://noahstutoring.academy/games/340.html",
+      "game": "https://noahstutoring.academy/games/340.html",
+      "status": 200
+    },
+    {
+      "id": "877",
+      "name": "Keep Talking And Nobody Explodes",
+      "source": "https://noahstutoring.academy/games/498.html",
+      "game": "https://noahstutoring.academy/games/498.html",
+      "status": 200
+    },
+    {
+      "id": "878",
+      "name": "Table Tennis WorldTour",
+      "source": "https://noahstutoring.academy/games/497.html",
+      "game": "https://noahstutoring.academy/games/497.html",
+      "status": 200
+    },
+    {
+      "id": "879",
+      "name": "NANA: DS",
+      "source": "https://noahstutoring.academy/games/496.html",
+      "game": "https://noahstutoring.academy/games/496.html",
+      "status": 200
+    },
+    {
+      "id": "880",
+      "name": "Kerbal Space Program",
+      "source": "https://noahstutoring.academy/games/494.html",
+      "game": "https://noahstutoring.academy/games/494.html",
+      "status": 200
+    },
+    {
+      "id": "881",
+      "name": "Gangbeasts",
+      "source": "https://noahstutoring.academy/games/492.html",
+      "game": "https://noahstutoring.academy/games/492.html",
+      "status": 200
+    },
+    {
+      "id": "882",
+      "name": "Superflight",
+      "source": "https://noahstutoring.academy/games/491.html",
+      "game": "https://noahstutoring.academy/games/491.html",
+      "status": 200
+    },
+    {
+      "id": "883",
+      "name": "Horse Magnifier",
+      "source": "https://noahstutoring.academy/games/489.html",
+      "game": "https://noahstutoring.academy/games/489.html",
+      "status": 200
+    },
+    {
+      "id": "884",
+      "name": "Mindustry",
+      "source": "https://noahstutoring.academy/games/488.html",
+      "game": "https://noahstutoring.academy/games/488.html",
+      "status": 200
+    },
+    {
+      "id": "885",
+      "name": "Undertale",
+      "source": "https://noahstutoring.academy/games/478.html",
+      "game": "https://noahstutoring.academy/games/478.html",
+      "status": 200
+    },
+    {
+      "id": "886",
+      "name": "Kick the Buddy",
+      "source": "https://noahstutoring.academy/games/470.html",
+      "game": "https://noahstutoring.academy/games/470.html",
+      "status": 200
+    },
+    {
+      "id": "887",
+      "name": "Cleggy Car",
+      "source": "https://noahstutoring.academy/games/415.html",
+      "game": "https://noahstutoring.academy/games/415.html",
+      "status": 200
+    },
+    {
+      "id": "888",
+      "name": "Little Alchemy 2",
+      "source": "https://noahstutoring.academy/games/429.html",
+      "game": "https://noahstutoring.academy/games/429.html",
+      "status": 200
+    },
+    {
+      "id": "889",
+      "name": "The World's Hardest Game 2",
+      "source": "https://noahstutoring.academy/games/404.html",
+      "game": "https://noahstutoring.academy/games/404.html",
+      "status": 200
+    },
+    {
+      "id": "890",
+      "name": "Customer Support",
+      "source": "https://noahstutoring.academy/games/383.html",
+      "game": "https://noahstutoring.academy/games/383.html",
+      "status": 200
+    },
+    {
+      "id": "891",
+      "name": "Fireboy and Watergirl: Forest Temple",
+      "source": "https://noahstutoring.academy/games/385.html",
+      "game": "https://noahstutoring.academy/games/385.html",
+      "status": 200
+    },
+    {
+      "id": "892",
+      "name": "Earn to Die",
+      "source": "https://noahstutoring.academy/games/378.html",
+      "game": "https://noahstutoring.academy/games/378.html",
+      "status": 200
+    },
+    {
+      "id": "893",
+      "name": "Earn to Die 2",
+      "source": "https://noahstutoring.academy/games/379.html",
+      "game": "https://noahstutoring.academy/games/379.html",
+      "status": 200
+    },
+    {
+      "id": "894",
+      "name": "Gacha Life",
+      "source": "https://noahstutoring.academy/games/375.html",
+      "game": "https://noahstutoring.academy/games/375.html",
+      "status": 200
+    },
+    {
+      "id": "895",
+      "name": "Gacha Verse",
+      "source": "https://noahstutoring.academy/games/376.html",
+      "game": "https://noahstutoring.academy/games/376.html",
+      "status": 200
+    },
+    {
+      "id": "896",
+      "name": "Tung Sahur Horror",
+      "source": "https://noahstutoring.academy/games/377.html",
+      "game": "https://noahstutoring.academy/games/377.html",
+      "status": 200
+    },
+    {
+      "id": "897",
+      "name": "Horror Tale",
+      "source": "https://noahstutoring.academy/games/373.html",
+      "game": "https://noahstutoring.academy/games/373.html",
+      "status": 200
+    },
+    {
+      "id": "898",
+      "name": "Baby Sniper In Vietnam",
+      "source": "https://noahstutoring.academy/games/363.html",
+      "game": "https://noahstutoring.academy/games/363.html",
+      "status": 200
+    },
+    {
+      "id": "899",
+      "name": "Dad 'n Me",
+      "source": "https://noahstutoring.academy/games/345.html",
+      "game": "https://noahstutoring.academy/games/345.html",
+      "status": 200
+    },
+    {
+      "id": "900",
+      "name": "Earthbound",
+      "source": "https://noahstutoring.academy/games/339.html",
+      "game": "https://noahstutoring.academy/games/339.html",
+      "status": 200
+    },
+    {
+      "id": "901",
+      "name": "Hamtaro: Ham-Ham Heartbreak",
+      "source": "https://noahstutoring.academy/games/336.html",
+      "game": "https://noahstutoring.academy/games/336.html",
+      "status": 200
+    },
+    {
+      "id": "902",
+      "name": "Beeswarm Simulator (html version)",
+      "source": "https://noahstutoring.academy/games/312.html",
+      "game": "https://noahstutoring.academy/games/312.html",
+      "status": 200
+    },
+    {
+      "id": "903",
+      "name": "Dungeons & Degenerate Gamblers",
+      "source": "https://noahstutoring.academy/games/173.html",
+      "game": "https://noahstutoring.academy/games/173.html",
+      "status": 200
+    },
+    {
+      "id": "904",
+      "name": "Pixel Gun 3D",
+      "source": "https://noahstutoring.academy/games/272.html",
+      "game": "https://rawcdn.githack.com/thirstygithub/mrmooremath/edf912ae4d86452b59348babd57f3b8c86dcbe86/public/assets/storage/webgl/pg3d/index.html",
+      "status": 200
+    },
+    {
+      "id": "905",
+      "name": "Eat The Rich",
+      "source": "https://noahstutoring.academy/games/270.html",
+      "game": "https://rawcdn.githack.com/thirstygithub/mrmooremath/edf912ae4d86452b59348babd57f3b8c86dcbe86/public/assets/storage/webgl/eattherich/index.html",
+      "status": 200
+    },
+    {
+      "id": "906",
+      "name": "Grand Theft Auto: Vice City",
+      "source": "https://noahstutoring.academy/games/149.html",
+      "game": "https://noahstutoring.academy/games/149.html",
+      "status": 200
+    },
+    {
+      "id": "907",
+      "name": "Heretic",
+      "source": "https://noahstutoring.academy/games/150.html",
+      "game": "https://noahstutoring.academy/games/150.html",
+      "status": 200
+    },
+    {
+      "id": "908",
+      "name": "FNF Rewrite",
+      "source": "https://noahstutoring.academy/games/154.html",
+      "game": "https://noahstutoring.academy/games/154.html",
+      "status": 200
+    },
+    {
+      "id": "909",
+      "name": "Daggerfall",
+      "source": "https://noahstutoring.academy/games/136.html",
+      "game": "https://noahstutoring.academy/games/136.html",
+      "status": 200
+    },
+    {
+      "id": "910",
+      "name": "Portal",
+      "source": "https://noahstutoring.academy/games/135.html",
+      "game": "https://noahstutoring.academy/games/135.html",
+      "status": 200
+    },
+    {
+      "id": "911",
+      "name": "Kart Bros",
+      "source": "https://kartbros.io/?ms=1&msstart_sdk_init=eyJwYXJlbnRPcmlnaW4iOiJodHRwczovL3d3dy5tc24uY29tIiwiY2xpZW50SWQiOiIyRDNDRjBEODBGRUQ2RDVDMDFDN0U2MjEwRTlFNkNGRCIsImxvY2FsZSI6ImVuLXVzIiwiZW50cnlQb2ludElkIjoiIiwic3dpdGNoR2FtZVBheWxvYWQiOnsic3dpdGNoZWRUbyI6IjlwOTc4OHM2OTdqYyIsInZhbHVlIjp7fX19",
+      "game": "https://kartbros.io/?ms=1&msstart_sdk_init=eyJwYXJlbnRPcmlnaW4iOiJodHRwczovL3d3dy5tc24uY29tIiwiY2xpZW50SWQiOiIyRDNDRjBEODBGRUQ2RDVDMDFDN0U2MjEwRTlFNkNGRCIsImxvY2FsZSI6ImVuLXVzIiwiZW50cnlQb2ludElkIjoiIiwic3dpdGNoR2FtZVBheWxvYWQiOnsic3dpdGNoZWRUbyI6IjlwOTc4OHM2OTdqYyIsInZhbHVlIjp7fX19",
+      "status": 200
+    },
+    {
+      "id": "912",
+      "name": "FNF Agoti",
+      "source": "https://noahstutoring.academy/games/125.html",
+      "game": "https://noahstutoring.academy/games/125.html",
+      "status": 200
+    },
+    {
+      "id": "913",
+      "name": "FNF Black Betrayal",
+      "source": "https://noahstutoring.academy/games/124.html",
+      "game": "https://noahstutoring.academy/games/124.html",
+      "status": 200
+    },
+    {
+      "id": "914",
+      "name": "FNF Camellia",
+      "source": "https://noahstutoring.academy/games/122.html",
+      "game": "https://noahstutoring.academy/games/122.html",
+      "status": 200
+    },
+    {
+      "id": "915",
+      "name": "FNF Shaggy X Matt",
+      "source": "https://noahstutoring.academy/games/116.html",
+      "game": "https://noahstutoring.academy/games/116.html",
+      "status": 200
+    },
+    {
+      "id": "916",
+      "name": "Achilles 2",
+      "source": "https://noahstutoring.academy/games/112.html",
+      "game": "https://noahstutoring.academy/games/112.html",
+      "status": 200
+    },
+    {
+      "id": "917",
+      "name": "Russian Counter Strike",
+      "source": "https://noahstutoring.academy/games/111.html",
+      "game": "https://noahstutoring.academy/games/111.html",
+      "status": 200
+    },
+    {
+      "id": "918",
+      "name": "Madness Interactive",
+      "source": "https://noahstutoring.academy/games/106.html",
+      "game": "https://noahstutoring.academy/games/106.html",
+      "status": 200
+    },
+    {
+      "id": "919",
+      "name": "Tony Hawks Pro Skater",
+      "source": "https://noahstutoring.academy/games/105.html",
+      "game": "https://noahstutoring.academy/games/105.html",
+      "status": 200
+    },
+    {
+      "id": "920",
+      "name": "Resident Evil 3",
+      "source": "https://noahstutoring.academy/games/103.html",
+      "game": "https://noahstutoring.academy/games/103.html",
+      "status": 200
+    },
+    {
+      "id": "921",
+      "name": "Scribblenauts",
+      "source": "https://noahstutoring.academy/games/102.html",
+      "game": "https://noahstutoring.academy/games/102.html",
+      "status": 200
+    },
+    {
+      "id": "922",
+      "name": "Strange Rope Police",
+      "source": "https://noahstutoring.academy/games/100.html",
+      "game": "https://noahstutoring.academy/games/100.html",
+      "status": 200
+    },
+    {
+      "id": "923",
+      "name": "Street Fighter III",
+      "source": "https://noahstutoring.academy/games/99.html",
+      "game": "https://noahstutoring.academy/games/99.html",
+      "status": 200
+    },
+    {
+      "id": "924",
+      "name": "Super Liquid Soccer",
+      "source": "https://noahstutoring.academy/games/98.html",
+      "game": "https://noahstutoring.academy/games/98.html",
+      "status": 200
+    },
+    {
+      "id": "925",
+      "name": "Tempoverdose",
+      "source": "https://noahstutoring.academy/games/97.html",
+      "game": "https://noahstutoring.academy/games/97.html",
+      "status": 200
+    },
+    {
+      "id": "926",
+      "name": "Wolfenstein 3D",
+      "source": "https://noahstutoring.academy/games/95.html",
+      "game": "https://noahstutoring.academy/games/95.html",
+      "status": 200
+    },
+    {
+      "id": "927",
+      "name": "Zombotron Reboot",
+      "source": "https://noahstutoring.academy/games/94.html",
+      "game": "https://noahstutoring.academy/games/94.html",
+      "status": 200
+    },
+    {
+      "id": "928",
+      "name": "Mortal Kombat 4",
+      "source": "https://noahstutoring.academy/games/93.html",
+      "game": "https://noahstutoring.academy/games/93.html",
+      "status": 200
+    },
+    {
+      "id": "929",
+      "name": "Big Shot Boxing",
+      "source": "https://noahstutoring.academy/games/85.html",
+      "game": "https://noahstutoring.academy/games/85.html",
+      "status": 200
+    },
+    {
+      "id": "930",
+      "name": "Assessment Examination",
+      "source": "https://noahstutoring.academy/games/84.html",
+      "game": "https://noahstutoring.academy/games/84.html",
+      "status": 200
+    },
+    {
+      "id": "931",
+      "name": "Douche Bag Life",
+      "source": "https://noahstutoring.academy/games/78.html",
+      "game": "https://noahstutoring.academy/games/78.html",
+      "status": 200
+    },
+    {
+      "id": "932",
+      "name": "Donkey Kong",
+      "source": "https://noahstutoring.academy/games/77.html",
+      "game": "https://noahstutoring.academy/games/77.html",
+      "status": 200
+    },
+    {
+      "id": "933",
+      "name": "Apple Worm",
+      "source": "https://noahstutoring.academy/games/75.html",
+      "game": "https://noahstutoring.academy/games/75.html",
+      "status": 200
+    },
+    {
+      "id": "934",
+      "name": "Doki Doki Literature Club",
+      "source": "https://noahstutoring.academy/games/73.html",
+      "game": "https://noahstutoring.academy/games/73.html",
+      "status": 200
+    },
+    {
+      "id": "936",
+      "name": "Deepest Sword",
+      "source": "https://noahstutoring.academy/games/263.html",
+      "game": "https://noahstutoring.academy/games/263.html",
+      "status": 200
+    },
+    {
+      "id": "937",
+      "name": "Tomodachi Life",
+      "source": "https://noahstutoring.academy/games/5.html",
+      "game": "https://noahstutoring.academy/games/5.html",
+      "status": 200
+    },
+    {
+      "id": "938",
+      "name": "Rocket Soccer Derby",
+      "source": "https://noahstutoring.academy/games/262.html",
+      "game": "https://noahstutoring.academy/games/262.html",
+      "status": 200
+    },
+    {
+      "id": "939",
+      "name": "Street Fighter II",
+      "source": "https://noahstutoring.academy/games/261.html",
+      "game": "https://noahstutoring.academy/games/261.html",
+      "status": 200
+    },
+    {
+      "id": "941",
+      "name": "Super Falling Fred",
+      "source": "https://noahstutoring.academy/games/256.html",
+      "game": "https://noahstutoring.academy/games/256.html",
+      "status": 200
+    },
+    {
+      "id": "942",
+      "name": "Impossible Quiz 2",
+      "source": "https://xoriushourz.github.io/ImpossibleQuiz2/",
+      "game": "https://xoriushourz.github.io/ImpossibleQuiz2/",
+      "status": 200
+    },
+    {
+      "id": "943",
+      "name": "Gun Mayhem 2",
+      "source": "https://noahstutoring.academy/games/251.html",
+      "game": "https://noahstutoring.academy/games/251.html",
+      "status": 200
+    },
+    {
+      "id": "944",
+      "name": "Gun Mayhem",
+      "source": "https://noahstutoring.academy/games/250.html",
+      "game": "https://noahstutoring.academy/games/250.html",
+      "status": 200
+    },
+    {
+      "id": "945",
+      "name": "Stake Mines",
+      "source": "https://noahstutoring.academy/games/246.html",
+      "game": "https://noahstutoring.academy/games/246.html",
+      "status": 200
+    },
+    {
+      "id": "946",
+      "name": "Twitch Tetris",
+      "source": "https://godlover89.github.io/Twitch-Tetris/",
+      "game": "https://godlover89.github.io/Twitch-Tetris/",
+      "status": 200
+    },
+    {
+      "id": "947",
+      "name": "Ultimate Car Driving Game",
+      "source": "https://noahstutoring.academy/games/237.html",
+      "game": "https://noahstutoring.academy/games/237.html",
+      "status": 200
+    },
+    {
+      "id": "948",
+      "name": "Apple Shooter",
+      "source": "https://noahstutoring.academy/games/233.html",
+      "game": "https://noahstutoring.academy/games/233.html",
+      "status": 200
+    },
+    {
+      "id": "949",
+      "name": "Running Fred",
+      "source": "https://noahstutoring.academy/games/232.html",
+      "game": "https://noahstutoring.academy/games/232.html",
+      "status": 200
+    },
+    {
+      "id": "950",
+      "name": "Hextris",
+      "source": "https://noahstutoring.academy/games/231.html",
+      "game": "https://noahstutoring.academy/games/231.html",
+      "status": 200
+    },
+    {
+      "id": "951",
+      "name": "Jelly Truck",
+      "source": "https://noahstutoring.academy/games/230.html",
+      "game": "https://noahstutoring.academy/games/230.html",
+      "status": 200
+    },
+    {
+      "id": "952",
+      "name": "Hole.io",
+      "source": "https://noahstutoring.academy/games/228.html",
+      "game": "https://noahstutoring.academy/games/228.html",
+      "status": 200
+    },
+    {
+      "id": "953",
+      "name": "Wrassling",
+      "source": "https://noahstutoring.academy/games/227.html",
+      "game": "https://noahstutoring.academy/games/227.html",
+      "status": 200
+    },
+    {
+      "id": "954",
+      "name": "Level Devil",
+      "source": "https://noahstutoring.academy/games/225.html",
+      "game": "https://noahstutoring.academy/games/225.html",
+      "status": 200
+    },
+    {
+      "id": "955",
+      "name": "Boxing Live 2",
+      "source": "https://noahstutoring.academy/games/223.html",
+      "game": "https://noahstutoring.academy/games/223.html",
+      "status": 200
+    },
+    {
+      "id": "956",
+      "name": "Wheelie Bike 2",
+      "source": "https://noahstutoring.academy/games/221.html",
+      "game": "https://noahstutoring.academy/games/221.html",
+      "status": 200
+    },
+    {
+      "id": "957",
+      "name": "Stacktris",
+      "source": "https://noahstutoring.academy/games/214.html",
+      "game": "https://noahstutoring.academy/games/214.html",
+      "status": 200
+    },
+    {
+      "id": "958",
+      "name": "Happy Room",
+      "source": "https://noahstutoring.academy/games/210.html",
+      "game": "https://noahstutoring.academy/games/210.html",
+      "status": 200
+    },
+    {
+      "id": "959",
+      "name": "Zombocalypse 2",
+      "source": "https://noahstutoring.academy/games/209.html",
+      "game": "https://noahstutoring.academy/games/209.html",
+      "status": 200
+    },
+    {
+      "id": "960",
+      "name": "Club Penguin",
+      "source": "https://play.cplegacy.com/",
+      "game": "https://play.cplegacy.com/",
+      "status": 200
+    },
+    {
+      "id": "961",
+      "name": "Thorns and Balloons",
+      "source": "https://noahsamazingtutoringhelp.github.io/ScienceStudyBuddy/",
+      "game": "https://noahsamazingtutoringhelp.github.io/ScienceStudyBuddy/",
+      "status": 200
+    },
+    {
+      "id": "962",
+      "name": "Subway Surfers",
+      "source": "https://noahstutoring.academy/games/200.html",
+      "game": "https://noahstutoring.academy/games/200.html",
+      "status": 200
+    },
+    {
+      "id": "963",
+      "name": "Sand Game",
+      "source": "https://noahstutoring.academy/games/187.html",
+      "game": "https://noahstutoring.academy/games/187.html",
+      "status": 200
+    },
+    {
+      "id": "964",
+      "name": "Chrome Dino",
+      "source": "https://noahstutoring.academy/games/184.html",
+      "game": "https://noahstutoring.academy/games/184.html",
+      "status": 200
+    },
+    {
+      "id": "965",
+      "name": "Dodge Ball",
+      "source": "https://noahstutoring.academy/games/401.html",
+      "game": "https://noahstutoring.academy/games/401.html",
+      "status": 200
+    },
+    {
+      "id": "966",
+      "name": "Age of War 2",
+      "source": "https://noahstutoring.academy/games/183.html",
+      "game": "https://noahstutoring.academy/games/183.html",
+      "status": 200
+    },
+    {
+      "id": "967",
+      "name": "Sprinter",
+      "source": "https://noahstutoring.academy/games/fucker.html",
+      "game": "https://noahstutoring.academy/games/fucker.html",
+      "status": 200
+    },
+    {
+      "id": "968",
+      "name": "Short Life",
+      "source": "https://noahstutoring.academy/games/174.html",
+      "game": "https://noahstutoring.academy/games/174.html",
+      "status": 200
+    }
+  ],
+  "duplicates": [
+    {
+      "source": "Happy Wheels",
+      "existingId": "624",
+      "reason": "same game name, reviewed alias, or matching game-specific asset"
+    },
+    {
+      "source": "A Dance of Fire and Ice",
+      "existingId": "59",
+      "reason": "same game name, reviewed alias, or matching game-specific asset"
+    },
+    {
+      "source": "Peggle Deluxe",
+      "existingId": "688",
+      "reason": "same game name, reviewed alias, or matching game-specific asset"
+    },
+    {
+      "source": "8-Ball Pool",
+      "existingId": "115",
+      "reason": "same game name, reviewed alias, or matching game-specific asset"
+    },
+    {
+      "source": "Trees Hate You",
+      "existingId": "801",
+      "reason": "same game name, reviewed alias, or matching game-specific asset"
+    },
+    {
+      "source": "Superhot Webport",
+      "existingId": "233",
+      "reason": "same game name, reviewed alias, or matching game-specific asset"
+    },
+    {
+      "source": "Geometry Dash Webport",
+      "existingId": "785",
+      "reason": "same game name, reviewed alias, or matching game-specific asset"
+    },
+    {
+      "source": "Endacopia (full)",
+      "existingId": "860",
+      "reason": "same game name, reviewed alias, or matching game-specific asset"
+    },
+    {
+      "source": "How to Fish",
+      "existingId": "how-to-fish",
+      "reason": "same game name, reviewed alias, or matching game-specific asset"
+    },
+    {
+      "source": "FNAF: Ultimate Custom Night",
+      "existingId": "192",
+      "reason": "same game name, reviewed alias, or matching game-specific asset"
+    },
+    {
+      "source": "Swords and Sandals 2",
+      "existingId": "845",
+      "reason": "same game name, reviewed alias, or matching game-specific asset"
+    },
+    {
+      "source": "Hammer 2 Reloaded",
+      "existingId": "844",
+      "reason": "same game name, reviewed alias, or matching game-specific asset"
+    },
+    {
+      "source": "PikuNiku",
+      "existingId": "856",
+      "reason": "same game name, reviewed alias, or matching game-specific asset"
+    },
+    {
+      "source": "SCP Containment Breach",
+      "existingId": "853",
+      "reason": "same game name, reviewed alias, or matching game-specific asset"
+    },
+    {
+      "source": "Scampton The Great",
+      "existingId": "802",
+      "reason": "same game name, reviewed alias, or matching game-specific asset"
+    },
+    {
+      "source": "Rhythm Heaven",
+      "existingId": "809",
+      "reason": "same game name, reviewed alias, or matching game-specific asset"
+    },
+    {
+      "source": "Pizza Tower",
+      "existingId": "267",
+      "reason": "same game name, reviewed alias, or matching game-specific asset"
+    },
+    {
+      "source": "60 Seconds",
+      "existingId": "858",
+      "reason": "same game name, reviewed alias, or matching game-specific asset"
+    },
+    {
+      "source": "PEAK",
+      "existingId": "847",
+      "reason": "same game name, reviewed alias, or matching game-specific asset"
+    },
+    {
+      "source": "Trombone Champ",
+      "existingId": "855",
+      "reason": "same game name, reviewed alias, or matching game-specific asset"
+    },
+    {
+      "source": "Clustertruck",
+      "existingId": "848",
+      "reason": "same game name, reviewed alias, or matching game-specific asset"
+    },
+    {
+      "source": "Granny 3",
+      "existingId": "852",
+      "reason": "same game name, reviewed alias, or matching game-specific asset"
+    },
+    {
+      "source": "Grand Theft Auto 3",
+      "existingId": "851",
+      "reason": "same game name, reviewed alias, or matching game-specific asset"
+    },
+    {
+      "source": "Inscryption",
+      "existingId": "857",
+      "reason": "same game name, reviewed alias, or matching game-specific asset"
+    },
+    {
+      "source": "Lobotomy Corporation",
+      "existingId": "850",
+      "reason": "same game name, reviewed alias, or matching game-specific asset"
+    },
+    {
+      "source": "La Madriguera",
+      "existingId": "843",
+      "reason": "same game name, reviewed alias, or matching game-specific asset"
+    },
+    {
+      "source": "Webdashers",
+      "existingId": "785",
+      "reason": "same game name, reviewed alias, or matching game-specific asset"
+    },
+    {
+      "source": "Plants Vs Zombies",
+      "existingId": "232",
+      "reason": "same game name, reviewed alias, or matching game-specific asset"
+    },
+    {
+      "source": "Metal Gear Solid",
+      "existingId": "599",
+      "reason": "same game name, reviewed alias, or matching game-specific asset"
+    },
+    {
+      "source": "Hypper Sandbox",
+      "existingId": "551",
+      "reason": "same game name, reviewed alias, or matching game-specific asset"
+    },
+    {
+      "source": "FNF vs Shucks V2",
+      "existingId": "836",
+      "reason": "same game name, reviewed alias, or matching game-specific asset"
+    },
+    {
+      "source": "Cup Head",
+      "existingId": "465",
+      "reason": "same game name, reviewed alias, or matching game-specific asset"
+    },
+    {
+      "source": "YoHoHo.io",
+      "existingId": "835",
+      "reason": "same game name, reviewed alias, or matching game-specific asset"
+    },
+    {
+      "source": "Totally Accurate Battle Simulator",
+      "existingId": "827",
+      "reason": "same game name, reviewed alias, or matching game-specific asset"
+    },
+    {
+      "source": "Just Shapes & Beats",
+      "existingId": "826",
+      "reason": "same game name, reviewed alias, or matching game-specific asset"
+    },
+    {
+      "source": "Into Space 2",
+      "existingId": "837",
+      "reason": "same game name, reviewed alias, or matching game-specific asset"
+    },
+    {
+      "source": "Animal Crossing",
+      "existingId": "828",
+      "reason": "same game name, reviewed alias, or matching game-specific asset"
+    },
+    {
+      "source": "Rocket Goal.io",
+      "existingId": "800",
+      "reason": "same game name, reviewed alias, or matching game-specific asset"
+    },
+    {
+      "source": "20 Minutes Till Dawn",
+      "existingId": "819",
+      "reason": "same game name, reviewed alias, or matching game-specific asset"
+    },
+    {
+      "source": "Cruelty Squad",
+      "existingId": "825",
+      "reason": "same game name, reviewed alias, or matching game-specific asset"
+    },
+    {
+      "source": "Plague Inc",
+      "existingId": "805",
+      "reason": "same game name, reviewed alias, or matching game-specific asset"
+    },
+    {
+      "source": "BeatBlock",
+      "existingId": "787",
+      "reason": "same game name, reviewed alias, or matching game-specific asset"
+    },
+    {
+      "source": "Escape Road 3",
+      "existingId": "792",
+      "reason": "same game name, reviewed alias, or matching game-specific asset"
+    },
+    {
+      "source": "Fih",
+      "existingId": "797",
+      "reason": "same game name, reviewed alias, or matching game-specific asset"
+    },
+    {
+      "source": "Slendytubbies 2",
+      "existingId": "806",
+      "reason": "same game name, reviewed alias, or matching game-specific asset"
+    },
+    {
+      "source": "Slendytubbies 1",
+      "existingId": "796",
+      "reason": "same game name, reviewed alias, or matching game-specific asset"
+    },
+    {
+      "source": "Lethal Ape",
+      "existingId": "793",
+      "reason": "same game name, reviewed alias, or matching game-specific asset"
+    },
+    {
+      "source": "Spaceflight Simulator",
+      "existingId": "808",
+      "reason": "same game name, reviewed alias, or matching game-specific asset"
+    },
+    {
+      "source": "Bad Piggies",
+      "existingId": "752",
+      "reason": "same game name, reviewed alias, or matching game-specific asset"
+    },
+    {
+      "source": "Stardew Valley",
+      "existingId": "789",
+      "reason": "same game name, reviewed alias, or matching game-specific asset"
+    },
+    {
+      "source": "Dice A Million",
+      "existingId": "759",
+      "reason": "same game name, reviewed alias, or matching game-specific asset"
+    },
+    {
+      "source": "Helltaker",
+      "existingId": "790",
+      "reason": "same game name, reviewed alias, or matching game-specific asset"
+    },
+    {
+      "source": "Vib-Ribbon",
+      "existingId": "788",
+      "reason": "same game name, reviewed alias, or matching game-specific asset"
+    },
+    {
+      "source": "Who's Your Daddy?",
+      "existingId": "791",
+      "reason": "same game name, reviewed alias, or matching game-specific asset"
+    },
+    {
+      "source": "Minecraft 1.12.1",
+      "existingId": "181",
+      "reason": "same game name, reviewed alias, or matching game-specific asset"
+    },
+    {
+      "source": "I Have No Mouth, and I Must Scream",
+      "existingId": "779",
+      "reason": "same game name, reviewed alias, or matching game-specific asset"
+    },
+    {
+      "source": "CheeseRoll",
+      "existingId": "762",
+      "reason": "same game name, reviewed alias, or matching game-specific asset"
+    },
+    {
+      "source": "Overburden",
+      "existingId": "760",
+      "reason": "same game name, reviewed alias, or matching game-specific asset"
+    },
+    {
+      "source": "Brotato",
+      "existingId": "723",
+      "reason": "same game name, reviewed alias, or matching game-specific asset"
+    },
+    {
+      "source": "Serial Experiments Lain",
+      "existingId": "778",
+      "reason": "same game name, reviewed alias, or matching game-specific asset"
+    },
+    {
+      "source": "Stickman Duel",
+      "existingId": "769",
+      "reason": "same game name, reviewed alias, or matching game-specific asset"
+    },
+    {
+      "source": "Your Only Move Is HUSTLE",
+      "existingId": "776",
+      "reason": "same game name, reviewed alias, or matching game-specific asset"
+    },
+    {
+      "source": "Hollow Knight: Silksong",
+      "existingId": "771",
+      "reason": "same game name, reviewed alias, or matching game-specific asset"
+    },
+    {
+      "source": "Going Balls",
+      "existingId": "662",
+      "reason": "same game name, reviewed alias, or matching game-specific asset"
+    },
+    {
+      "source": "Bart Bash",
+      "existingId": "775",
+      "reason": "same game name, reviewed alias, or matching game-specific asset"
+    },
+    {
+      "source": "Hobo 1",
+      "existingId": "673",
+      "reason": "same game name, reviewed alias, or matching game-specific asset"
+    },
+    {
+      "source": "Hobo 2: Prison Brawl",
+      "existingId": "674",
+      "reason": "same game name, reviewed alias, or matching game-specific asset"
+    },
+    {
+      "source": "Hobo 3: Wanted",
+      "existingId": "675",
+      "reason": "same game name, reviewed alias, or matching game-specific asset"
+    },
+    {
+      "source": "Hobo 4: Total War",
+      "existingId": "676",
+      "reason": "same game name, reviewed alias, or matching game-specific asset"
+    },
+    {
+      "source": "Hobo 5: Space Brawls",
+      "existingId": "677",
+      "reason": "same game name, reviewed alias, or matching game-specific asset"
+    },
+    {
+      "source": "Cookie Clicker",
+      "existingId": "82",
+      "reason": "same game name, reviewed alias, or matching game-specific asset"
+    },
+    {
+      "source": "Scary Shawarma",
+      "existingId": "765",
+      "reason": "same game name, reviewed alias, or matching game-specific asset"
+    },
+    {
+      "source": "Command & Conquer",
+      "existingId": "773",
+      "reason": "same game name, reviewed alias, or matching game-specific asset"
+    },
+    {
+      "source": "FISH",
+      "existingId": "761",
+      "reason": "same game name, reviewed alias, or matching game-specific asset"
+    },
+    {
+      "source": "Um Jammer Lammy",
+      "existingId": "782",
+      "reason": "same game name, reviewed alias, or matching game-specific asset"
+    },
+    {
+      "source": "Brawl Simulator",
+      "existingId": "755",
+      "reason": "same game name, reviewed alias, or matching game-specific asset"
+    },
+    {
+      "source": "Google Baseball",
+      "existingId": "257",
+      "reason": "same game name, reviewed alias, or matching game-specific asset"
+    },
+    {
+      "source": "Dumb Ways to Die",
+      "existingId": "738",
+      "reason": "same game name, reviewed alias, or matching game-specific asset"
+    },
+    {
+      "source": "Ultrapool",
+      "existingId": "757",
+      "reason": "same game name, reviewed alias, or matching game-specific asset"
+    },
+    {
+      "source": "A Bite at Freddy's",
+      "existingId": "258",
+      "reason": "same game name, reviewed alias, or matching game-specific asset"
+    },
+    {
+      "source": "Wheely",
+      "existingId": "245",
+      "reason": "same game name, reviewed alias, or matching game-specific asset"
+    },
+    {
+      "source": "The World's Hardest Game",
+      "existingId": "103",
+      "reason": "same game name, reviewed alias, or matching game-specific asset"
+    },
+    {
+      "source": "The World's Hardest Game 3",
+      "existingId": "104",
+      "reason": "same game name, reviewed alias, or matching game-specific asset"
+    },
+    {
+      "source": "The World's Hardest Game 4",
+      "existingId": "105",
+      "reason": "same game name, reviewed alias, or matching game-specific asset"
+    },
+    {
+      "source": "Escape Road City 2",
+      "existingId": "744",
+      "reason": "same game name, reviewed alias, or matching game-specific asset"
+    },
+    {
+      "source": "Bank Robbery 2",
+      "existingId": "439",
+      "reason": "same game name, reviewed alias, or matching game-specific asset"
+    },
+    {
+      "source": "Bank Robbery 3",
+      "existingId": "698",
+      "reason": "same game name, reviewed alias, or matching game-specific asset"
+    },
+    {
+      "source": "Madness Combat: Project Nexus",
+      "existingId": "471",
+      "reason": "same game name, reviewed alias, or matching game-specific asset"
+    },
+    {
+      "source": "Alien Hominid",
+      "existingId": "304",
+      "reason": "same game name, reviewed alias, or matching game-specific asset"
+    },
+    {
+      "source": "The Deadseat",
+      "existingId": "458",
+      "reason": "same game name, reviewed alias, or matching game-specific asset"
+    },
+    {
+      "source": "Deltatraveler",
+      "existingId": "560",
+      "reason": "same game name, reviewed alias, or matching game-specific asset"
+    },
+    {
+      "source": "Needy Streamer Overload",
+      "existingId": "708",
+      "reason": "same game name, reviewed alias, or matching game-specific asset"
+    },
+    {
+      "source": "TileTopia",
+      "existingId": "329",
+      "reason": "same game name, reviewed alias, or matching game-specific asset"
+    },
+    {
+      "source": "Bart Blast",
+      "existingId": "740",
+      "reason": "same game name, reviewed alias, or matching game-specific asset"
+    },
+    {
+      "source": "Bendy and the Ink Machine: All Chapters",
+      "existingId": "803",
+      "reason": "same game name, reviewed alias, or matching game-specific asset"
+    },
+    {
+      "source": "Dumb Ways to Die",
+      "reason": "duplicate source entry"
+    },
+    {
+      "source": "Bloons Tower Defense 1",
+      "existingId": "71",
+      "reason": "same game name, reviewed alias, or matching game-specific asset"
+    },
+    {
+      "source": "Bloons Tower Defense 2",
+      "existingId": "72",
+      "reason": "same game name, reviewed alias, or matching game-specific asset"
+    },
+    {
+      "source": "Bloons Tower Defense 3",
+      "existingId": "73",
+      "reason": "same game name, reviewed alias, or matching game-specific asset"
+    },
+    {
+      "source": "Bloons Tower Defense 4",
+      "existingId": "74",
+      "reason": "same game name, reviewed alias, or matching game-specific asset"
+    },
+    {
+      "source": "Bloons Tower Defense 5",
+      "existingId": "75",
+      "reason": "same game name, reviewed alias, or matching game-specific asset"
+    },
+    {
+      "source": "Endoparasitic 2",
+      "existingId": "724",
+      "reason": "same game name, reviewed alias, or matching game-specific asset"
+    },
+    {
+      "source": "Endoparasitic",
+      "existingId": "286",
+      "reason": "same game name, reviewed alias, or matching game-specific asset"
+    },
+    {
+      "source": "Shift at Midnight",
+      "existingId": "721",
+      "reason": "same game name, reviewed alias, or matching game-specific asset"
+    },
+    {
+      "source": "Road of Fury",
+      "existingId": "42",
+      "reason": "same game name, reviewed alias, or matching game-specific asset"
+    },
+    {
+      "source": "Roulette Hero",
+      "existingId": "720",
+      "reason": "same game name, reviewed alias, or matching game-specific asset"
+    },
+    {
+      "source": "Fear Assessment",
+      "existingId": "728",
+      "reason": "same game name, reviewed alias, or matching game-specific asset"
+    },
+    {
+      "source": "Dimension Incident",
+      "existingId": "727",
+      "reason": "same game name, reviewed alias, or matching game-specific asset"
+    },
+    {
+      "source": "Raldi's Crackhouse",
+      "existingId": "670",
+      "reason": "same game name, reviewed alias, or matching game-specific asset"
+    },
+    {
+      "source": "Christmas Massacre",
+      "existingId": "734",
+      "reason": "same game name, reviewed alias, or matching game-specific asset"
+    },
+    {
+      "source": "Boxing Random",
+      "existingId": "77",
+      "reason": "same game name, reviewed alias, or matching game-specific asset"
+    },
+    {
+      "source": "Volley Random",
+      "existingId": "786",
+      "reason": "same game name, reviewed alias, or matching game-specific asset"
+    },
+    {
+      "source": "Basket Random",
+      "existingId": "66",
+      "reason": "same game name, reviewed alias, or matching game-specific asset"
+    },
+    {
+      "source": "Soccer Random",
+      "existingId": "739",
+      "reason": "same game name, reviewed alias, or matching game-specific asset"
+    },
+    {
+      "source": "Cloverpit",
+      "existingId": "716",
+      "reason": "same game name, reviewed alias, or matching game-specific asset"
+    },
+    {
+      "source": "Peaks of Yore",
+      "existingId": "717",
+      "reason": "same game name, reviewed alias, or matching game-specific asset"
+    },
+    {
+      "source": "Silent Hill",
+      "existingId": "713",
+      "reason": "same game name, reviewed alias, or matching game-specific asset"
+    },
+    {
+      "source": "Five Nights at Candy's 1",
+      "existingId": "503",
+      "reason": "same game name, reviewed alias, or matching game-specific asset"
+    },
+    {
+      "source": "Five Nights at Candy's 2",
+      "existingId": "504",
+      "reason": "same game name, reviewed alias, or matching game-specific asset"
+    },
+    {
+      "source": "Untitled Goose Game",
+      "existingId": "718",
+      "reason": "same game name, reviewed alias, or matching game-specific asset"
+    },
+    {
+      "source": "Class of '09",
+      "existingId": "259",
+      "reason": "same game name, reviewed alias, or matching game-specific asset"
+    },
+    {
+      "source": "Antonblast",
+      "existingId": "711",
+      "reason": "same game name, reviewed alias, or matching game-specific asset"
+    },
+    {
+      "source": "Super Monkey Ball",
+      "existingId": "749",
+      "reason": "same game name, reviewed alias, or matching game-specific asset"
+    },
+    {
+      "source": "Iron Lung",
+      "existingId": "705",
+      "reason": "same game name, reviewed alias, or matching game-specific asset"
+    },
+    {
+      "source": "Superhot",
+      "existingId": "233",
+      "reason": "same game name, reviewed alias, or matching game-specific asset"
+    },
+    {
+      "source": "OMORI",
+      "existingId": "427",
+      "reason": "same game name, reviewed alias, or matching game-specific asset"
+    },
+    {
+      "source": "Fear & Hunger",
+      "existingId": "706",
+      "reason": "same game name, reviewed alias, or matching game-specific asset"
+    },
+    {
+      "source": "Doodle Jump",
+      "existingId": "470",
+      "reason": "same game name, reviewed alias, or matching game-specific asset"
+    },
+    {
+      "source": "Karlson",
+      "existingId": "542",
+      "reason": "same game name, reviewed alias, or matching game-specific asset"
+    },
+    {
+      "source": "Toss The Turtle",
+      "existingId": "110",
+      "reason": "same game name, reviewed alias, or matching game-specific asset"
+    },
+    {
+      "source": "Survivor.io",
+      "existingId": "709",
+      "reason": "same game name, reviewed alias, or matching game-specific asset"
+    },
+    {
+      "source": "People Playground",
+      "existingId": "194",
+      "reason": "same game name, reviewed alias, or matching game-specific asset"
+    },
+    {
+      "source": "Papers, Please",
+      "existingId": "187",
+      "reason": "same game name, reviewed alias, or matching game-specific asset"
+    },
+    {
+      "source": "Time Shooter 3: SWAT",
+      "existingId": "201",
+      "reason": "same game name, reviewed alias, or matching game-specific asset"
+    },
+    {
+      "source": "Time Shooter 2",
+      "existingId": "200",
+      "reason": "same game name, reviewed alias, or matching game-specific asset"
+    },
+    {
+      "source": "Time Shooter 1",
+      "existingId": "199",
+      "reason": "same game name, reviewed alias, or matching game-specific asset"
+    },
+    {
+      "source": "The Man FROM The Window",
+      "existingId": "459",
+      "reason": "same game name, reviewed alias, or matching game-specific asset"
+    },
+    {
+      "source": "Real Flight Simulator",
+      "existingId": "701",
+      "reason": "same game name, reviewed alias, or matching game-specific asset"
+    },
+    {
+      "source": "Johnny Trigger",
+      "existingId": "93",
+      "reason": "same game name, reviewed alias, or matching game-specific asset"
+    },
+    {
+      "source": "Kirby Soft & Wet",
+      "existingId": "692",
+      "reason": "same game name, reviewed alias, or matching game-specific asset"
+    },
+    {
+      "source": "VS Rewrite: ROUND 2",
+      "existingId": "703",
+      "reason": "same game name, reviewed alias, or matching game-specific asset"
+    },
+    {
+      "source": "Speed Stars",
+      "existingId": "266",
+      "reason": "same game name, reviewed alias, or matching game-specific asset"
+    },
+    {
+      "source": "Stickman Destruction",
+      "existingId": "699",
+      "reason": "same game name, reviewed alias, or matching game-specific asset"
+    },
+    {
+      "source": "Stickman Fight Ragdoll",
+      "existingId": "371",
+      "reason": "same game name, reviewed alias, or matching game-specific asset"
+    },
+    {
+      "source": "Gobble",
+      "existingId": "37",
+      "reason": "same game name, reviewed alias, or matching game-specific asset"
+    },
+    {
+      "source": "Tag",
+      "existingId": "627",
+      "reason": "same game name, reviewed alias, or matching game-specific asset"
+    },
+    {
+      "source": "BitPlanes",
+      "existingId": "330",
+      "reason": "same game name, reviewed alias, or matching game-specific asset"
+    },
+    {
+      "source": "Half Life: Opposing Force",
+      "existingId": "693",
+      "reason": "same game name, reviewed alias, or matching game-specific asset"
+    },
+    {
+      "source": "A Difficult Game About Climbing",
+      "existingId": "672",
+      "reason": "same game name, reviewed alias, or matching game-specific asset"
+    },
+    {
+      "source": "Stick War Legacy",
+      "existingId": "666",
+      "reason": "same game name, reviewed alias, or matching game-specific asset"
+    },
+    {
+      "source": "Buster Jam",
+      "existingId": "646",
+      "reason": "same game name, reviewed alias, or matching game-specific asset"
+    },
+    {
+      "source": "Gorilla Tag",
+      "existingId": "668",
+      "reason": "same game name, reviewed alias, or matching game-specific asset"
+    },
+    {
+      "source": "Goblin Goopmaxxing",
+      "existingId": "655",
+      "reason": "same game name, reviewed alias, or matching game-specific asset"
+    },
+    {
+      "source": "Midnight Shift",
+      "existingId": "658",
+      "reason": "same game name, reviewed alias, or matching game-specific asset"
+    },
+    {
+      "source": "Orange Roulette",
+      "existingId": "659",
+      "reason": "same game name, reviewed alias, or matching game-specific asset"
+    },
+    {
+      "source": "Five Nights at Winstons",
+      "existingId": "204",
+      "reason": "same game name, reviewed alias, or matching game-specific asset"
+    },
+    {
+      "source": "Final Fantasy VII",
+      "existingId": "654",
+      "reason": "same game name, reviewed alias, or matching game-specific asset"
+    },
+    {
+      "source": "Please Dont Touch Anything",
+      "existingId": "660",
+      "reason": "same game name, reviewed alias, or matching game-specific asset"
+    },
+    {
+      "source": "Doom 3",
+      "existingId": "626",
+      "reason": "same game name, reviewed alias, or matching game-specific asset"
+    },
+    {
+      "source": "Slendy Tubbies",
+      "existingId": "796",
+      "reason": "same game name, reviewed alias, or matching game-specific asset"
+    },
+    {
+      "source": "Flying Gorilla",
+      "existingId": "763",
+      "reason": "same game name, reviewed alias, or matching game-specific asset"
+    },
+    {
+      "source": "Bacon May Die",
+      "existingId": "268",
+      "reason": "same game name, reviewed alias, or matching game-specific asset"
+    },
+    {
+      "source": "Oneshot",
+      "existingId": "622",
+      "reason": "same game name, reviewed alias, or matching game-specific asset"
+    },
+    {
+      "source": "Jelly Drift",
+      "existingId": "543",
+      "reason": "same game name, reviewed alias, or matching game-specific asset"
+    },
+    {
+      "source": "Terraria",
+      "existingId": "669",
+      "reason": "same game name, reviewed alias, or matching game-specific asset"
+    },
+    {
+      "source": "Celeste",
+      "existingId": "623",
+      "reason": "same game name, reviewed alias, or matching game-specific asset"
+    },
+    {
+      "source": "Burrito Bison",
+      "existingId": "78",
+      "reason": "same game name, reviewed alias, or matching game-specific asset"
+    },
+    {
+      "source": "Tanuki Sunset",
+      "existingId": "305",
+      "reason": "same game name, reviewed alias, or matching game-specific asset"
+    },
+    {
+      "source": "SwordFight!!",
+      "existingId": "513",
+      "reason": "same game name, reviewed alias, or matching game-specific asset"
+    },
+    {
+      "source": "Station Saturn",
+      "existingId": "453",
+      "reason": "same game name, reviewed alias, or matching game-specific asset"
+    },
+    {
+      "source": "Spelunky Classic HD",
+      "existingId": "635",
+      "reason": "same game name, reviewed alias, or matching game-specific asset"
+    },
+    {
+      "source": "Sonic.EXE",
+      "existingId": "598",
+      "reason": "same game name, reviewed alias, or matching game-specific asset"
+    },
+    {
+      "source": "Minesweeper Plus",
+      "existingId": "604",
+      "reason": "same game name, reviewed alias, or matching game-specific asset"
+    },
+    {
+      "source": "Kitty Toy",
+      "existingId": "441",
+      "reason": "same game name, reviewed alias, or matching game-specific asset"
+    },
+    {
+      "source": "Google Feud",
+      "existingId": "361",
+      "reason": "same game name, reviewed alias, or matching game-specific asset"
+    },
+    {
+      "source": "Basketball Stars",
+      "existingId": "272",
+      "reason": "same game name, reviewed alias, or matching game-specific asset"
+    },
+    {
+      "source": "Ice Dodo",
+      "existingId": "5",
+      "reason": "same game name, reviewed alias, or matching game-specific asset"
+    },
+    {
+      "source": "Doom",
+      "existingId": "203",
+      "reason": "same game name, reviewed alias, or matching game-specific asset"
+    },
+    {
+      "source": "Doom 2",
+      "existingId": "602",
+      "reason": "same game name, reviewed alias, or matching game-specific asset"
+    },
+    {
+      "source": "Peggle",
+      "existingId": "688",
+      "reason": "same game name, reviewed alias, or matching game-specific asset"
+    },
+    {
+      "source": "Ace Attorny",
+      "existingId": "820",
+      "reason": "same game name, reviewed alias, or matching game-specific asset"
+    },
+    {
+      "source": "FNF B-Side",
+      "existingId": "475",
+      "reason": "same game name, reviewed alias, or matching game-specific asset"
+    },
+    {
+      "source": "FNF Impostor V4",
+      "existingId": "608",
+      "reason": "same game name, reviewed alias, or matching game-specific asset"
+    },
+    {
+      "source": "FNF Indie Cross",
+      "existingId": "489",
+      "reason": "same game name, reviewed alias, or matching game-specific asset"
+    },
+    {
+      "source": "FNF Kapi",
+      "existingId": "555",
+      "reason": "same game name, reviewed alias, or matching game-specific asset"
+    },
+    {
+      "source": "FNF Mario Madness",
+      "existingId": "582",
+      "reason": "same game name, reviewed alias, or matching game-specific asset"
+    },
+    {
+      "source": "FNF Pibby Apocalypse",
+      "existingId": "541",
+      "reason": "same game name, reviewed alias, or matching game-specific asset"
+    },
+    {
+      "source": "FNF Sonic.exe",
+      "existingId": "601",
+      "reason": "same game name, reviewed alias, or matching game-specific asset"
+    },
+    {
+      "source": "FNF Garcello",
+      "existingId": "485",
+      "reason": "same game name, reviewed alias, or matching game-specific asset"
+    },
+    {
+      "source": "FNF Hit Single",
+      "existingId": "483",
+      "reason": "same game name, reviewed alias, or matching game-specific asset"
+    },
+    {
+      "source": "Papa's Donuteria",
+      "existingId": "222",
+      "reason": "same game name, reviewed alias, or matching game-specific asset"
+    },
+    {
+      "source": "Papa's Burgeria",
+      "existingId": "219",
+      "reason": "same game name, reviewed alias, or matching game-specific asset"
+    },
+    {
+      "source": "Papa's Cheeseria",
+      "existingId": "220",
+      "reason": "same game name, reviewed alias, or matching game-specific asset"
+    },
+    {
+      "source": "Papa's Cupcakeria",
+      "existingId": "221",
+      "reason": "same game name, reviewed alias, or matching game-specific asset"
+    },
+    {
+      "source": "Papa's Freezeria",
+      "existingId": "223",
+      "reason": "same game name, reviewed alias, or matching game-specific asset"
+    },
+    {
+      "source": "Papa's Hot Doggeria",
+      "existingId": "224",
+      "reason": "same game name, reviewed alias, or matching game-specific asset"
+    },
+    {
+      "source": "Papa's Pancakeria",
+      "existingId": "225",
+      "reason": "same game name, reviewed alias, or matching game-specific asset"
+    },
+    {
+      "source": "Papa's Pastaria",
+      "existingId": "226",
+      "reason": "same game name, reviewed alias, or matching game-specific asset"
+    },
+    {
+      "source": "Papa's Scooperia",
+      "existingId": "228",
+      "reason": "same game name, reviewed alias, or matching game-specific asset"
+    },
+    {
+      "source": "Papa's Sushiria",
+      "existingId": "229",
+      "reason": "same game name, reviewed alias, or matching game-specific asset"
+    },
+    {
+      "source": "Papa's Taco Mia",
+      "existingId": "230",
+      "reason": "same game name, reviewed alias, or matching game-specific asset"
+    },
+    {
+      "source": "Papa's Wingeria",
+      "existingId": "231",
+      "reason": "same game name, reviewed alias, or matching game-specific asset"
+    },
+    {
+      "source": "Papa's Pizzeria",
+      "existingId": "227",
+      "reason": "same game name, reviewed alias, or matching game-specific asset"
+    },
+    {
+      "source": "Deltarune",
+      "reason": "duplicate source entry"
+    },
+    {
+      "source": "Learn to Fly 3",
+      "existingId": "342",
+      "reason": "same game name, reviewed alias, or matching game-specific asset"
+    },
+    {
+      "source": "Postal",
+      "existingId": "617",
+      "reason": "same game name, reviewed alias, or matching game-specific asset"
+    },
+    {
+      "source": "Sprunki",
+      "existingId": "9",
+      "reason": "same game name, reviewed alias, or matching game-specific asset"
+    },
+    {
+      "source": "Abandoned",
+      "existingId": "432",
+      "reason": "same game name, reviewed alias, or matching game-specific asset"
+    },
+    {
+      "source": "Plants Vs Zombies 2",
+      "existingId": "597",
+      "reason": "same game name, reviewed alias, or matching game-specific asset"
+    },
+    {
+      "source": "Hotline Miami",
+      "existingId": "217",
+      "reason": "same game name, reviewed alias, or matching game-specific asset"
+    },
+    {
+      "source": "Balatro",
+      "existingId": "254",
+      "reason": "same game name, reviewed alias, or matching game-specific asset"
+    },
+    {
+      "source": "The Legend of Zelda Majora's Mask",
+      "existingId": "612",
+      "reason": "same game name, reviewed alias, or matching game-specific asset"
+    },
+    {
+      "source": "Cooking Mama 3",
+      "existingId": "683",
+      "reason": "same game name, reviewed alias, or matching game-specific asset"
+    },
+    {
+      "source": "Cooking Mama 2",
+      "existingId": "682",
+      "reason": "same game name, reviewed alias, or matching game-specific asset"
+    },
+    {
+      "source": "Cooking Mama",
+      "existingId": "681",
+      "reason": "same game name, reviewed alias, or matching game-specific asset"
+    },
+    {
+      "source": "BloodMoney",
+      "existingId": "454",
+      "reason": "same game name, reviewed alias, or matching game-specific asset"
+    },
+    {
+      "source": "Schoolboy Runaway",
+      "existingId": "605",
+      "reason": "same game name, reviewed alias, or matching game-specific asset"
+    },
+    {
+      "source": "Fears To Fathom: Home Alone",
+      "existingId": "460",
+      "reason": "same game name, reviewed alias, or matching game-specific asset"
+    },
+    {
+      "source": "Dan The Man",
+      "existingId": "520",
+      "reason": "same game name, reviewed alias, or matching game-specific asset"
+    },
+    {
+      "source": "Resident Evil 2",
+      "existingId": "742",
+      "reason": "same game name, reviewed alias, or matching game-specific asset"
+    },
+    {
+      "source": "Get Yoked",
+      "existingId": "625",
+      "reason": "same game name, reviewed alias, or matching game-specific asset"
+    },
+    {
+      "source": "Chess",
+      "existingId": "151",
+      "reason": "same game name, reviewed alias, or matching game-specific asset"
+    },
+    {
+      "source": "Getting Over It",
+      "existingId": "557",
+      "reason": "same game name, reviewed alias, or matching game-specific asset"
+    },
+    {
+      "source": "Tattletail",
+      "existingId": "607",
+      "reason": "same game name, reviewed alias, or matching game-specific asset"
+    },
+    {
+      "source": "Sonic the Hedgehog 3",
+      "existingId": "550",
+      "reason": "same game name, reviewed alias, or matching game-specific asset"
+    },
+    {
+      "source": "Sonic the Hedgehog 2",
+      "existingId": "549",
+      "reason": "same game name, reviewed alias, or matching game-specific asset"
+    },
+    {
+      "source": "Sonic Mania",
+      "existingId": "590",
+      "reason": "same game name, reviewed alias, or matching game-specific asset"
+    },
+    {
+      "source": "Sonic CD",
+      "existingId": "589",
+      "reason": "same game name, reviewed alias, or matching game-specific asset"
+    },
+    {
+      "source": "War The Knights",
+      "existingId": "284",
+      "reason": "same game name, reviewed alias, or matching game-specific asset"
+    },
+    {
+      "source": "Football Bros",
+      "existingId": "548",
+      "reason": "same game name, reviewed alias, or matching game-specific asset"
+    },
+    {
+      "source": "Buckshot Roulette",
+      "existingId": "205",
+      "reason": "same game name, reviewed alias, or matching game-specific asset"
+    },
+    {
+      "source": "Slime Rancher",
+      "existingId": "591",
+      "reason": "same game name, reviewed alias, or matching game-specific asset"
+    },
+    {
+      "source": "FNAF: Pizza Sim",
+      "existingId": "191",
+      "reason": "same game name, reviewed alias, or matching game-specific asset"
+    },
+    {
+      "source": "Baseball Bros",
+      "existingId": "547",
+      "reason": "same game name, reviewed alias, or matching game-specific asset"
+    },
+    {
+      "source": "Smashy Kart",
+      "existingId": "370",
+      "reason": "same game name, reviewed alias, or matching game-specific asset"
+    },
+    {
+      "source": "Retro Bowl College",
+      "existingId": "34",
+      "reason": "same game name, reviewed alias, or matching game-specific asset"
+    },
+    {
+      "source": "FNAF: Sister Location",
+      "existingId": "185",
+      "reason": "same game name, reviewed alias, or matching game-specific asset"
+    },
+    {
+      "source": "Fallout",
+      "existingId": "585",
+      "reason": "same game name, reviewed alias, or matching game-specific asset"
+    },
+    {
+      "source": "Super Star Car",
+      "existingId": "579",
+      "reason": "same game name, reviewed alias, or matching game-specific asset"
+    },
+    {
+      "source": "Steal a Brainrot Online",
+      "existingId": "577",
+      "reason": "same game name, reviewed alias, or matching game-specific asset"
+    },
+    {
+      "source": "Yandere Simulator",
+      "existingId": "554",
+      "reason": "same game name, reviewed alias, or matching game-specific asset"
+    },
+    {
+      "source": "Twerk Race 3D",
+      "existingId": "414",
+      "reason": "same game name, reviewed alias, or matching game-specific asset"
+    },
+    {
+      "source": "Quake III",
+      "existingId": "263",
+      "reason": "same game name, reviewed alias, or matching game-specific asset"
+    },
+    {
+      "source": "Nubby's Number Factory",
+      "existingId": "517",
+      "reason": "same game name, reviewed alias, or matching game-specific asset"
+    },
+    {
+      "source": "Generic Fighter Maybe",
+      "existingId": "519",
+      "reason": "same game name, reviewed alias, or matching game-specific asset"
+    },
+    {
+      "source": "Death Run 3D",
+      "existingId": "211",
+      "reason": "same game name, reviewed alias, or matching game-specific asset"
+    },
+    {
+      "source": "Clash Royale",
+      "existingId": "cloud:clash",
+      "reason": "same game name, reviewed alias, or matching game-specific asset"
+    },
+    {
+      "source": "PaRappa The Rapper",
+      "existingId": "524",
+      "reason": "same game name, reviewed alias, or matching game-specific asset"
+    },
+    {
+      "source": "Hollow Knight",
+      "existingId": "468",
+      "reason": "same game name, reviewed alias, or matching game-specific asset"
+    },
+    {
+      "source": "Binding of Issac WOTL",
+      "existingId": "350",
+      "reason": "same game name, reviewed alias, or matching game-specific asset"
+    },
+    {
+      "source": "Blade Ball",
+      "existingId": "167",
+      "reason": "same game name, reviewed alias, or matching game-specific asset"
+    },
+    {
+      "source": "Ages of Conflict",
+      "existingId": "444",
+      "reason": "same game name, reviewed alias, or matching game-specific asset"
+    },
+    {
+      "source": "Triva Crack",
+      "existingId": "163",
+      "reason": "same game name, reviewed alias, or matching game-specific asset"
+    },
+    {
+      "source": "Bow Masters",
+      "existingId": "0",
+      "reason": "same game name, reviewed alias, or matching game-specific asset"
+    },
+    {
+      "source": "Angry Birds",
+      "existingId": "63",
+      "reason": "same game name, reviewed alias, or matching game-specific asset"
+    },
+    {
+      "source": "FNAF: World",
+      "existingId": "190",
+      "reason": "same game name, reviewed alias, or matching game-specific asset"
+    },
+    {
+      "source": "Solar Smash",
+      "existingId": "118",
+      "reason": "same game name, reviewed alias, or matching game-specific asset"
+    },
+    {
+      "source": "Idle Mining Empire",
+      "existingId": "364",
+      "reason": "same game name, reviewed alias, or matching game-specific asset"
+    },
+    {
+      "source": "Highway Racers 2",
+      "existingId": "92",
+      "reason": "same game name, reviewed alias, or matching game-specific asset"
+    },
+    {
+      "source": "Bounce Masters",
+      "existingId": "437",
+      "reason": "same game name, reviewed alias, or matching game-specific asset"
+    },
+    {
+      "source": "R.E.P.O",
+      "existingId": "195",
+      "reason": "same game name, reviewed alias, or matching game-specific asset"
+    },
+    {
+      "source": "Raft",
+      "existingId": "457",
+      "reason": "same game name, reviewed alias, or matching game-specific asset"
+    },
+    {
+      "source": "Side Effects",
+      "existingId": "318",
+      "reason": "same game name, reviewed alias, or matching game-specific asset"
+    },
+    {
+      "source": "Slender",
+      "existingId": "451",
+      "reason": "same game name, reviewed alias, or matching game-specific asset"
+    },
+    {
+      "source": "Line Rider",
+      "existingId": "95",
+      "reason": "same game name, reviewed alias, or matching game-specific asset"
+    },
+    {
+      "source": "Kindergarten 3",
+      "existingId": "501",
+      "reason": "same game name, reviewed alias, or matching game-specific asset"
+    },
+    {
+      "source": "Kindergarten 2",
+      "existingId": "446",
+      "reason": "same game name, reviewed alias, or matching game-specific asset"
+    },
+    {
+      "source": "Kindergarten",
+      "existingId": "445",
+      "reason": "same game name, reviewed alias, or matching game-specific asset"
+    },
+    {
+      "source": "Granny 2",
+      "existingId": "125",
+      "reason": "same game name, reviewed alias, or matching game-specific asset"
+    },
+    {
+      "source": "Granny",
+      "existingId": "90",
+      "reason": "same game name, reviewed alias, or matching game-specific asset"
+    },
+    {
+      "source": "Bad Parenting",
+      "existingId": "166",
+      "reason": "same game name, reviewed alias, or matching game-specific asset"
+    },
+    {
+      "source": "Baldis Basics",
+      "existingId": "65",
+      "reason": "same game name, reviewed alias, or matching game-specific asset"
+    },
+    {
+      "source": "Candy Crush",
+      "existingId": "171",
+      "reason": "same game name, reviewed alias, or matching game-specific asset"
+    },
+    {
+      "source": "That's Not My Neighbor",
+      "existingId": "216",
+      "reason": "same game name, reviewed alias, or matching game-specific asset"
+    },
+    {
+      "source": "ULTRAKILL",
+      "existingId": "196",
+      "reason": "same game name, reviewed alias, or matching game-specific asset"
+    },
+    {
+      "source": "WebFishing",
+      "existingId": "423",
+      "reason": "same game name, reviewed alias, or matching game-specific asset"
+    },
+    {
+      "source": "Pokemon Emerald",
+      "existingId": "506",
+      "reason": "same game name, reviewed alias, or matching game-specific asset"
+    },
+    {
+      "source": "Super Smash Flash",
+      "existingId": "647",
+      "reason": "same game name, reviewed alias, or matching game-specific asset"
+    },
+    {
+      "source": "Idle Breakout",
+      "existingId": "362",
+      "reason": "same game name, reviewed alias, or matching game-specific asset"
+    },
+    {
+      "source": "Big Tower Tiny Square",
+      "existingId": "67",
+      "reason": "same game name, reviewed alias, or matching game-specific asset"
+    },
+    {
+      "source": "Big Tower Tiny Square 2",
+      "existingId": "170",
+      "reason": "same game name, reviewed alias, or matching game-specific asset"
+    },
+    {
+      "source": "Pokemon Firered",
+      "existingId": "694",
+      "reason": "same game name, reviewed alias, or matching game-specific asset"
+    },
+    {
+      "source": "Blumgi Rocket",
+      "existingId": "353",
+      "reason": "same game name, reviewed alias, or matching game-specific asset"
+    },
+    {
+      "source": "Raft Wars 2",
+      "existingId": "345",
+      "reason": "same game name, reviewed alias, or matching game-specific asset"
+    },
+    {
+      "source": "8Ball Pool",
+      "reason": "duplicate source entry"
+    },
+    {
+      "source": "Escape Road",
+      "existingId": "264",
+      "reason": "same game name, reviewed alias, or matching game-specific asset"
+    },
+    {
+      "source": "OvO",
+      "existingId": "1",
+      "reason": "same game name, reviewed alias, or matching game-specific asset"
+    },
+    {
+      "source": "Fruit Ninja",
+      "existingId": "261",
+      "reason": "same game name, reviewed alias, or matching game-specific asset"
+    },
+    {
+      "source": "They're Coming",
+      "existingId": "348",
+      "reason": "same game name, reviewed alias, or matching game-specific asset"
+    },
+    {
+      "source": "Flappy Bird",
+      "existingId": "129",
+      "reason": "same game name, reviewed alias, or matching game-specific asset"
+    },
+    {
+      "source": "Recoil",
+      "existingId": "546",
+      "reason": "same game name, reviewed alias, or matching game-specific asset"
+    },
+    {
+      "source": "Crazy Cattle 3D",
+      "existingId": "164",
+      "reason": "same game name, reviewed alias, or matching game-specific asset"
+    },
+    {
+      "source": "Run 3",
+      "existingId": "177",
+      "reason": "same game name, reviewed alias, or matching game-specific asset"
+    },
+    {
+      "source": "Vex 8",
+      "existingId": "53",
+      "reason": "same game name, reviewed alias, or matching game-specific asset"
+    },
+    {
+      "source": "Rooftop Snipers 2",
+      "existingId": "490",
+      "reason": "same game name, reviewed alias, or matching game-specific asset"
+    },
+    {
+      "source": "Temple Run 2",
+      "existingId": "10",
+      "reason": "same game name, reviewed alias, or matching game-specific asset"
+    },
+    {
+      "source": "Super Mario 64",
+      "existingId": "588",
+      "reason": "same game name, reviewed alias, or matching game-specific asset"
+    },
+    {
+      "source": "Bloxorz",
+      "existingId": "169",
+      "reason": "same game name, reviewed alias, or matching game-specific asset"
+    },
+    {
+      "source": "Worlds Hardest Game",
+      "existingId": "103",
+      "reason": "same game name, reviewed alias, or matching game-specific asset"
+    },
+    {
+      "source": "Impossible Quiz",
+      "existingId": "507",
+      "reason": "same game name, reviewed alias, or matching game-specific asset"
+    },
+    {
+      "source": "Stickman Hook",
+      "existingId": "11",
+      "reason": "same game name, reviewed alias, or matching game-specific asset"
+    },
+    {
+      "source": "Rio Rex",
+      "existingId": "643",
+      "reason": "same game name, reviewed alias, or matching game-specific asset"
+    },
+    {
+      "source": "Plinko",
+      "existingId": "544",
+      "reason": "same game name, reviewed alias, or matching game-specific asset"
+    },
+    {
+      "source": "Blocky Snakes",
+      "existingId": "168",
+      "reason": "same game name, reviewed alias, or matching game-specific asset"
+    },
+    {
+      "source": "Crossy Road",
+      "existingId": "24",
+      "reason": "same game name, reviewed alias, or matching game-specific asset"
+    },
+    {
+      "source": "Pou",
+      "existingId": "23",
+      "reason": "same game name, reviewed alias, or matching game-specific asset"
+    },
+    {
+      "source": "Backrooms",
+      "existingId": "64",
+      "reason": "same game name, reviewed alias, or matching game-specific asset"
+    },
+    {
+      "source": "Getaway Shootout",
+      "existingId": "338",
+      "reason": "same game name, reviewed alias, or matching game-specific asset"
+    },
+    {
+      "source": "Snow Rider 3D",
+      "existingId": "119",
+      "reason": "same game name, reviewed alias, or matching game-specific asset"
+    },
+    {
+      "source": "Gladihoppers",
+      "existingId": "4",
+      "reason": "same game name, reviewed alias, or matching game-specific asset"
+    },
+    {
+      "source": "Paper.io 2",
+      "existingId": "102",
+      "reason": "same game name, reviewed alias, or matching game-specific asset"
+    },
+    {
+      "source": "Poly Track",
+      "existingId": "123",
+      "reason": "same game name, reviewed alias, or matching game-specific asset"
+    },
+    {
+      "source": "Ragdoll Hit",
+      "existingId": "44",
+      "reason": "same game name, reviewed alias, or matching game-specific asset"
+    },
+    {
+      "source": "Gun Spin",
+      "existingId": "91",
+      "reason": "same game name, reviewed alias, or matching game-specific asset"
+    },
+    {
+      "source": "Block Blast",
+      "existingId": "6",
+      "reason": "same game name, reviewed alias, or matching game-specific asset"
+    },
+    {
+      "source": "Stacky Dash",
+      "existingId": "18",
+      "reason": "same game name, reviewed alias, or matching game-specific asset"
+    },
+    {
+      "source": "Drift Boss",
+      "existingId": "276",
+      "reason": "same game name, reviewed alias, or matching game-specific asset"
+    },
+    {
+      "source": "Friday Night Funkin",
+      "existingId": "8",
+      "reason": "same game name, reviewed alias, or matching game-specific asset"
+    },
+    {
+      "source": "COD Nazi Zombies Portable",
+      "existingId": "308",
+      "reason": "same game name, reviewed alias, or matching game-specific asset"
+    },
+    {
+      "source": "Adventure Capitalist",
+      "existingId": "354",
+      "reason": "same game name, reviewed alias, or matching game-specific asset"
+    },
+    {
+      "source": "1v1.lol",
+      "existingId": "58",
+      "reason": "same game name, reviewed alias, or matching game-specific asset"
+    },
+    {
+      "source": "Ragdoll Archers",
+      "existingId": "186",
+      "reason": "same game name, reviewed alias, or matching game-specific asset"
+    },
+    {
+      "source": "Retro Bowl",
+      "existingId": "33",
+      "reason": "same game name, reviewed alias, or matching game-specific asset"
+    },
+    {
+      "source": "Half Life",
+      "existingId": "262",
+      "reason": "same game name, reviewed alias, or matching game-specific asset"
+    },
+    {
+      "source": "Jetpack Joyride",
+      "existingId": "7",
+      "reason": "same game name, reviewed alias, or matching game-specific asset"
+    },
+    {
+      "source": "Bloons TD 4",
+      "existingId": "74",
+      "reason": "same game name, reviewed alias, or matching game-specific asset"
+    },
+    {
+      "source": "FNAF",
+      "existingId": "38",
+      "reason": "same game name, reviewed alias, or matching game-specific asset"
+    },
+    {
+      "source": "FNAF: 2",
+      "existingId": "39",
+      "reason": "same game name, reviewed alias, or matching game-specific asset"
+    },
+    {
+      "source": "FNAF: 3",
+      "existingId": "40",
+      "reason": "same game name, reviewed alias, or matching game-specific asset"
+    },
+    {
+      "source": "FNAF: 4",
+      "existingId": "41",
+      "reason": "same game name, reviewed alias, or matching game-specific asset"
+    },
+    {
+      "source": "Madalin Stunt Cars 3",
+      "existingId": "279",
+      "reason": "same game name, reviewed alias, or matching game-specific asset"
+    },
+    {
+      "source": "Tiny Fishing",
+      "existingId": "108",
+      "reason": "same game name, reviewed alias, or matching game-specific asset"
+    },
+    {
+      "source": "Slope",
+      "existingId": "198",
+      "reason": "same game name, reviewed alias, or matching game-specific asset"
+    },
+    {
+      "source": "Bitlife",
+      "existingId": "70",
+      "reason": "same game name, reviewed alias, or matching game-specific asset"
+    },
+    {
+      "source": "Drift Hunters",
+      "existingId": "173",
+      "reason": "same game name, reviewed alias, or matching game-specific asset"
+    },
+    {
+      "source": "Cut The Rope",
+      "existingId": "85",
+      "reason": "same game name, reviewed alias, or matching game-specific asset"
+    },
+    {
+      "source": "Sort The Court",
+      "existingId": "346",
+      "reason": "same game name, reviewed alias, or matching game-specific asset"
+    },
+    {
+      "source": "Tomb of the Mask",
+      "existingId": "109",
+      "reason": "same game name, reviewed alias, or matching game-specific asset"
+    },
+    {
+      "source": "Wordle",
+      "existingId": "112",
+      "reason": "same game name, reviewed alias, or matching game-specific asset"
+    },
+    {
+      "source": "Five Nights at Epstein",
+      "existingId": "710",
+      "reason": "same game name, reviewed alias, or matching game-specific asset"
+    }
+  ],
+  "unavailable": [
+    {
+      "source": "Fruit Merge",
+      "error": "HTTP Error 404: Not Found"
+    },
+    {
+      "source": "Little Big Planet",
+      "name": "Little Big Planet",
+      "issues": [
+        {
+          "url": "https://cdn.jsdelivr.net/gh/NoahsAmazingTutoringHelp/stunning-engine/LittleBigPlanet_USA.iso",
+          "error": "HTTP Error 404: Not Found"
+        }
+      ]
+    },
+    {
+      "source": "The Binding of Isaac: Rebirth",
+      "name": "The Binding of Isaac: Rebirth",
+      "issues": [
+        {
+          "url": "https://cdn.jsdelivr.net/gh/NoahsAmazingTutoringHelp/musical-octo-dollop/tboirpsp0301.iso",
+          "error": "HTTP Error 404: Not Found"
+        }
+      ]
+    },
+    {
+      "source": "Littlest Pet Shop City Friends",
+      "name": "Littlest Pet Shop City Friends",
+      "issues": [
+        {
+          "url": "https://cdn.jsdelivr.net/gh/NoahsAmazingTutoringHelp/effective-journey/lps.nds",
+          "error": "HTTP Error 404: Not Found"
+        }
+      ]
+    },
+    {
+      "source": "Minesweeper Classic",
+      "name": "Minesweeper Classic",
+      "issues": [
+        {
+          "url": "https://turbo.freevideogames.org/includes/css/core-game-site.css",
+          "error": "<urlopen error [SSL: WRONG_VERSION_NUMBER] wrong version number (_ssl.c:1010)>"
+        },
+        {
+          "url": "https://turbo.freevideogames.org/includes/css/side-navigation.css",
+          "error": "<urlopen error [SSL: WRONG_VERSION_NUMBER] wrong version number (_ssl.c:1010)>"
+        },
+        {
+          "url": "https://turbo.freevideogames.org/includes/css/minesweeper.css",
+          "error": "<urlopen error [SSL: WRONG_VERSION_NUMBER] wrong version number (_ssl.c:1010)>"
+        },
+        {
+          "url": "https://turbo.freevideogames.org/includes/js/core-game-site.js",
+          "error": "<urlopen error [SSL: WRONG_VERSION_NUMBER] wrong version number (_ssl.c:1010)>"
+        },
+        {
+          "url": "https://turbo.freevideogames.org/includes/js/screenfull.min.js",
+          "error": "<urlopen error [SSL: WRONG_VERSION_NUMBER] wrong version number (_ssl.c:1010)>"
+        },
+        {
+          "url": "https://turbo.freevideogames.org/includes/js/minesweepercookie.js",
+          "error": "<urlopen error [SSL: WRONG_VERSION_NUMBER] wrong version number (_ssl.c:1010)>"
+        }
+      ]
+    },
+    {
+      "source": "Call of Duty: World at War",
+      "name": "Call of Duty: World at War",
+      "issues": [
+        {
+          "url": "https://cdn.jsdelivr.net/gh/bubbls/ugss@e1a24919f02b3fff28ea5453f70336b4d82daffe/Call%20of%20Duty%20-%20World%20at%20War%20(USA)/Call%20of%20Duty%20-%20World%20at%20War%20(USA).nds",
+          "error": "HTTP Error 404: Not Found"
+        }
+      ]
+    },
+    {
+      "source": "Call of Duty 4: Modern Warfare",
+      "name": "Call of Duty 4: Modern Warfare",
+      "issues": [
+        {
+          "url": "https://cdn.jsdelivr.net/gh/bubbls/ugss@2aa8e49096f37352d81500a212e2215e044cb568/Call%20of%20Duty%204%20-%20Modern%20Warfare%20(USA)/Call%20of%20Duty%204%20-%20Modern%20Warfare%20(USA).nds",
+          "error": "HTTP Error 404: Not Found"
+        }
+      ]
+    },
+    {
+      "source": "Lego Batman 2",
+      "name": "Lego Batman 2",
+      "issues": [
+        {
+          "url": "https://cdn.jsdelivr.net/gh/bubbls/ugss@4183685fe631b2e1735347d60fcf24a7d194bf6a/LEGO%20Batman%202%20-%20DC%20Super%20Heroes%20(USA)%20(En%2CFr%2CEs%2CPt)/LEGO%20Batman%202%20-%20DC%20Super%20Heroes%20(USA)%20(En%2CFr%2CEs%2CPt).nds",
+          "error": "HTTP Error 404: Not Found"
+        }
+      ]
+    },
+    {
+      "source": "Lego Starwars Complete Saga",
+      "name": "Lego Starwars Complete Saga",
+      "issues": [
+        {
+          "url": "https://cdn.jsdelivr.net/gh/bubbls/ugss@be3eda6572fba26d9575c87fd864392c7e19261c/LEGO%20Star%20Wars%20-%20The%20Complete%20Saga%20(USA)/LEGO%20Star%20Wars%20-%20The%20Complete%20Saga%20(USA).nds",
+          "error": "HTTP Error 404: Not Found"
+        }
+      ]
+    },
+    {
+      "source": "Monkey Mart",
+      "name": "Monkey Mart",
+      "issues": [
+        {
+          "url": "https://cdn.jsdelivr.net/gh/genizy/monkey-mart-mobile@89836e4c54e87739ace84f6fe801b423185cc51d/patch/js/poki-sdk.js",
+          "error": "HTTP Error 403: Forbidden"
+        },
+        {
+          "url": "https://cdn.jsdelivr.net/gh/genizy/monkey-mart-mobile@89836e4c54e87739ace84f6fe801b423185cc51d/dmloader.js",
+          "error": "HTTP Error 403: Forbidden"
+        },
+        {
+          "url": "https://cdn.jsdelivr.net/gh/genizy/monkey-mart-mobile@89836e4c54e87739ace84f6fe801b423185cc51d/GameAnalytics.js",
+          "error": "HTTP Error 403: Forbidden"
+        }
+      ]
+    },
+    {
+      "id": "935",
+      "name": "Toca-Boca-World",
+      "source": "https://ud-gles3games.shared-osj.k8s.n2i.io/?deeplinksURI=null%3A%2F%2F&deeplinksApp=com.tocaboca.tocalifeworld&quotaBytes=89000000&naturalOrientation=portrait&invertNaturalOrientation&forcedNaturalOrientation&jitterBufferMin=0&deeplinksService=true&backOnDisconnected=true&disconnectedMessage=null&api=%7B%22back%22%3Afalse%7D&title=Toca+Boca+World",
+      "game": "https://ud-gles3games.shared-osj.k8s.n2i.io/?deeplinksURI=null%3A%2F%2F&deeplinksApp=com.tocaboca.tocalifeworld&quotaBytes=89000000&naturalOrientation=portrait&invertNaturalOrientation&forcedNaturalOrientation&jitterBufferMin=0&deeplinksService=true&backOnDisconnected=true&disconnectedMessage=null&api=%7B%22back%22%3Afalse%7D&title=Toca+Boca+World",
+      "status": 200,
+      "reason": "Provider requires service workers inside the game; unavailable in the isolated proxy. Toca Boca visibly reaches only an orientation prompt; console reports service worker not supported. Same provider and bootstrap used by Among Us."
+    },
+    {
+      "id": "940",
+      "name": "Among Us (real)",
+      "source": "https://ud-gles3games.shared-osj.k8s.n2i.io/?deeplinksURI=null%3A%2F%2F&deeplinksApp=com.innersloth.spacemafia&naturalOrientation=landscape&forcedNaturalOrientation&autofitOnConnect&jitterBufferMin=0&deeplinksService=true&backOnDisconnected=true&disconnectedMessage=null&api=%7B%22back%22%3Afalse%7D&title=Among+Us",
+      "game": "https://ud-gles3games.shared-osj.k8s.n2i.io/?deeplinksURI=null%3A%2F%2F&deeplinksApp=com.innersloth.spacemafia&naturalOrientation=landscape&forcedNaturalOrientation&autofitOnConnect&jitterBufferMin=0&deeplinksService=true&backOnDisconnected=true&disconnectedMessage=null&api=%7B%22back%22%3Afalse%7D&title=Among+Us",
+      "status": 200,
+      "reason": "Provider requires service workers inside the game; unavailable in the isolated proxy. Toca Boca visibly reaches only an orientation prompt; console reports service worker not supported. Same provider and bootstrap used by Among Us."
+    }
+  ],
+  "verificationNote": "HTTP source and asset probes do not prove full gameplay. Browser checks are recorded separately.",
+  "browserChecks": [
+    {
+      "id": "950",
+      "name": "Hextris",
+      "result": "Menu and game canvas load through the real proxy; Play starts the game. Not a complete playthrough."
+    },
+    {
+      "id": "954",
+      "name": "Level Devil",
+      "result": "Selected one player; the first playable level renders through the proxy. Not a complete playthrough."
+    },
+    {
+      "id": "935",
+      "name": "Toca Boca World",
+      "result": "Game document loads; portrait preview shows an orientation prompt. Cloud session gameplay has not been verified."
+    },
+    {
+      "id": "944",
+      "name": "Gun Mayhem",
+      "result": "Flash emulation loads to the animated game menu; no complete campaign tested."
+    }
+  ],
+  "catalogTotal": 934,
+  "existingDuplicateCardsConsolidated": [
+    "/games/164-temp.html",
+    "/games/164-temp2.html",
+    "/games/744-a.html"
+  ],
+  "countNote": "Library total includes all 934 catalog games (932 currently available and 2 pre-existing unavailable entries). Filters show matching count separately.",
+  "validation": {
+    "tests": "538 passed; 0 failed",
+    "build": "934 catalog entries, 32 wallpapers; main app modules and required assets verified",
+    "library": "Verified 934 total, Gun Mayhem query returns 2 of 934, unmatched query returns 0 of 934, clearing restores all cards.",
+    "limits": "101 additions have source/resource checks. Browser samples cover Hextris, Level Devil and Gun Mayhem; this is not a complete gameplay test of all 101 games. Twelve unavailable source entries were omitted."
+  }
+}

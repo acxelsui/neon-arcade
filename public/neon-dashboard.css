@@ -42,3 +42,5 @@ main{min-width:0}.page:not(.home):not(.search-page){padding:20px 10px}.search-pa
 #player .player-bar button:hover{background:#c4e7ff18;border-color:#c4e7ff55}
 #player #close-game{width:28px;padding:3px;font-size:18px}
 @media(max-width:520px){#player{padding-bottom:46px}#player .player-bar{height:46px;padding:0 7px;gap:6px}#player .player-bar>span{font-size:10px}#player .player-bar>div{gap:3px}#player .player-bar button{min-height:32px;padding:5px;font-size:10px}#player #close-game{width:30px}}
+
+#games .game-total-badge{display:inline-block;vertical-align:middle;margin-left:10px;padding:7px 12px;border:1px solid #8c7aff55;border-radius:999px;background:linear-gradient(120deg,#2874b72b,#6c38b32b);color:#d8dcff;font:500 13px "DM Sans",sans-serif;letter-spacing:0;white-space:nowrap}
