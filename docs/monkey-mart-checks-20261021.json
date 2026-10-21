@@ -1,0 +1,15 @@
+{
+  "date": "2026-10-21",
+  "sourcePage": "https://monkeymart.gg/",
+  "gameFrame": "https://h5.ant.games/game-assets/17147248671818/index.html?v=1.0.1",
+  "id": "969",
+  "saveScope": "Original game browser save. Same browser and Neon origin required; site-data clearing removes progress. No account syncing.",
+  "checks": [
+    "Direct game-only frame loads through the existing proxy.",
+    "First checkout (balance 25) did not persist during the opening tutorial.",
+    "After the user finished the opening tutorial, the game created its native monkeymart_config save.",
+    "Reopening restored balance 3, unlocked checkout, banana stand and selected hat.",
+    "The experimental filesystem backup was removed after confirming the native save."
+  ],
+  "limits": "No promise of saving during the opening tutorial or preserving the exact player position."
+}
