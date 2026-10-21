@@ -2,7 +2,7 @@
   "date": "2026-10-20",
   "source": "https://lagged.com/popular-games",
   "sourceCount": 82,
-  "added": 74,
+  "added": 58,
   "skippedDuplicates": [
     {
       "name": "Going Balls",
@@ -46,14 +46,6 @@
     }
   ],
   "games": [
-    {
-      "id": "970",
-      "name": "Barry Prison: Parkour Escape",
-      "sourcePage": "https://lagged.com/en/g/barry-prison-parkour-escape",
-      "frame": "https://barry-prison-parkour-escape.games.playgama.com/cmrqtqlp802k4ib0h70rb27t5/__patch__/cms289w8e022ujg0ixr588ou0/index.html?platform_id=playgama",
-      "engine": "HTML5",
-      "saveVerification": "Stable game URL and browser storage retained; gameplay persistence not yet verified."
-    },
     {
       "id": "972",
       "name": "Save the Doge 2",
@@ -207,14 +199,6 @@
       "saveVerification": "Stable game URL and browser storage retained; gameplay persistence not yet verified."
     },
     {
-      "id": "991",
-      "name": "TB World",
-      "sourcePage": "https://lagged.com/en/g/tb-world",
-      "frame": "https://tb-world.games.playgama.com/cmoou8ya100v0on0hj8mkplmk/index.html?platform_id=playgama",
-      "engine": "Construct",
-      "saveVerification": "Stable game URL and browser storage retained; gameplay persistence not yet verified."
-    },
-    {
       "id": "992",
       "name": "Troll Thief",
       "sourcePage": "https://lagged.com/en/g/troll-thief",
@@ -335,14 +319,6 @@
       "saveVerification": "Stable game URL and browser storage retained; gameplay persistence not yet verified."
     },
     {
-      "id": "1007",
-      "name": "Obby: +1 Jump per Click",
-      "sourcePage": "https://lagged.com/en/g/obby-1-jump-per-click",
-      "frame": "https://obby-1-jump-per-click.games.playgama.com/cmpo3bqjg00qemz0hs7kvkwhs/index.html?platform_id=playgama",
-      "engine": "Unity",
-      "saveVerification": "Stable game URL and browser storage retained; gameplay persistence not yet verified."
-    },
-    {
       "id": "1008",
       "name": "Fish Rescue",
       "sourcePage": "https://lagged.com/en/g/fish-rescue",
@@ -356,14 +332,6 @@
       "sourcePage": "https://lagged.com/en/g/rail-slide",
       "frame": "https://html5.gamedistribution.com/951ad3dacf8a4017b8268b316ad73ee7/?gd_sdk_referrer_url=https://lagged.com/en/g/rail-slide",
       "engine": "HTML5",
-      "saveVerification": "Stable game URL and browser storage retained; gameplay persistence not yet verified."
-    },
-    {
-      "id": "1010",
-      "name": "Obby: +1 Laser to Break Walls",
-      "sourcePage": "https://lagged.com/en/g/obby-1-laser-to-break-walls",
-      "frame": "https://games.playgama.com/cmsu7a83z01lkl30hrktu1okf/__patch__/cmtcxj9mm2so8jw0hf3vmj4hf/index.html?clid=p_8460bdc6-2f32-4753-b553-fa84d1fc40d7",
-      "engine": "Unity",
       "saveVerification": "Stable game URL and browser storage retained; gameplay persistence not yet verified."
     },
     {
@@ -511,66 +479,10 @@
       "saveVerification": "Stable game URL and browser storage retained; gameplay persistence not yet verified."
     },
     {
-      "id": "1029",
-      "name": "Car VS Tape",
-      "sourcePage": "https://lagged.com/en/g/car-vs-tape",
-      "frame": "https://car-vs-tape.games.playgama.com/cmuh8r0630awpkg0hddjsl99y/__patch__/cmumui5eg008tke0h2bv6pu6l/index.html?platform_id=playgama",
-      "engine": "HTML5",
-      "saveVerification": "Stable game URL and browser storage retained; gameplay persistence not yet verified."
-    },
-    {
       "id": "1030",
       "name": "Mall Goth Aesthetic Fashion",
       "sourcePage": "https://lagged.com/en/g/mall-goth-aesthetic-fashion",
       "frame": "https://lagged.com/game-files/mall-goth-aesthetic-fashion-15408/",
-      "engine": "HTML5",
-      "saveVerification": "Stable game URL and browser storage retained; gameplay persistence not yet verified."
-    },
-    {
-      "id": "1031",
-      "name": "Stunts 4 Cash",
-      "sourcePage": "https://lagged.com/en/g/stunts-4-cash",
-      "frame": "https://stunts-4-cash.games.playgama.com/cmtkid85p10hol20hg29pjy8b/__patch__/cmtlw8z090mm0kc0ihic7i93c/index.html?platform_id=playgama",
-      "engine": "HTML5",
-      "saveVerification": "Stable game URL and browser storage retained; gameplay persistence not yet verified."
-    },
-    {
-      "id": "1032",
-      "name": "Obby Prison Digger",
-      "sourcePage": "https://lagged.com/en/g/obby-prison-digger",
-      "frame": "https://obby-prison-digger.games.playgama.com/cmtps4bq024qxh90hkkbzz5pi/__patch__/cmttn2t1g0vk8mn0h3v8uu2kk/index.html?platform_id=playgama",
-      "engine": "HTML5",
-      "saveVerification": "Stable game URL and browser storage retained; gameplay persistence not yet verified."
-    },
-    {
-      "id": "1033",
-      "name": "Draw Puzzle: Complete One Part",
-      "sourcePage": "https://lagged.com/en/g/draw-puzzle-complete-one-part",
-      "frame": "https://draw-puzzle-complete-one-part.games.playgama.com/cmrm25zg4021wnb0htrifqkop/__patch__/cmrnonhi40045ib0hb6jng8sk/index.html?platform_id=playgama",
-      "engine": "HTML5",
-      "saveVerification": "Stable game URL and browser storage retained; gameplay persistence not yet verified."
-    },
-    {
-      "id": "1034",
-      "name": "Crush Hour",
-      "sourcePage": "https://lagged.com/en/g/crush-hour",
-      "frame": "https://crush-hour.games.playgama.com/cmtrh3f5f3m39h90h78ktcfbc/__patch__/cmtv9gy1j0jvckk0hgyb4wr1h/index.html?platform_id=playgama",
-      "engine": "Unity",
-      "saveVerification": "Stable game URL and browser storage retained; gameplay persistence not yet verified."
-    },
-    {
-      "id": "1035",
-      "name": "Real War: Not Fake",
-      "sourcePage": "https://lagged.com/en/g/real-war-not-fake",
-      "frame": "https://real-war-not-fake.games.playgama.com/cmtqfao3u2q24hg0hrof28kz0/__patch__/cmtshei8a04lfmh0hebogonns/index.html?platform_id=playgama",
-      "engine": "Unity",
-      "saveVerification": "Stable game URL and browser storage retained; gameplay persistence not yet verified."
-    },
-    {
-      "id": "1036",
-      "name": "Cake Ready",
-      "sourcePage": "https://lagged.com/en/g/cake-ready",
-      "frame": "https://cake-ready.games.playgama.com/cmtn51znr00b0h90hg4nawpof/__patch__/cmtthdkwt0qvwmg0h4vy0dnxy/index.html?platform_id=playgama",
       "engine": "HTML5",
       "saveVerification": "Stable game URL and browser storage retained; gameplay persistence not yet verified."
     },
@@ -583,30 +495,6 @@
       "saveVerification": "Stable game URL and browser storage retained; gameplay persistence not yet verified."
     },
     {
-      "id": "1038",
-      "name": "Attack Of Zombies",
-      "sourcePage": "https://lagged.com/en/g/attack-of-zombies",
-      "frame": "https://attack-of-zombies.games.playgama.com/cmuz9byh60cuikq0h86xgsxvk/__patch__/cmv2uzl2l0lwsma0hzptfifnd/index.html?platform_id=playgama",
-      "engine": "Unity",
-      "saveVerification": "Stable game URL and browser storage retained; gameplay persistence not yet verified."
-    },
-    {
-      "id": "1039",
-      "name": "PrintMaster 3D: Printing Tycoon",
-      "sourcePage": "https://lagged.com/en/g/printmaster-3d-printing-tycoon",
-      "frame": "https://printmaster-3d-printing-tycoon.games.playgama.com/cmun1450d03avke0hsp6vf1v7/__patch__/cmuof8rsr02udk30hyhxrkhzx/index.html?platform_id=playgama",
-      "engine": "HTML5",
-      "saveVerification": "Stable game URL and browser storage retained; gameplay persistence not yet verified."
-    },
-    {
-      "id": "1040",
-      "name": "Duck Family Simulator Animal Games",
-      "sourcePage": "https://lagged.com/en/g/duck-family-simulator-animal-games",
-      "frame": "https://duck-family-simulator-animal-games.games.playgama.com/cmth7pm1x03s2n00hxrzryzex/__patch__/cmtn1jafz0a5jnd0h0d2y4rfs/index.html?platform_id=playgama",
-      "engine": "HTML5",
-      "saveVerification": "Stable game URL and browser storage retained; gameplay persistence not yet verified."
-    },
-    {
       "id": "1041",
       "name": "Knights' Arena - Castle Defense",
       "sourcePage": "https://lagged.com/en/g/knights-arena--castle-defense",
@@ -615,27 +503,11 @@
       "saveVerification": "Stable game URL and browser storage retained; gameplay persistence not yet verified."
     },
     {
-      "id": "1042",
-      "name": "My Little Park 3D",
-      "sourcePage": "https://lagged.com/en/g/my-little-park-3d",
-      "frame": "https://my-little-park-3d.games.playgama.com/cmtj4slj20bj7o10hqiuf2u6d/__patch__/cmtsd2st300w8ma0hpcxeev49/index.html?platform_id=playgama",
-      "engine": "Unity",
-      "saveVerification": "Stable game URL and browser storage retained; gameplay persistence not yet verified."
-    },
-    {
       "id": "1043",
       "name": "Geometry Arrow Wave Rush",
       "sourcePage": "https://lagged.com/en/g/geometry-arrow-wave-rush",
       "frame": "https://lagged.com/game-files/geometry-arrow-wave-rush-8014/",
       "engine": "HTML5",
-      "saveVerification": "Stable game URL and browser storage retained; gameplay persistence not yet verified."
-    },
-    {
-      "id": "1044",
-      "name": "Fight Club Simulator",
-      "sourcePage": "https://lagged.com/en/g/fight-club-simulator",
-      "frame": "https://fight-club-simulator.games.playgama.com/cmtdap4zn0j1zk40h9zh6qnjz/__patch__/cmth08y8e6phok40hurdazxrl/index.html?platform_id=playgama",
-      "engine": "Unity",
       "saveVerification": "Stable game URL and browser storage retained; gameplay persistence not yet verified."
     }
   ],
@@ -1460,15 +1332,181 @@
       "name": "Skateboard Surf",
       "id": "980",
       "result": "Game loads to character/start menu despite optional external SDK errors. Progress persistence not independently verified."
+    },
+    {
+      "name": "Barry Prison: Parkour Escape",
+      "id": "970",
+      "result": "Direct inner game timed out waiting for its bridge. Official game-only export wrapper stalled during provider verification. Excluded this and the other 15 games requiring the same provider startup."
     }
   ],
   "saveScope": "Uses existing per-provider browser localStorage/IndexedDB through the isolated runner and stable game URLs. No account sync or generic mid-frame snapshots. Progress requires the individual game to support saves.",
   "implementationDate": "2026-10-21",
   "validation": {
-    "automatedTests": "539 passed; after the last duplicate removal all 5 focused catalog and transport checks passed.",
-    "build": "1009 entries and 32 wallpapers verified.",
+    "automatedTests": "539 passed before provider exclusions. All 5 final focused catalog/transport checks passed after exclusions.",
+    "build": "993 catalog entries and 32 wallpapers verified.",
     "resources": "75 direct game documents and 200 referenced scripts checked; optional Facebook Instant script returned 500 and the shared onlagged helper returned 406. Native gameplay save behavior requires separate checks."
   },
-  "catalogTotal": 1009,
-  "limits": "Source documents and referenced scripts were checked for all additions. Browser gameplay checks are samples; every game has not been played through or individually verified for saved level progression. The existing browser storage and stable addresses are retained."
+  "catalogTotal": 993,
+  "limits": "Source documents and referenced scripts were checked for all additions. Browser gameplay checks are samples; every game has not been played through or individually verified for saved level progression. The existing browser storage and stable addresses are retained.",
+  "excluded": [
+    {
+      "id": "970",
+      "name": "Barry Prison: Parkour Escape",
+      "sourcePage": "https://lagged.com/en/g/barry-prison-parkour-escape",
+      "frame": "https://playgama.com/export/game/barry-prison-parkour-escape-27f2-1?clid=p_8460bdc6-2f32-4753-b553-fa84d1fc40d7",
+      "engine": "HTML5",
+      "saveVerification": "Stable game URL and browser storage retained; gameplay persistence not yet verified.",
+      "providerNote": "Retains the provider game-only embed wrapper needed for its parent/child SDK initialization.",
+      "reason": "Playgama game-only wrapper stalls during provider verification in the proxy; innermost game frame times out waiting for its provider bridge. Inferred to affect other games using the same provider startup."
+    },
+    {
+      "id": "991",
+      "name": "TB World",
+      "sourcePage": "https://lagged.com/en/g/tb-world",
+      "frame": "https://playgama.com/export/game/tb-world?clid=p_8460bdc6-2f32-4753-b553-fa84d1fc40d7",
+      "engine": "Construct",
+      "saveVerification": "Stable game URL and browser storage retained; gameplay persistence not yet verified.",
+      "providerNote": "Retains the provider game-only embed wrapper needed for its parent/child SDK initialization.",
+      "reason": "Playgama game-only wrapper stalls during provider verification in the proxy; innermost game frame times out waiting for its provider bridge. Inferred to affect other games using the same provider startup."
+    },
+    {
+      "id": "1007",
+      "name": "Obby: +1 Jump per Click",
+      "sourcePage": "https://lagged.com/en/g/obby-1-jump-per-click",
+      "frame": "https://playgama.com/export/game/obby-1-jump-per-click?clid=p_8460bdc6-2f32-4753-b553-fa84d1fc40d7",
+      "engine": "Unity",
+      "saveVerification": "Stable game URL and browser storage retained; gameplay persistence not yet verified.",
+      "providerNote": "Retains the provider game-only embed wrapper needed for its parent/child SDK initialization.",
+      "reason": "Playgama game-only wrapper stalls during provider verification in the proxy; innermost game frame times out waiting for its provider bridge. Inferred to affect other games using the same provider startup."
+    },
+    {
+      "id": "1010",
+      "name": "Obby: +1 Laser to Break Walls",
+      "sourcePage": "https://lagged.com/en/g/obby-1-laser-to-break-walls",
+      "frame": "https://games.playgama.com/cmsu7a83z01lkl30hrktu1okf/__patch__/cmtcxj9mm2so8jw0hf3vmj4hf/index.html?clid=p_8460bdc6-2f32-4753-b553-fa84d1fc40d7",
+      "engine": "Unity",
+      "saveVerification": "Stable game URL and browser storage retained; gameplay persistence not yet verified.",
+      "reason": "Playgama game-only wrapper stalls during provider verification in the proxy; innermost game frame times out waiting for its provider bridge. Inferred to affect other games using the same provider startup."
+    },
+    {
+      "id": "1029",
+      "name": "Car VS Tape",
+      "sourcePage": "https://lagged.com/en/g/car-vs-tape",
+      "frame": "https://playgama.com/export/game/car-vs-tape?clid=p_8460bdc6-2f32-4753-b553-fa84d1fc40d7",
+      "engine": "HTML5",
+      "saveVerification": "Stable game URL and browser storage retained; gameplay persistence not yet verified.",
+      "providerNote": "Retains the provider game-only embed wrapper needed for its parent/child SDK initialization.",
+      "reason": "Playgama game-only wrapper stalls during provider verification in the proxy; innermost game frame times out waiting for its provider bridge. Inferred to affect other games using the same provider startup."
+    },
+    {
+      "id": "1031",
+      "name": "Stunts 4 Cash",
+      "sourcePage": "https://lagged.com/en/g/stunts-4-cash",
+      "frame": "https://playgama.com/export/game/stunts-4-cash?clid=p_8460bdc6-2f32-4753-b553-fa84d1fc40d7",
+      "engine": "HTML5",
+      "saveVerification": "Stable game URL and browser storage retained; gameplay persistence not yet verified.",
+      "providerNote": "Retains the provider game-only embed wrapper needed for its parent/child SDK initialization.",
+      "reason": "Playgama game-only wrapper stalls during provider verification in the proxy; innermost game frame times out waiting for its provider bridge. Inferred to affect other games using the same provider startup."
+    },
+    {
+      "id": "1032",
+      "name": "Obby Prison Digger",
+      "sourcePage": "https://lagged.com/en/g/obby-prison-digger",
+      "frame": "https://playgama.com/export/game/obby-prison-digger?clid=p_8460bdc6-2f32-4753-b553-fa84d1fc40d7",
+      "engine": "HTML5",
+      "saveVerification": "Stable game URL and browser storage retained; gameplay persistence not yet verified.",
+      "providerNote": "Retains the provider game-only embed wrapper needed for its parent/child SDK initialization.",
+      "reason": "Playgama game-only wrapper stalls during provider verification in the proxy; innermost game frame times out waiting for its provider bridge. Inferred to affect other games using the same provider startup."
+    },
+    {
+      "id": "1033",
+      "name": "Draw Puzzle: Complete One Part",
+      "sourcePage": "https://lagged.com/en/g/draw-puzzle-complete-one-part",
+      "frame": "https://playgama.com/export/game/draw-puzzle-complete-one-part?clid=p_8460bdc6-2f32-4753-b553-fa84d1fc40d7",
+      "engine": "HTML5",
+      "saveVerification": "Stable game URL and browser storage retained; gameplay persistence not yet verified.",
+      "providerNote": "Retains the provider game-only embed wrapper needed for its parent/child SDK initialization.",
+      "reason": "Playgama game-only wrapper stalls during provider verification in the proxy; innermost game frame times out waiting for its provider bridge. Inferred to affect other games using the same provider startup."
+    },
+    {
+      "id": "1034",
+      "name": "Crush Hour",
+      "sourcePage": "https://lagged.com/en/g/crush-hour",
+      "frame": "https://playgama.com/export/game/crush-hour?clid=p_8460bdc6-2f32-4753-b553-fa84d1fc40d7",
+      "engine": "Unity",
+      "saveVerification": "Stable game URL and browser storage retained; gameplay persistence not yet verified.",
+      "providerNote": "Retains the provider game-only embed wrapper needed for its parent/child SDK initialization.",
+      "reason": "Playgama game-only wrapper stalls during provider verification in the proxy; innermost game frame times out waiting for its provider bridge. Inferred to affect other games using the same provider startup."
+    },
+    {
+      "id": "1035",
+      "name": "Real War: Not Fake",
+      "sourcePage": "https://lagged.com/en/g/real-war-not-fake",
+      "frame": "https://playgama.com/export/game/real-war-not-fake?clid=p_8460bdc6-2f32-4753-b553-fa84d1fc40d7",
+      "engine": "Unity",
+      "saveVerification": "Stable game URL and browser storage retained; gameplay persistence not yet verified.",
+      "providerNote": "Retains the provider game-only embed wrapper needed for its parent/child SDK initialization.",
+      "reason": "Playgama game-only wrapper stalls during provider verification in the proxy; innermost game frame times out waiting for its provider bridge. Inferred to affect other games using the same provider startup."
+    },
+    {
+      "id": "1036",
+      "name": "Cake Ready",
+      "sourcePage": "https://lagged.com/en/g/cake-ready",
+      "frame": "https://playgama.com/export/game/cake-ready?clid=p_8460bdc6-2f32-4753-b553-fa84d1fc40d7",
+      "engine": "HTML5",
+      "saveVerification": "Stable game URL and browser storage retained; gameplay persistence not yet verified.",
+      "providerNote": "Retains the provider game-only embed wrapper needed for its parent/child SDK initialization.",
+      "reason": "Playgama game-only wrapper stalls during provider verification in the proxy; innermost game frame times out waiting for its provider bridge. Inferred to affect other games using the same provider startup."
+    },
+    {
+      "id": "1038",
+      "name": "Attack Of Zombies",
+      "sourcePage": "https://lagged.com/en/g/attack-of-zombies",
+      "frame": "https://playgama.com/export/game/attack-of-zombies?clid=p_8460bdc6-2f32-4753-b553-fa84d1fc40d7",
+      "engine": "Unity",
+      "saveVerification": "Stable game URL and browser storage retained; gameplay persistence not yet verified.",
+      "providerNote": "Retains the provider game-only embed wrapper needed for its parent/child SDK initialization.",
+      "reason": "Playgama game-only wrapper stalls during provider verification in the proxy; innermost game frame times out waiting for its provider bridge. Inferred to affect other games using the same provider startup."
+    },
+    {
+      "id": "1039",
+      "name": "PrintMaster 3D: Printing Tycoon",
+      "sourcePage": "https://lagged.com/en/g/printmaster-3d-printing-tycoon",
+      "frame": "https://playgama.com/export/game/printmaster-3d-printing-tycoon?clid=p_8460bdc6-2f32-4753-b553-fa84d1fc40d7",
+      "engine": "HTML5",
+      "saveVerification": "Stable game URL and browser storage retained; gameplay persistence not yet verified.",
+      "providerNote": "Retains the provider game-only embed wrapper needed for its parent/child SDK initialization.",
+      "reason": "Playgama game-only wrapper stalls during provider verification in the proxy; innermost game frame times out waiting for its provider bridge. Inferred to affect other games using the same provider startup."
+    },
+    {
+      "id": "1040",
+      "name": "Duck Family Simulator Animal Games",
+      "sourcePage": "https://lagged.com/en/g/duck-family-simulator-animal-games",
+      "frame": "https://playgama.com/export/game/duck-family-simulator-animal-games?clid=p_8460bdc6-2f32-4753-b553-fa84d1fc40d7",
+      "engine": "HTML5",
+      "saveVerification": "Stable game URL and browser storage retained; gameplay persistence not yet verified.",
+      "providerNote": "Retains the provider game-only embed wrapper needed for its parent/child SDK initialization.",
+      "reason": "Playgama game-only wrapper stalls during provider verification in the proxy; innermost game frame times out waiting for its provider bridge. Inferred to affect other games using the same provider startup."
+    },
+    {
+      "id": "1042",
+      "name": "My Little Park 3D",
+      "sourcePage": "https://lagged.com/en/g/my-little-park-3d",
+      "frame": "https://playgama.com/export/game/my-little-park-3d?clid=p_8460bdc6-2f32-4753-b553-fa84d1fc40d7",
+      "engine": "Unity",
+      "saveVerification": "Stable game URL and browser storage retained; gameplay persistence not yet verified.",
+      "providerNote": "Retains the provider game-only embed wrapper needed for its parent/child SDK initialization.",
+      "reason": "Playgama game-only wrapper stalls during provider verification in the proxy; innermost game frame times out waiting for its provider bridge. Inferred to affect other games using the same provider startup."
+    },
+    {
+      "id": "1044",
+      "name": "Fight Club Simulator",
+      "sourcePage": "https://lagged.com/en/g/fight-club-simulator",
+      "frame": "https://playgama.com/export/game/fight-club-simulator?clid=p_8460bdc6-2f32-4753-b553-fa84d1fc40d7",
+      "engine": "Unity",
+      "saveVerification": "Stable game URL and browser storage retained; gameplay persistence not yet verified.",
+      "providerNote": "Retains the provider game-only embed wrapper needed for its parent/child SDK initialization.",
+      "reason": "Playgama game-only wrapper stalls during provider verification in the proxy; innermost game frame times out waiting for its provider bridge. Inferred to affect other games using the same provider startup."
+    }
+  ]
 }
