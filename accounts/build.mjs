@@ -9,6 +9,7 @@ for(const name of ['remote-bridge.js','remote-rules.js'])await copyFile(name,'di
 await copyFile('game-status-rules.js','dist/game-status-rules.js');
 await copyFile('game-save-rules.js','dist/game-save-rules.js');
 await copyFile('hacks-bridge.js','dist/hacks-bridge.js');
+await copyFile('ai-bridge.js','dist/ai-bridge.js');
 await mkdir('dist/downloads',{recursive:true});
 await copyFile('downloads/NeonLauncher.exe','dist/downloads/NeonLauncher.exe');
 

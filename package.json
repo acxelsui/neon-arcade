@@ -5,6 +5,7 @@
   "type": "module",
   "scripts": {
     "build": "node scripts/build.mjs",
+    "ai": "node scripts/start-local-ai.mjs",
     "prestart": "node scripts/build.mjs",
     "start": "node server.mjs",
     "test": "node --test tests/*.test.mjs"

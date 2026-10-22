@@ -3,6 +3,7 @@ import {createAccountLoading} from './loading-sequence.js';
 import {createChatPopout} from './chat-popout.js';
 import {createRemoteBridge} from './remote-bridge.js';
 import {createHacksBridge} from './hacks-bridge.js';
+import {createAIBridge} from './ai-bridge.js';
 import {initMessageNotifications} from './message-notifications.js';
 import {initFriendNotifications} from './friend-notifications.js';
 import {browserIdentity} from './browser-identity.js';
@@ -31,6 +32,7 @@ const pollFriendRequests=initFriendNotifications({rpc,send,getProfile:()=>profil
 const checkSiteAccess=createSiteAccessMonitor({rpc,getProfile:()=>profile,getDeviceKey:getBrowserKey,onBanned:bannedGate});
 const handleRemoteAccess=createRemoteBridge({getProfile:()=>profile,getSession:()=>client.auth.getSession(),send});
 const handleHacks=createHacksBridge({getProfile:()=>profile,getSession:()=>client.auth.getSession(),send});
+const handleAI=createAIBridge({getProfile:()=>profile,getSession:()=>client.auth.getSession(),rpc,send});
 const handleChat=initChatBridge({rpc,send,getProfile:()=>profile,postUpdate:async text=>{const owner=profile?.id,session=await client.auth.getSession();if(profile?.id!==owner)throw Error('Your account changed.');const token=session.data?.session?.access_token;if(!token)throw Error('Sign in again.');const response=await fetch('/api/updates-post',{method:'POST',headers:{Authorization:'Bearer '+token,'Content-Type':'application/json'},body:JSON.stringify({text}),cache:'no-store',redirect:'error',signal:AbortSignal.timeout(15000)});const result=await response.json();if(!response.ok)throw Error(result.error||'Update could not be posted.');return result;},decorateRows:async rows=>{
  const ids=[...new Set(rows.map(row=>row.sender_id))];const decoration=await decorations(ids);
  const missing=ids.filter(id=>!avatarCache.has(id)||avatarCache.get(id).expires<Date.now());
@@ -124,6 +126,7 @@ window.addEventListener('message',event=>{
  if(event.data.type==='ai-popout-open'){screenPopout.open().catch(error=>send('ai-popout-error',{error:error.message}));return}
  if(event.data.type==='chat-request'){handleChat(event.data);return}
  if(event.data.type==='hacks-request'){handleHacks(event.data);return}
+ if(event.data.type==='ai-request'){handleAI(event.data);return}
  if(event.data.type==='owner-remote-v2-request'){handleRemoteAccess(event.data);return}
  if(event.data.type==='social-request'){handleSocial(event.data);return}
  if(event.data.type==='profile-updated'){sync();return}

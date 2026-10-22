@@ -5,19 +5,32 @@ import {createScreenPopoutBridge} from './chat-popout-bridge.js';
 import {createFloatingScreenChat} from './chat-floating.js';
 import {createScreenShare,startScreenChat} from './chat-screen.js';
 import {conversationContext} from './chat-context.js';
+import {createAIClient} from './ai-client.js';
 const $=s=>document.querySelector(s);
-const conversationStorage=createConversationStorage();
+const shell=$('#ai .chat-shell');shell.hidden=true;
+const gate=document.createElement('div');gate.className='ai-owner-gate glass';
+const gateMark=document.createElement('span');gateMark.className='ai-owner-mark';gateMark.textContent='N';
+const gateTitle=document.createElement('h1');gateTitle.textContent='Your private thinking space';
+const gateCopy=document.createElement('p');gateCopy.textContent='Checking owner access…';gateCopy.setAttribute('role','status');
+gate.append(gateMark,gateTitle,gateCopy);$('#ai').append(gate);
+let revoke=()=>{};
+const ownerAI=createAIClient({onRevoke:()=>{revoke();shell.hidden=true;shell.replaceChildren();gate.hidden=false;gateCopy.textContent='Owner access changed. Reload Neon AI through your owner account.';}});
+ownerAI.ready.then(async owner=>{gate.hidden=true;shell.hidden=false;await initOwnerChat(owner);}).catch(error=>{gateCopy.textContent=error.message;});
+async function initOwnerChat(owner){
+const conversationStorage=createConversationStorage({namespace:owner});
+const preferencesKey='neon-ai-preferences-'+owner;
 let chats=await conversationStorage.read();
+if(!ownerAI.isAllowed())return;
 let active=chats[0]?.id, pending=null, attachments=[], preparing=false;
 let preferences={style:'balanced',instructions:'',model:'auto'};
-try{preferences={...preferences,...JSON.parse(localStorage.getItem('neon-ai-preferences')||'{}')}}catch{}
+try{preferences={...preferences,...JSON.parse(localStorage.getItem(preferencesKey)||'{}')}}catch{}
 $('#chat-style').value=['balanced','quick','detailed','coach'].includes(preferences.style)?preferences.style:'balanced';
 $('#chat-instructions').value=typeof preferences.instructions==='string'?preferences.instructions.slice(0,1000):'';
 const modelLabel=document.createElement('label');modelLabel.className='chat-model-picker';modelLabel.append(document.createTextNode('Model'));
 const modelSelect=document.createElement('select');modelSelect.id='chat-model';modelSelect.setAttribute('aria-label','Neon AI model');modelSelect.append(Object.assign(document.createElement('option'),{value:'auto',textContent:'Auto · Site default'}));modelLabel.append(modelSelect);$('.chat-heading-copy').append(modelLabel);
 let modelLabels=new Map(),contextChars=32000,retryTimer=null,retryUntil=0;
 modelSelect.onchange=()=>{clearWait();savePreferences();status('Model selected. Your conversation stays here.');};
-function savePreferences(){preferences={style:$('#chat-style').value,instructions:$('#chat-instructions').value,model:modelSelect.value};try{localStorage.setItem('neon-ai-preferences',JSON.stringify(preferences))}catch{}}
+function savePreferences(){preferences={style:$('#chat-style').value,instructions:$('#chat-instructions').value,model:modelSelect.value};try{localStorage.setItem(preferencesKey,JSON.stringify(preferences))}catch{}}
 $('#chat-style').onchange=savePreferences;$('#chat-instructions').oninput=savePreferences;
 let previewTimer=null,popoutOpen=false;
 const screenPopout=createScreenPopoutBridge({opened:value=>{popoutOpen=value;floatingChat.external(value);if(value&&screenShare.active())refreshScreenPreview()},error:status,action:(action,question)=>{if(action==='stop'){screenShare.stop();status('Screen sharing stopped.');return}if(!screenShare.active())return;if(action==='full'){location.hash='ai';return}if(action==='ask'&&typeof question==='string'&&question.trim()&&question.length<=7600)send(false,question.trim());else if(action==='stop'){screenShare.stop();status('Screen sharing stopped.')}else if(action==='cancel'){cancel();status('Reply stopped.')}}});
@@ -69,7 +82,7 @@ async function send(retry=false,question=null){
   if(chat.messages.at(-1)?.role!=='user')return;
   resizeComposer();render({toLatest:true});setBusy(true);status('Neon is thinking…');const controller=new AbortController();pending=controller;
   const messages=conversationContext(chat.messages,{maxChars:contextChars});
-  try{const result=await requestChat({messages,...preferences},{signal:controller.signal,progress:({seconds})=>status('Neon is reconnecting. Retrying in '+seconds+'s… Your message is saved. Use Stop to cancel.')});if(pending!==controller)return;chat.messages.push({role:'assistant',content:result.content,...(result.model?{model:result.model}:{})});save();render();status(result.contextTrimmed?'Neon used recent messages for this reply. Your full conversation is still saved.':'')}
+  try{const result=await requestChat({messages,...preferences},{signal:controller.signal,request:ownerAI.request,progress:({seconds})=>status('Neon is reconnecting. Retrying in '+seconds+'s… Your message is saved. Use Stop to cancel.')});if(pending!==controller)return;chat.messages.push({role:'assistant',content:result.content,...(result.model?{model:result.model}:{})});save();render();status(result.contextTrimmed?'Neon used recent messages for this reply. Your full conversation is still saved.':'')}
   catch(error){if(pending!==controller)return;status(error.name==='AbortError'?'Reply stopped.':error.message);$('#chat-retry').hidden=false;if(error.retryAfter)waitToRetry(error.retryAfter,error.message)}
   finally{if(pending===controller){pending=null;floatingChat.busy(false);$('#chat-send').disabled=false;$('#chat-regenerate').disabled=false;$('#chat-stop').hidden=true;$('#chat-input').disabled=false;$('#chat-image-input').disabled=false;$('#chat-screen-start').disabled=false;$('#chat-messages').setAttribute('aria-busy','false');if(question===null)$('#chat-input').focus()}}
   return true;
@@ -95,13 +108,20 @@ $('#chat-input').addEventListener('input',resizeComposer);
 new ResizeObserver(()=>{chatShell.style.setProperty('--chat-bottom-height',$('.chat-bottom').offsetHeight+'px');updateJump()}).observe($('.chat-bottom'));
 new ResizeObserver(()=>{const log=$('#chat-messages');if(latestOnReveal&&log.clientHeight){log.style.scrollBehavior='auto';log.scrollTop=log.scrollHeight;log.style.scrollBehavior='';latestOnReveal=false;}updateJump()}).observe($('#chat-messages'));
 resizeComposer();render();
-fetch('/api/chat').then(r=>{if(!r.ok)throw Error();return r.json()}).then(data=>{if(!data.configured){status('AI Chat is not connected yet. Waiting for the site owner to set up an AI provider.');return;}if(Array.isArray(data.models)&&data.models.length){modelSelect.replaceChildren(Object.assign(document.createElement('option'),{value:'auto',textContent:'Auto · Best available'}));for(const model of data.models.slice(0,10)){if(typeof model?.id!=='string'||typeof model?.label!=='string')continue;modelLabels.set(model.id,model.label);modelSelect.append(Object.assign(document.createElement('option'),{value:model.id,textContent:model.label}));}modelSelect.value=modelLabels.has(preferences.model)?preferences.model:'auto';preferences.model=modelSelect.value;modelSelect.title='Auto can use another configured model when one is busy. Screenshots use the image model.';if(Number.isInteger(data.contextChars))contextChars=Math.max(8000,Math.min(40000,data.contextChars));render();}}).catch(()=>status('AI Chat is temporarily unavailable. Please try again later.'));
+const connection=document.createElement('button');connection.type='button';connection.className='ai-connect';connection.textContent='Connect local AI';$('.chat-heading-copy').append(connection);
+connection.onclick=async()=>{connection.disabled=true;connection.textContent='Connecting?';try{const response=await ownerAI.request('/api/chat');const data=await response.json();if(!response.ok||!data.configured)throw Error(data.error||'Start the Neon AI companion on this computer.');modelSelect.replaceChildren(Object.assign(document.createElement('option'),{value:'auto',textContent:'Neon Local ? Qwen 3'}));modelLabels.set('qwen3:1.7b','Qwen 3 ? local');contextChars=12000;connection.textContent='Connected ? On this computer';status('Ready. Your messages are processed on this computer.');}catch(error){connection.textContent='Reconnect local AI';status(error.message);}finally{connection.disabled=false;}};
+$('#ai').classList.add('local-text-chat');$('.chat-heading-copy .eyebrow').textContent='OWNER SPACE / LOCAL AI';$('#chat-welcome h2').textContent='A little spark. A new idea.';$('#chat-welcome>p').textContent='Ask, write, code, or work through something. This space is yours.';
+$('.chat-footnote').textContent='Replies run on this computer. Chats are saved in this browser for your account. Neon can make mistakes.';
+status('Connect local AI to check the model. Keep the Neon AI companion running while you chat.');
+revoke=()=>{cancel();screenShare.stop();chats=[];attachments=[];};
+
 
 function renderAttachments(){
   const wrap=$('#chat-attachments');wrap.replaceChildren();
   attachments.forEach((a,i)=>{const item=document.createElement('div');item.className='chat-attachment';const img=document.createElement('img');img.src=a.url;img.alt=a.name;const remove=document.createElement('button');remove.type='button';remove.textContent='×';remove.setAttribute('aria-label','Remove '+a.name);remove.onclick=()=>{attachments.splice(i,1);renderAttachments()};item.append(img,remove);wrap.append(item)});
 }
 async function addImages(files){
+  if($('#ai').classList.contains('local-text-chat')){status('This local model supports text. Describe the image in your message.');return;}
   if(pending||preparing)return;
   if(files.length+attachments.length+(screenShare.active()?1:0)>3){status(screenShare.active()?'Attach up to two screenshots while sharing your screen.':'Attach up to three screenshots at a time.');return}
   preparing=true;$('#chat-screen-start').disabled=true;$('#chat-send').disabled=true;$('#chat-image-input').disabled=true;status('Preparing screenshot…');
@@ -129,3 +149,5 @@ async function addImages(files){
 }
 $('#chat-image-input').onchange=e=>addImages([...e.target.files]);
 $('#chat-input').addEventListener('paste',event=>{const files=[...event.clipboardData.items].filter(i=>i.type.startsWith('image/')).map(i=>i.getAsFile()).filter(Boolean);if(files.length){event.preventDefault();addImages(files)}});
+
+}
