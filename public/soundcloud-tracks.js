@@ -14,13 +14,13 @@ export function hasGoPlusBadge(root){
 export function soundcloudSongFromCard(card){
  if(!card)return null;
  if(hasGoPlusBadge(card))throw Error('Go+ songs cannot be added to Neon playlists.');
- const link=card.querySelector('.soundTitle__title,.playableTile__mainHeading a,.playbackSoundBadge__titleLink,.listenDetails__trackTitle a,a[itemprop="url"]');
+ const link=card.querySelector('.soundTitle__title,.playableTile__mainHeading a,.playbackSoundBadge__titleLink,.listenDetails__trackTitle a,a[itemprop="url"],.trackItem__trackTitle');
  const canonical=card.matches?.('.listenHero,.fullListenHero')?card.ownerDocument.querySelector('link[rel="canonical"]'):null;
  const url=soundcloudTrackURL(link?.getAttribute('scramjet-attr-href')||link?.getAttribute('href')||canonical?.getAttribute('scramjet-attr-href')||canonical?.getAttribute('href'));if(!url)return null;
  const title=(link.getAttribute('title')||link.textContent||'').trim().slice(0,200);if(!title)return null;
  const id='sc:'+new URL(url).pathname.slice(1).replace('/',':');if(id.length>160)return null;
- const artist=(card.querySelector('.soundTitle__username,.playableTile__usernameHeading,.playbackSoundBadge__lightLink')?.textContent||'').trim().slice(0,200);
- const artwork=card.querySelector('.image__full')||card.querySelector('img')||card.querySelector('.sc-artwork');const image=artwork?.getAttribute('scramjet-attr-src')||artwork?.getAttribute('src')||/url\(["']?(.*?)["']?\)/.exec(artwork?.style?.backgroundImage||'')?.[1]||'';
+ const artist=(card.querySelector('.soundTitle__username,.playableTile__usernameHeading,.playbackSoundBadge__lightLink,.trackItem__username')?.textContent||'').trim().slice(0,200);
+ const artwork=card.querySelector('.sound__coverArt .image__full,.playableTile__artwork .image__full,.trackItem__artwork .image__full')||card.querySelector('.image__full')||card.querySelector('img')||card.querySelector('.sc-artwork');const image=artwork?.getAttribute('scramjet-attr-src')||artwork?.getAttribute('src')||artwork?.getAttribute('data-src')||/url\(["']?(.*?)["']?\)/.exec(artwork?.style?.backgroundImage||'')?.[1]||'';
  let thumb='';try{const cover=new URL(remoteURL(image));if(cover.protocol==='https:'&&!cover.username&&!cover.password)thumb=cover.href;}catch{}
  return {id,title,artist,thumb,duration:0};
 }

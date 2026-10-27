@@ -1,4 +1,5 @@
 import {songArtwork,musicArtworkOrigin} from './playlist-player.js';
+import {soundcloudSongURL} from './soundcloud-tracks.js';
 // Covers and metadata use the music relay, including artwork missing from old playlists.
 export function createPlaylistCovers(getController,{makeURL=blob=>URL.createObjectURL(blob),revokeURL=url=>URL.revokeObjectURL(url)}={}){
  const cache=new Map(),urls=new Set();let closed=false,transportPromise=null;
@@ -20,6 +21,13 @@ export function createPlaylistCovers(getController,{makeURL=blob=>URL.createObje
  }
  async function lookup(song){
   if(!song||typeof song.id!=='string'||!/^[a-zA-Z0-9:_-]{1,160}$/.test(song.id)||typeof song.title!=='string'||!song.title.trim())return '';
+  if(song.id.startsWith('sc:')){
+   const url=soundcloudSongURL(song);if(!url)return '';
+   const response=await request(url);if(response.status!==200||Number(response.headers.get('content-length'))>8000000){await response.body?.cancel?.();return '';}
+   const text=await new Response(response.body).text();if(text.length>8000000)return '';
+   const json=/window\.__sc_hydration\s*=\s*(\[[\s\S]*?\]);/.exec(text);let track;try{track=JSON.parse(json?.[1]||'[]').find(row=>row.hydratable==='sound')?.data;}catch{}
+   return songArtwork({thumb:track?.artwork_url||track?.user?.avatar_url});
+  }
   const query=[song.title.slice(0,200),String(song.artist||'').slice(0,200)].filter(Boolean).join(' '),response=await request(musicArtworkOrigin+'/_o/m/search?q='+encodeURIComponent(query));
   if(response.status!==200||Number(response.headers.get('content-length'))>1000000){await response.body?.cancel?.();return '';}
   const text=await new Response(response.body).text();if(text.length>1000000)return '';const data=JSON.parse(text),rows=Array.isArray(data)?data:Array.isArray(data.results)?data.results:[];

@@ -6,12 +6,13 @@ import {MUSIC_URL,musicStartup} from './music-startup.js';
 import {soundcloudSongURL} from './soundcloud-tracks.js';
 import {createMusicPlaylistQueue} from './music-playlist-queue.js';
 import {initMusicAppearance} from './music-appearance.js';
+import {initMusicWorkspace} from './music-workspace.js';
 export function initMusic(getController){
- const $=s=>document.querySelector(s);let frame,loading=null,version=0,cleanup=()=>{},lastMusicState='';
- const status=text=>$('#music-status').textContent=text;
+ const $=s=>document.querySelector(s);let frame,loading=null,version=0,cleanup=()=>{},lastMusicState='',workspace=null;
+ const status=text=>{$('#music-status').textContent=text;workspace?.status(text);};
  const appearance=initMusicAppearance($('#music-dock'));
  const cloudHost=document.getElementById?.('music-cloud-frame'),savedHost=document.getElementById?.('music-playlist-engine');
- const cloud=cloudHost?createSoundCloudMusic(getController,cloudHost,status,{appearance,addSong:song=>window.dispatchEvent(new CustomEvent('neon-add-playlist-song',{detail:song})),openLibrary:()=>{location.hash='playlists';},unavailable:()=>{mixedQueue.clear();},skip:type=>mixedQueue.action(type),ended:()=>{if(source==='cloud')mixedQueue.ended();}}):null;let source=cloud?'cloud':'saved';
+ const cloud=cloudHost?createSoundCloudMusic(getController,cloudHost,status,{nativeUI:true,appearance,addSong:song=>window.dispatchEvent(new CustomEvent('neon-add-playlist-song',{detail:song})),openLibrary:()=>{location.hash='playlists';},unavailable:()=>{mixedQueue.clear();},skip:type=>mixedQueue.action(type),ended:()=>{if(source==='cloud')mixedQueue.ended();}}):null;let source=cloud?'cloud':'saved';
  function selectSource(name){if(name!==source){if(name==='saved')cloud?.pause();else if(readMusicState(playerDocument()).playing)performMusicAction(playerDocument(),'toggle');}source=name;if(cloudHost)cloudHost.hidden=false;if(savedHost)savedHost.hidden=true;}
  const welcome=$('.music-welcome');if(welcome)welcome.hidden=true;
  const queue=createPlaylistQueue({changed:state=>window.dispatchEvent(new CustomEvent('neon-playlist-state',{detail:state})),failed:error=>window.dispatchEvent(new CustomEvent('neon-playlist-error',{detail:error.message}))});
@@ -39,7 +40,7 @@ export function initMusic(getController){
   catch(error){if(launch===playlistLaunch)window.dispatchEvent(new CustomEvent('neon-playlist-error',{detail:error.message}));}
  });
  window.addEventListener('neon-playlist-stop',()=>{playlistLaunch++;queue.clear();mixedQueue.clear();legacyMedia?.removeEventListener('ended',mixedEnded);updateMini();});
- window.addEventListener('neon-music-search',event=>{selectSource('cloud');cloud?.search(event.detail).catch(error=>status(error.message));});
+ window.addEventListener('neon-music-search',event=>{selectSource('cloud');if(workspace)workspace.search(event.detail);else cloud?.search(event.detail).catch(error=>status(error.message));});
  $('#shell-music-toggle').onclick=()=>action('toggle');
  window.addEventListener('neon-music-action',event=>action(event.detail));
  $('#shell-music-stop').onclick=()=>$('#music-stop').click();
@@ -69,5 +70,6 @@ export function initMusic(getController){
  $('#music-reload').onclick=()=>{if(cloud){cloud.reload();return;}if(frame){status('Reconnecting to music…');frame.reload()}else open()};
  $('#music-minimize').onclick=()=>{const compact=$('#music-dock').classList.toggle('compact');$('#music-minimize').setAttribute('aria-expanded',String(!compact));$('#music-minimize').textContent=compact?'＋':'−'};
  $('#music-stop').onclick=()=>{cloud?.stop();playlistLaunch++;queue.clear();mixedQueue.clear();legacyMedia?.removeEventListener('ended',mixedEnded);version++;loading=null;cleanup();cleanup=()=>{};(savedHost||$('#music-frame')).replaceChildren();frame=null;const inMusic=location.hash==='#music';$('#music-dock').hidden=!inMusic;status(inMusic?'Music stopped. Select Reload to reconnect.':'');updateMini();if(!$('#player').hidden)$('#close-game').focus();else if(inMusic)$('#music-reload').focus();else document.querySelector('#shell-music').focus()};
+ if(cloud)workspace=initMusicWorkspace({dock:$('#music-dock'),getController,cloud,action,seek:fraction=>{if(source==='cloud'){if(!cloud.seek(fraction))status('Seeking is not available for this song yet.');}else{const media=playerDocument()?.querySelector('audio');if(media?.duration)media.currentTime=fraction*media.duration;}},volume:value=>{if(source==='cloud'){if(!cloud.volume(value))status('Volume is not available until a song is playing.');}else{const media=playerDocument()?.querySelector('audio');if(media)media.volume=value;}}});
  selectSource(source);page(location.hash.slice(1));
 }

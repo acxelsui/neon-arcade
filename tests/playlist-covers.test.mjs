@@ -2,6 +2,7 @@ import test from 'node:test';
 import assert from 'node:assert/strict';
 import {createPlaylistCovers} from '../public/playlist-covers.js';
 import {playlistSong,musicArtworkOrigin} from '../public/playlist-player.js';
+test('missing SoundCloud artwork comes from that exact public track instead of the legacy catalog',async()=>{const requests=[];const covers=createPlaylistCovers(async()=>({transport:{request:async url=>{requests.push(url.href);return url.hostname==='soundcloud.com'?{status:200,headers:[],body:new Response('window.__sc_hydration = '+JSON.stringify([{hydratable:'sound',data:{artwork_url:'https://i1.sndcdn.com/exact-track.jpg'}}])+';').body}:{status:200,headers:[['Content-Type','image/jpeg']],body:new Response('cover').body};}}}),{makeURL:()=> 'blob:exact-cover'});assert.equal(await covers.load({id:'sc:artist:recording',title:'Recording',artist:'Artist'}),'blob:exact-cover');assert.deepEqual(requests,['https://soundcloud.com/artist/recording','https://i1.sndcdn.com/exact-track.jpg']);covers.clear();});
 
 test('song covers use the music relay, reuse downloads, and release image URLs',async()=>{
  const requests=[],revoked=[];let count=0;
