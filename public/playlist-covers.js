@@ -2,7 +2,9 @@ import {songArtwork,musicArtworkOrigin} from './playlist-player.js';
 import {soundcloudSongURL} from './soundcloud-tracks.js';
 // Covers and metadata use the music relay, including artwork missing from old playlists.
 export function createPlaylistCovers(getController,{makeURL=blob=>URL.createObjectURL(blob),revokeURL=url=>URL.revokeObjectURL(url)}={}){
- const cache=new Map(),urls=new Set();let closed=false,transportPromise=null;
+ const cache=new Map(),urls=new Set(),waiting=[];let active=0;
+ function limited(task){return new Promise(resolve=>{waiting.push({task,resolve});drain();});}
+ function drain(){while(active<3&&waiting.length){const {task,resolve}=waiting.shift();if(closed){resolve('');continue;}active++;Promise.resolve().then(task).then(resolve,()=>resolve('')).finally(()=>{active--;drain();});}}let closed=false,transportPromise=null;
  function transport(){return transportPromise??=(async()=>{const controller=await getController(),client=controller.transport;if(client.ready===false)await client.init();return client;})().catch(error=>{transportPromise=null;throw error;});}
  async function request(value){
   const client=await transport();let remote=new URL(value);
@@ -38,12 +40,12 @@ export function createPlaylistCovers(getController,{makeURL=blob=>URL.createObje
   const key=String(song?.id||'')+'|'+original,previous=cache.get(key);if(previous&&(previous.url||Date.now()-previous.created<30000))return previous.promise;
   const entry={url:'',promise:null,created:Date.now()};cache.set(key,entry);
   while(cache.size>128){const oldest=cache.keys().next().value,old=cache.get(oldest);if(old.url){revokeURL(old.url);urls.delete(old.url);}cache.delete(oldest);}
-  entry.promise=(async()=>{try{
+  entry.promise=limited(async()=>{try{
    let blob=null;if(original)try{blob=await image(original);}catch{}
    if(!blob&&!closed){const recovered=await lookup(song);if(recovered&&recovered!==original)blob=await image(recovered);}
    if(!blob||closed||cache.get(key)!==entry)return '';const url=makeURL(blob);entry.url=url;urls.add(url);return url;
-  }catch{return '';}})();return entry.promise;
+  }catch{return '';}});return entry.promise;
  }
- function clear(){closed=true;for(const url of urls)revokeURL(url);urls.clear();cache.clear();}
+ function clear(){closed=true;for(const url of urls)revokeURL(url);urls.clear();cache.clear();drain();}
  return {load,clear};
 }

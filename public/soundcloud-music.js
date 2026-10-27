@@ -1,13 +1,13 @@
 import {applyMusicDocumentAppearance} from './music-appearance.js';
 import {watchFrame} from './proxy-feedback.js';
 import {musicClockSeconds} from './music-playlist-queue.js';
-import {soundcloudSongFromCard,soundcloudSongURL,hasGoPlusBadge} from './soundcloud-tracks.js';
+import {soundcloudSongFromCard,soundcloudSongURL,soundcloudTrackURL,hasGoPlusBadge} from './soundcloud-tracks.js';
 import {collectionURL} from './music-library.js';
 
 export const SOUNDCLOUD_MUSIC_URL='https://soundcloud.com/discover';
 // Match dedicated ad services, never entire music/CDN domains or arbitrary
 // occurrences of "ad" in a song URL. Shared audio streams remain untouched.
-const adHosts=['doubleclick.net','googlesyndication.com','googletagservices.com','googleadservices.com','amazon-adsystem.com','adswizz.com','ads.soundcloud.com','audio-ads.sndcdn.com','adnxs.com','criteo.com','criteo.net','rubiconproject.com','pubmatic.com','openx.net','casalemedia.com','smartadserver.com','teads.tv','adsrvr.org','adform.net','aaxads.com'];
+const adHosts=['doubleclick.net','googlesyndication.com','googletagservices.com','googleadservices.com','amazon-adsystem.com','adswizz.com','ads.soundcloud.com','audio-ads.sndcdn.com','adnxs.com','criteo.com','criteo.net','rubiconproject.com','pubmatic.com','openx.net','casalemedia.com','smartadserver.com','teads.tv','adsrvr.org','adform.net','aaxads.com','aditude.cloud'];
 export function isMusicAdURL(value){try{const url=new URL(value);if(!['http:','https:'].includes(url.protocol))return false;const host=url.hostname.toLowerCase().replace(/\.$/,'');if(adHosts.some(ad=>host===ad||host.endsWith('.'+ad)))return true;return ['api.soundcloud.com','api-v2.soundcloud.com'].includes(host)&&/^\/(?:v[12]\/)?(?:ads|advertising|ad-selection|ad-delivery)(?:\/|$)/i.test(url.pathname);}catch{return false}}
 export function musicAdFilter(transport){
  const request=transport.request.bind(transport);
@@ -163,17 +163,36 @@ export function createSoundCloudMusic(getController,host,status,options={}){
  let frame,controller,pending,themedDoc,version=0,cleanup=()=>{},pendingPlay=null;
  const document=()=>{try{return frame?.element.contentDocument}catch{return null}};
  function refreshTheme(){const doc=document();if(doc?.body&&doc!==themedDoc){cleanup();if(options.nativeUI){themedDoc=doc;cleanup=()=>{};return;}cleanup=themeSoundCloud(doc,()=>status('This song or action requires a provider account. Choose another song to keep listening.'),()=>frame?.go(SOUNDCLOUD_MUSIC_URL),options);themedDoc=doc;}}
- function state(){refreshTheme();if(options.appearance&&!options.nativeUI)applyMusicDocumentAppearance(document(),options.appearance());const doc=document(),control=doc?.querySelector('.playControls .playControl'),ready=!!control&&!control.classList.contains('disabled')&&!control.disabled;let song=null;try{song=soundcloudSongFromCard(doc?.querySelector('.playbackSoundBadge'));}catch{}if(pendingPlay&&doc?.body){const hero=doc.querySelector('.listenHero,.fullListenHero');if(hero&&hasGoPlusBadge(hero)){pendingPlay=null;status('Go+ songs are excluded from Neon playlists.');options.unavailable?.();}else if(Date.now()>pendingPlay.until){pendingPlay=null;status('Song loaded. Press Play to start listening.');}else{const play=hero?.querySelector('.playButton,.sc-button-play');if(play&&soundcloudSongFromCard(hero)?.id===pendingPlay.id){const label=play.getAttribute('title')||play.getAttribute('aria-label')||'';if(/unavailable/i.test(label)){pendingPlay=null;status('This song is unavailable from the provider. Choose another track.');options.unavailable?.();}else if(!play.classList.contains('sc-button-disabled')&&play.getAttribute('aria-disabled')!=='true'){pendingPlay=null;if(!/pause/i.test(label))play.click();}}}}return {active:!!frame,ready,playing:ready&&/pause/i.test(control.getAttribute('title')||control.getAttribute('aria-label')||''),title:doc?.querySelector('.playbackSoundBadge__titleLink')?.getAttribute('title')||'Choose a song',song,elapsed:musicClockSeconds(doc?.querySelector('.playbackTimeline__timePassed [aria-hidden]')?.textContent),duration:musicClockSeconds(doc?.querySelector('.playbackTimeline__duration [aria-hidden]')?.textContent)};}
+ function state(){
+  refreshTheme();if(options.appearance&&!options.nativeUI)applyMusicDocumentAppearance(document(),options.appearance());
+  const doc=document(),control=doc?.querySelector('.playControls .playControl'),ready=!!control&&!control.classList.contains('disabled')&&!control.disabled;
+  let song=null;try{song=soundcloudSongFromCard(doc?.querySelector('.playbackSoundBadge'));}catch{}
+  if(pendingPlay&&doc?.body){
+   const hero=doc.querySelector('.listenHero,.fullListenHero')||doc.querySelector('.fullHero');
+   if(hero&&hasGoPlusBadge(hero)){pendingPlay=null;status('Go+ songs are excluded from Neon playlists.');options.unavailable?.();}
+   else if(Date.now()>pendingPlay.until){pendingPlay=null;status('SoundCloud is taking longer to start this song. Reload or choose another track.');}
+   else{
+    const play=hero?.querySelector('.playButton,.sc-button-play')||doc.querySelector('a.playButton.sc-button-play,.soundTitle__playButton .sc-button-play,.fullHero__playerArea .playButton');
+    const canonical=doc.querySelector('link[rel="canonical"]'),currentURL=soundcloudTrackURL(canonical?.getAttribute('scramjet-attr-href')||canonical?.getAttribute('href'));
+    if(play&&(currentURL===soundcloudSongURL({id:pendingPlay.id})||soundcloudSongFromCard(hero)?.id===pendingPlay.id)){
+     const label=play.getAttribute('title')||play.getAttribute('aria-label')||'';
+     if(/unavailable/i.test(label)){pendingPlay=null;status('This song is unavailable from the provider. Choose another track.');options.unavailable?.();}
+     else if(!play.classList.contains('sc-button-disabled')&&play.getAttribute('aria-disabled')!=='true'){pendingPlay=null;if(!/pause/i.test(label))play.click();}
+    }
+   }
+  }
+  return {active:!!frame,ready,playing:ready&&/pause/i.test(control.getAttribute('title')||control.getAttribute('aria-label')||''),title:doc?.querySelector('.playbackSoundBadge__titleLink')?.getAttribute('title')||'Choose a song',song,elapsed:musicClockSeconds(doc?.querySelector('.playbackTimeline__timePassed [aria-hidden]')?.textContent),duration:musicClockSeconds(doc?.querySelector('.playbackTimeline__duration [aria-hidden]')?.textContent)};
+ }
  function action(name){const doc=document(),selector={toggle:'.playControls .playControl',previous:'.skipControl__previous',next:'.skipControl__next'}[name],control=selector&&doc?.querySelector(selector);if(!control||control.disabled||control.classList.contains('disabled'))return false;control.click();return true;}
  function pause(){if(state().playing)action('toggle');}
- function open(reset=false){
+ function open(reset=false,initialURL=SOUNDCLOUD_MUSIC_URL){
   if(frame){if(reset)frame.go(SOUNDCLOUD_MUSIC_URL);return Promise.resolve(frame)}if(pending)return pending;
   const current=++version;status('Connecting to Neon Music…');
   const task=(async()=>{try{controller=await getController();if(current!==version)return null;frame=controller.createFrame();frame.element.title='Neon Music';frame.element.allow='autoplay; fullscreen; encrypted-media; picture-in-picture';frame.element.allowFullscreen=true;
    if(frame.fetchHandler.client?.transport)frame.fetchHandler.client.transport=musicAdFilter(frame.fetchHandler.client.transport);
    watchFrame(frame,error=>status(error+' Select Reload to retry.'),()=>status(''));
    frame.element.addEventListener('load',()=>{try{refreshTheme();}catch{status('Music loaded, but its appearance could not be updated.')}});
-   host.replaceChildren(frame.element);frame.go(SOUNDCLOUD_MUSIC_URL);return frame;
+   host.replaceChildren(frame.element);frame.go(initialURL);return frame;
   }catch(error){status('Music could not connect. '+error.message);return null}})();pending=task;task.finally(()=>{if(pending===task)pending=null});return task;
  }
  function stop(){version++;pendingPlay=null;pending=null;themedDoc=null;cleanup();cleanup=()=>{};if(frame){const index=controller?.frames?.indexOf(frame);if(index>=0)controller.frames.splice(index,1);frame.element.remove();frame=null;}host.replaceChildren();}
@@ -181,5 +200,5 @@ export function createSoundCloudMusic(getController,host,status,options={}){
  function catalog(){const doc=document(),songs=[],collections=[],seen=new Set();if(!doc?.body)return {songs,collections,url:''};for(const card of doc.querySelectorAll('.sound,.playableTile,.trackItem')){let song;try{song=soundcloudSongFromCard(card);}catch{}if(song&&!seen.has(song.id)){seen.add(song.id);songs.push(song);}const link=card.querySelector('a[href*="/sets/"],a[scramjet-attr-href*="/sets/"]'),url=collectionURL(raw(link));if(url&&!seen.has(url)){seen.add(url);const art=card.querySelector('img');collections.push({url,title:link.textContent.trim()||link.getAttribute('title')||'SoundCloud playlist',artist:card.querySelector('.soundTitle__username,.playableTile__usernameHeading')?.textContent?.trim()||'',thumb:art?raw(art,'src'):''});}}return {songs:songs.slice(0,200),collections:collections.slice(0,100),url:raw(doc.querySelector('link[rel="canonical"]'))};}
  function seek(fraction){const doc=document(),media=doc?.querySelector('audio');if(media?.duration){media.currentTime=Math.max(0,Math.min(1,fraction))*media.duration;return true;}const bar=doc?.querySelector('.playbackTimeline__progressWrapper');if(!bar)return false;const rect=bar.getBoundingClientRect();bar.dispatchEvent(new doc.defaultView.MouseEvent('click',{bubbles:true,clientX:rect.left+rect.width*Math.max(0,Math.min(1,fraction)),clientY:rect.top+rect.height/2}));return true;}
  function volume(value){const doc=document(),media=doc?.querySelector('audio');if(media){media.volume=Math.max(0,Math.min(1,value));return true;}const bar=doc?.querySelector('.volume__sliderWrapper');if(!bar)return false;const rect=bar.getBoundingClientRect(),opts={bubbles:true,clientX:rect.left+rect.width/2,clientY:rect.bottom-rect.height*Math.max(0,Math.min(1,value)),buttons:1};bar.dispatchEvent(new doc.defaultView.MouseEvent('mousedown',opts));doc.dispatchEvent(new doc.defaultView.MouseEvent('mousemove',opts));doc.dispatchEvent(new doc.defaultView.MouseEvent('mouseup',{...opts,buttons:0}));return true;}
- return {open,state,action,pause,stop,catalog,seek,volume,loadMore(){const doc=document();if(doc?.documentElement)doc.defaultView.scrollTo(0,doc.documentElement.scrollHeight);},async browse(value){const url=collectionURL(value);if(!url)throw Error('Choose a SoundCloud playlist.');await open();frame.go(url);},async search(query,kind='songs'){await open();frame.go('https://soundcloud.com/search/'+(kind==='sets'?'sets':'sounds')+'?q='+encodeURIComponent(String(query).slice(0,120)));},async play(song){const url=soundcloudSongURL(song);if(!url)throw Error('This playlist song has an invalid music link.');await open();pendingPlay={id:song.id,until:Date.now()+20000};frame.go(url);},reload:()=>frame?frame.reload():open()};
+ return {open,state,action,pause,stop,catalog,seek,volume,loadMore(){const doc=document();if(doc?.documentElement)doc.defaultView.scrollTo(0,doc.documentElement.scrollHeight);},async browse(value){const url=collectionURL(value);if(!url)throw Error('Choose a SoundCloud playlist.');await open();frame.go(url);},async search(query,kind='songs'){const url='https://soundcloud.com/search/'+(kind==='sets'?'sets':'sounds')+'?q='+encodeURIComponent(String(query).slice(0,120)),existing=!!frame;await open(false,url);if(existing)frame.go(url);},async play(song){const url=soundcloudSongURL(song);if(!url)throw Error('This playlist song has an invalid music link.');const existing=!!frame;await open(false,url);pendingPlay={id:song.id,until:Date.now()+60000};if(existing)frame.go(url);},reload:()=>frame?frame.reload():open()};
 }

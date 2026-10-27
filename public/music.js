@@ -29,7 +29,7 @@ export function initMusic(getController){
   const expected=mixedQueue.current();if(source==='cloud'&&expected&&state.song){if(state.song.id===expected.id){cloudObservation={id:expected.id,elapsed:state.elapsed,duration:state.duration};if(state.duration>0&&state.elapsed>=state.duration)mixedQueue.ended();}else if(cloudObservation?.id===expected.id){const finished=cloudObservation.duration>0&&cloudObservation.elapsed>=cloudObservation.duration-3;cloudObservation=null;if(finished)mixedQueue.ended();else mixedQueue.clear();}}
   $('#shell-now').textContent=ready?(hasTrack?track:(playing?'Neon Music':'Music paused')):(frame?'Choose a song':'Nothing playing');
   $('#shell-music-toggle').disabled=!ready;$('#shell-music-toggle').textContent=playing?'Ⅱ':'▷';
-  $('#shell-music-toggle').title=playing?'Pause music':'Play music';$('#shell-music-toggle').setAttribute('aria-label',playing?'Pause music':'Play music');$('#shell-music-stop').disabled=!frame&&!cloud?.state().active;
+  $('#shell-music-toggle').title=playing?'Pause music':'Play music';$('#shell-music-toggle').setAttribute('aria-label',playing?'Pause music':'Play music');$('#shell-music-stop').disabled=!frame&&!state.active;
   const signature=JSON.stringify(state);if(signature!==lastMusicState){lastMusicState=signature;window.dispatchEvent(new CustomEvent('neon-music-state',{detail:state}))}
  }
  async function action(name){if(mixedQueue.action(name)){updateMini();return;}if(source==='cloud'){if(!cloud.action(name))status('Choose a song in Neon Music first.');updateMini();return;}try{if(!queue.action(name)&&!await performMusicAction(playerDocument(),name))status('Choose a song in Music first.')}catch{status('Playback could not start. Open Music and choose the song again.')}updateMini()}
@@ -44,7 +44,7 @@ export function initMusic(getController){
  $('#shell-music-toggle').onclick=()=>action('toggle');
  window.addEventListener('neon-music-action',event=>action(event.detail));
  $('#shell-music-stop').onclick=()=>$('#music-stop').click();
- setInterval(updateMini,500);updateMini();
+ let lastPoll=0;setInterval(()=>{const now=Date.now(),delay=document.hidden?2000:document.body.classList.contains?.('music-view')?500:1000;if(now-lastPoll>=delay){lastPoll=now;updateMini();}},500);updateMini();
 
  function open(reset=false,{background=false}={}){
   if(!background)$('#music-dock').hidden=false;
@@ -61,10 +61,10 @@ export function initMusic(getController){
   }catch(error){if(current===version)status('Music could not connect. '+error.message);return null}
   })();loading=pending;pending.finally(()=>{if(loading===pending)loading=null;});return pending;
  }
- function page(name){const active=name==='music';document.body.classList.toggle('music-view',active);if(active){$('#music-dock').classList.remove('compact');$('#music-minimize').setAttribute('aria-expanded','true');if(cloud){$('#music-dock').hidden=false;cloud.open();}else open()}else{$('#music-dock').classList.add('compact');$('#music-minimize').setAttribute('aria-expanded','false')}}
+ function page(name){const active=name==='music';document.body.classList.toggle('music-view',active);if(active){$('#music-dock').classList.remove('compact');$('#music-minimize').setAttribute('aria-expanded','true');if(cloud){$('#music-dock').hidden=false;}else open()}else{$('#music-dock').classList.add('compact');$('#music-minimize').setAttribute('aria-expanded','false')}}
  window.addEventListener('neon-page',e=>{page(e.detail);if(e.detail==='playlists')open(false,{background:true});});
  window.addEventListener('neon-music-prepare',()=>open(false,{background:true}));
- const prepareProxy=event=>{if(event.target?.closest?.('[data-page="music"],[data-app="music"],#shell-music'))getController().catch(()=>{});};
+ const prepareProxy=event=>{if(event.target?.closest?.('[data-page="music"],[data-app="music"],#shell-music,[data-page="search"],[data-app="search"],[data-page="sports"],[data-app="sports"],[data-page="movies"],[data-app="movies"],[data-app="cloud"]'))getController().catch(()=>{});};
  document.addEventListener?.('pointerover',prepareProxy,{passive:true});document.addEventListener?.('focusin',prepareProxy);
  const openButton=$('#music-open');if(openButton)openButton.onclick=()=>cloud?cloud.open():open();$('#music-home').onclick=()=>{if(cloud){selectSource('cloud');cloud.open(true);}else open(true);};
  $('#music-reload').onclick=()=>{if(cloud){cloud.reload();return;}if(frame){status('Reconnecting to music…');frame.reload()}else open()};

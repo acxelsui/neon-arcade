@@ -17,7 +17,7 @@ export function soundcloudSongFromCard(card){
  const link=card.querySelector('.soundTitle__title,.playableTile__mainHeading a,.playbackSoundBadge__titleLink,.listenDetails__trackTitle a,a[itemprop="url"],.trackItem__trackTitle');
  const canonical=card.matches?.('.listenHero,.fullListenHero')?card.ownerDocument.querySelector('link[rel="canonical"]'):null;
  const url=soundcloudTrackURL(link?.getAttribute('scramjet-attr-href')||link?.getAttribute('href')||canonical?.getAttribute('scramjet-attr-href')||canonical?.getAttribute('href'));if(!url)return null;
- const title=(link.getAttribute('title')||link.textContent||'').trim().slice(0,200);if(!title)return null;
+ const title=(link?.getAttribute('title')||link?.textContent||card.querySelector('.soundTitle__title,.listenDetails__trackTitle,h1')?.textContent||'').trim().slice(0,200);if(!title)return null;
  const id='sc:'+new URL(url).pathname.slice(1).replace('/',':');if(id.length>160)return null;
  const artist=(card.querySelector('.soundTitle__username,.playableTile__usernameHeading,.playbackSoundBadge__lightLink,.trackItem__username')?.textContent||'').trim().slice(0,200);
  const artwork=card.querySelector('.sound__coverArt .image__full,.playableTile__artwork .image__full,.trackItem__artwork .image__full')||card.querySelector('.image__full')||card.querySelector('img')||card.querySelector('.sc-artwork');const image=artwork?.getAttribute('scramjet-attr-src')||artwork?.getAttribute('src')||artwork?.getAttribute('data-src')||/url\(["']?(.*?)["']?\)/.exec(artwork?.style?.backgroundImage||'')?.[1]||'';

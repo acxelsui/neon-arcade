@@ -39,3 +39,11 @@ test('unavailable artwork and invalid URLs fall back without loading external sc
  for(const url of ['javascript:alert(1)','http://cover.test/image.jpg','https://user:secret@cover.test/image.jpg',''])assert.equal(await covers.load(url),'');assert.equal(requests,0);
  assert.equal(await covers.load('https://cover.test/missing.jpg'),'');assert.equal(requests,1);covers.clear();
 });
+
+test('cover requests are bounded so a large library does not flood the music connection',async()=>{
+ let active=0,peak=0;const releases=[];
+ const covers=createPlaylistCovers(async()=>({transport:{request:async()=>{active++;peak=Math.max(peak,active);await new Promise(resolve=>releases.push(resolve));active--;return {status:200,headers:[['content-type','image/png']],body:new Uint8Array([1])};}}}),{makeURL:()=> 'blob:cover',revokeURL:()=>{}});
+ const jobs=Array.from({length:12},(_,i)=>covers.load({thumb:'https://i1.sndcdn.com/artworks-'+i+'-large.jpg'}));
+ for(let i=0;i<50;i++){await new Promise(resolve=>setImmediate(resolve));releases.splice(0).forEach(resolve=>resolve());}
+ await Promise.all(jobs);assert.equal(peak,3);covers.clear();
+});
