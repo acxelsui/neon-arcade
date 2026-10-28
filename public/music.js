@@ -1,4 +1,4 @@
-import {createSoundCloudMusic} from './soundcloud-music.js';
+import {createNativeSoundCloudMusic} from './native-soundcloud.js';
 import {watchFrame} from './proxy-feedback.js';
 import {readMusicState,performMusicAction} from './music-controls.js';
 import {playlistSong,createPlaylistQueue} from './playlist-player.js';
@@ -12,7 +12,7 @@ export function initMusic(getController){
  const status=text=>{$('#music-status').textContent=text;workspace?.status(text);};
  const appearance=initMusicAppearance($('#music-dock'));
  const cloudHost=document.getElementById?.('music-cloud-frame'),savedHost=document.getElementById?.('music-playlist-engine');
- const cloud=cloudHost?createSoundCloudMusic(getController,cloudHost,status,{nativeUI:true,appearance,addSong:song=>window.dispatchEvent(new CustomEvent('neon-add-playlist-song',{detail:song})),openLibrary:()=>{location.hash='playlists';},unavailable:()=>{mixedQueue.clear();},skip:type=>mixedQueue.action(type),ended:()=>{if(source==='cloud')mixedQueue.ended();}}):null;let source=cloud?'cloud':'saved';
+ const cloud=cloudHost?createNativeSoundCloudMusic(getController,cloudHost,status,{nativeUI:true,appearance,addSong:song=>window.dispatchEvent(new CustomEvent('neon-add-playlist-song',{detail:song})),openLibrary:()=>{location.hash='playlists';},unavailable:()=>{mixedQueue.clear();},skip:type=>mixedQueue.action(type),ended:()=>{if(source==='cloud')mixedQueue.ended();}}):null;let source=cloud?'cloud':'saved';
  function selectSource(name){if(name!==source){if(name==='saved')cloud?.pause();else if(readMusicState(playerDocument()).playing)performMusicAction(playerDocument(),'toggle');}source=name;if(cloudHost)cloudHost.hidden=false;if(savedHost)savedHost.hidden=true;}
  const welcome=$('.music-welcome');if(welcome)welcome.hidden=true;
  const queue=createPlaylistQueue({changed:state=>window.dispatchEvent(new CustomEvent('neon-playlist-state',{detail:state})),failed:error=>window.dispatchEvent(new CustomEvent('neon-playlist-error',{detail:error.message}))});
@@ -25,14 +25,14 @@ export function initMusic(getController){
  }});
  function mixedEnded(){mixedQueue.ended();}
  function playerDocument(){try{return frame?.element.contentDocument}catch{return null}}
- function updateMini(){const doc=playerDocument();let song=null;try{queue.sync();song=playlistSong(doc?.defaultView?.__NEO_METING_PLAYER__?.track?.());}catch{}const state=source==='cloud'?cloud.state():{...readMusicState(doc),active:!!frame,song},track=state.title,hasTrack=track!=='Choose a song',ready=state.ready,playing=state.playing;
+ function updateMini(){const doc=playerDocument();let song=null;try{queue.sync();song=playlistSong(doc?.defaultView?.__NEO_METING_PLAYER__?.track?.());}catch{}const providerState=source==='cloud'?cloud.state():{...readMusicState(doc),active:!!frame,song};const state={...providerState,canToggle:!!providerState.ready,canNext:!!providerState.ready,canPrevious:!!providerState.ready,canLike:!!providerState.song&&!!workspace,liked:!!workspace?.isLiked(providerState.song)},track=state.title,hasTrack=track!=='Choose a song',ready=state.ready,playing=state.playing;
   const expected=mixedQueue.current();if(source==='cloud'&&expected&&state.song){if(state.song.id===expected.id){cloudObservation={id:expected.id,elapsed:state.elapsed,duration:state.duration};if(state.duration>0&&state.elapsed>=state.duration)mixedQueue.ended();}else if(cloudObservation?.id===expected.id){const finished=cloudObservation.duration>0&&cloudObservation.elapsed>=cloudObservation.duration-3;cloudObservation=null;if(finished)mixedQueue.ended();else mixedQueue.clear();}}
   $('#shell-now').textContent=ready?(hasTrack?track:(playing?'Neon Music':'Music paused')):(frame?'Choose a song':'Nothing playing');
   $('#shell-music-toggle').disabled=!ready;$('#shell-music-toggle').textContent=playing?'Ⅱ':'▷';
   $('#shell-music-toggle').title=playing?'Pause music':'Play music';$('#shell-music-toggle').setAttribute('aria-label',playing?'Pause music':'Play music');$('#shell-music-stop').disabled=!frame&&!state.active;
   const signature=JSON.stringify(state);if(signature!==lastMusicState){lastMusicState=signature;window.dispatchEvent(new CustomEvent('neon-music-state',{detail:state}))}
  }
- async function action(name){if(mixedQueue.action(name)){updateMini();return;}if(source==='cloud'){if(!cloud.action(name))status('Choose a song in Neon Music first.');updateMini();return;}try{if(!queue.action(name)&&!await performMusicAction(playerDocument(),name))status('Choose a song in Music first.')}catch{status('Playback could not start. Open Music and choose the song again.')}updateMini()}
+ async function action(name){if(name==='stop'){$('#music-stop').click();return;}if(name==='like'){workspace?.likeCurrent();updateMini();return;}if(mixedQueue.action(name)){updateMini();return;}if(source==='cloud'){if(!cloud.action(name))status('Choose a song in Neon Music first.');updateMini();return;}try{if(!queue.action(name)&&!await performMusicAction(playerDocument(),name))status('Choose a song in Music first.')}catch{status('Playback could not start. Open Music and choose the song again.')}updateMini()}
  window.addEventListener('neon-play-playlist',async event=>{
   if(event.detail?.tracks?.some(song=>soundcloudSongURL(song))){queue.clear();try{await mixedQueue.start(event.detail.tracks,event.detail.name,event.detail.index||0,event.detail.shuffle===true);}catch(error){window.dispatchEvent(new CustomEvent('neon-playlist-error',{detail:error.message}));}return;}mixedQueue.clear();
   const launch=++playlistLaunch,playlist=event.detail;selectSource('saved');
@@ -67,9 +67,9 @@ export function initMusic(getController){
  const prepareProxy=event=>{if(event.target?.closest?.('[data-page="music"],[data-app="music"],#shell-music,[data-page="search"],[data-app="search"],[data-page="sports"],[data-app="sports"],[data-page="movies"],[data-app="movies"],[data-app="cloud"]'))getController().catch(()=>{});};
  document.addEventListener?.('pointerover',prepareProxy,{passive:true});document.addEventListener?.('focusin',prepareProxy);
  const openButton=$('#music-open');if(openButton)openButton.onclick=()=>cloud?cloud.open():open();$('#music-home').onclick=()=>{if(cloud){selectSource('cloud');cloud.open(true);}else open(true);};
- $('#music-reload').onclick=()=>{if(cloud){cloud.reload();return;}if(frame){status('Reconnecting to music…');frame.reload()}else open()};
+ $('#music-reload').onclick=async()=>{if(cloud){try{await cloud.reload();}catch(error){status(error.message);}return;}if(frame){status('Reconnecting to music…');frame.reload()}else open()};
  $('#music-minimize').onclick=()=>{const compact=$('#music-dock').classList.toggle('compact');$('#music-minimize').setAttribute('aria-expanded',String(!compact));$('#music-minimize').textContent=compact?'＋':'−'};
- $('#music-stop').onclick=()=>{cloud?.stop();playlistLaunch++;queue.clear();mixedQueue.clear();legacyMedia?.removeEventListener('ended',mixedEnded);version++;loading=null;cleanup();cleanup=()=>{};(savedHost||$('#music-frame')).replaceChildren();frame=null;const inMusic=location.hash==='#music';$('#music-dock').hidden=!inMusic;status(inMusic?'Music stopped. Select Reload to reconnect.':'');updateMini();if(!$('#player').hidden)$('#close-game').focus();else if(inMusic)$('#music-reload').focus();else document.querySelector('#shell-music').focus()};
+ $('#music-stop').onclick=()=>{cloud?.stop();playlistLaunch++;queue.clear();mixedQueue.clear();legacyMedia?.removeEventListener('ended',mixedEnded);version++;loading=null;cleanup();cleanup=()=>{};(savedHost||$('#music-frame')).replaceChildren();frame=null;const inMusic=location.hash==='#music';$('#music-dock').hidden=!inMusic;status(inMusic?(cloud?'Music stopped. Choose a song to start again.':'Music stopped. Select Reload to reconnect.'):'');updateMini();if(!$('#player').hidden)$('#close-game').focus();else if(inMusic)$('#music-reload').focus();else document.querySelector('#shell-music').focus()};
  if(cloud)workspace=initMusicWorkspace({dock:$('#music-dock'),getController,cloud,action,seek:fraction=>{if(source==='cloud'){if(!cloud.seek(fraction))status('Seeking is not available for this song yet.');}else{const media=playerDocument()?.querySelector('audio');if(media?.duration)media.currentTime=fraction*media.duration;}},volume:value=>{if(source==='cloud'){if(!cloud.volume(value))status('Volume is not available until a song is playing.');}else{const media=playerDocument()?.querySelector('audio');if(media)media.volume=value;}}});
  selectSource(source);page(location.hash.slice(1));
 }

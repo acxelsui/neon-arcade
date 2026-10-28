@@ -27,6 +27,10 @@ export function mergeImportedTracks(existing,incoming,limit=100){
  return {tracks,added:tracks.length-existing.length,duplicates};
 }
 const publicClients=new WeakMap();
+export function publicSoundCloudClient(client,html,textAt){
+ if(!publicClients.has(client))publicClients.set(client,(async()=>{const scripts=[...html.matchAll(/<script[^>]+src="(https:\/\/a-v2\.sndcdn\.com\/assets\/[^"<>]+\.js)"/g)].map(m=>m[1]).slice(-5);for(const script of scripts){const source=await textAt(script);const match=/client_id\s*:\s*["']([a-zA-Z0-9]{32})/.exec(source);if(match)return match[1];}throw Error('SoundCloud song details are unavailable right now.');})().catch(error=>{publicClients.delete(client);throw error;}));
+ return publicClients.get(client);
+}
 export async function loadSoundCloudCollection(value,getController){
  const url=collectionURL(value);if(!url)throw Error('Choose a public SoundCloud playlist link.');
  const client=(await getController()).transport;if(client.ready===false)await client.init();
@@ -39,8 +43,7 @@ export async function loadSoundCloudCollection(value,getController){
  // These are the public web client's metadata requests. No user token or
  // private playlist access is requested, and provider errors are not bypassed.
  async function textAt(url,max=3000000){const r=await client.request(new URL(url),'GET',null,[],AbortSignal.timeout(45000));if(r.status!==200||Number(new Headers(r.headers).get('content-length'))>max){await r.body?.cancel?.();throw Error('SoundCloud could not provide all song details. Nothing was imported.');}const text=await new Response(r.body).text();if(text.length>max)throw Error('SoundCloud metadata is too large.');return text;}
- if(!publicClients.has(client))publicClients.set(client,(async()=>{const scripts=[...html.matchAll(/<script[^>]+src="(https:\/\/a-v2\.sndcdn\.com\/assets\/[^"<>]+\.js)"/g)].map(m=>m[1]).slice(-5);for(const script of scripts){const source=await textAt(script);const match=/client_id\s*:\s*["']([a-zA-Z0-9]{32})/.exec(source);if(match)return match[1];}throw Error('SoundCloud song details are unavailable right now. Nothing was imported.');})().catch(error=>{publicClients.delete(client);throw error;}));
- const clientId=await publicClients.get(client),resolved=[];
+ const clientId=await publicSoundCloudClient(client,html,textAt),resolved=[];
  for(let index=0;index<missing.length;index+=50){const ids=missing.slice(index,index+50).map(row=>row.id);if(ids.some(id=>!/^\d{1,20}$/.test(String(id))))throw Error('Invalid playlist song reference.');const response=JSON.parse(await textAt('https://api-v2.soundcloud.com/tracks?ids='+ids.join(',')+'&client_id='+encodeURIComponent(clientId)));if(!Array.isArray(response))throw Error('SoundCloud song details are unavailable.');resolved.push(...response);}
  return parseCollection(html,resolved);
 }

@@ -1,5 +1,9 @@
 import {songArtwork,musicArtworkOrigin} from './playlist-player.js';
 import {soundcloudSongURL} from './soundcloud-tracks.js';
+export function directSoundCloudArtwork(song){
+ const source=songArtwork(song);if(!source)return '';
+ try{const url=new URL(source);return url.protocol==='https:'&&!url.username&&!url.password&&!url.port&&(url.hostname==='sndcdn.com'||url.hostname.endsWith('.sndcdn.com'))?url.href:'';}catch{return '';}
+}
 // Covers and metadata use the music relay, including artwork missing from old playlists.
 export function createPlaylistCovers(getController,{makeURL=blob=>URL.createObjectURL(blob),revokeURL=url=>URL.revokeObjectURL(url)}={}){
  const cache=new Map(),urls=new Set(),waiting=[];let active=0;

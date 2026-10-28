@@ -1,7 +1,11 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import {createPlaylistCovers} from '../public/playlist-covers.js';
+import {createPlaylistCovers,directSoundCloudArtwork} from '../public/playlist-covers.js';
 import {playlistSong,musicArtworkOrigin} from '../public/playlist-player.js';
+test('only public HTTPS SoundCloud artwork can skip relay startup',()=>{
+ assert.equal(directSoundCloudArtwork({thumb:'https://i1.sndcdn.com/artworks-track-large.jpg'}),'https://i1.sndcdn.com/artworks-track-large.jpg');
+ for(const thumb of ['http://i1.sndcdn.com/a.jpg','https://i1.sndcdn.com.evil.test/a.jpg','https://user:pass@i1.sndcdn.com/a.jpg','https://example.com/a.jpg','javascript:alert(1)'])assert.equal(directSoundCloudArtwork({thumb}),'');
+});
 test('missing SoundCloud artwork comes from that exact public track instead of the legacy catalog',async()=>{const requests=[];const covers=createPlaylistCovers(async()=>({transport:{request:async url=>{requests.push(url.href);return url.hostname==='soundcloud.com'?{status:200,headers:[],body:new Response('window.__sc_hydration = '+JSON.stringify([{hydratable:'sound',data:{artwork_url:'https://i1.sndcdn.com/exact-track.jpg'}}])+';').body}:{status:200,headers:[['Content-Type','image/jpeg']],body:new Response('cover').body};}}}),{makeURL:()=> 'blob:exact-cover'});assert.equal(await covers.load({id:'sc:artist:recording',title:'Recording',artist:'Artist'}),'blob:exact-cover');assert.deepEqual(requests,['https://soundcloud.com/artist/recording','https://i1.sndcdn.com/exact-track.jpg']);covers.clear();});
 
 test('song covers use the music relay, reuse downloads, and release image URLs',async()=>{

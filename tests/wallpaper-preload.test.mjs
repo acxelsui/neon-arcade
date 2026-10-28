@@ -5,6 +5,10 @@ const items=['a','b','c'].map(name=>({url:`/wallpapers/4k/${name}.mp4`,preview:`
 function fixture(){const entries=new Map();return {entries,storage:{async open(){return {async match(url){return entries.get(url)?.clone();},async put(url,response){const body=await response.arrayBuffer();entries.set(url,new Response(body,{headers:response.headers,status:response.status}));}};}}};}
 function response(url,status=200){return new Response('asset',{status,headers:{'content-type':url.endsWith('.mp4')?'video/mp4':'image/webp','content-length':'5'}});}
 const tick=()=>new Promise(resolve=>setImmediate(resolve));
+test('normal browsing prepares only the chosen wallpaper, preserving bandwidth for apps',async()=>{
+ const f=fixture(),calls=[];const cache=createWallpaperPreparation({items,scope:'selected',storage:f.storage,delay:async()=>{},fetcher:async url=>{calls.push(url);return response(url);}});
+ cache.select(items[1].url);await cache.resume();assert.deepEqual(calls,[items[1].url.replace('/4k/','/4k-start/'),items[1].preview,items[1].url]);assert.equal(cache.snapshot().ready,1);assert.equal(cache.isPrepared(items[0].url),false);
+});
 test('the smooth-loop release replaces only its old wallpaper cache and leaves player data untouched',async()=>{
  const deleted=[],opened=[],oldCache=new Map([[items[0].url,response(items[0].url)]]),gameCache=new Map([['player-progress','saved']]);
  const named=new Map([['neon-wallpapers-20261004-v2',oldCache],['neon-game-saves',gameCache]]);

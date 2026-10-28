@@ -1,6 +1,6 @@
 import {wallpapers} from './wallpaper-options.js';
 // Only bundled, non-personal wallpaper files enter this cache.
-export function createWallpaperPreparation({items=wallpapers,storage=globalThis.caches,fetcher=globalThis.fetch,estimate=()=>globalThis.navigator?.storage?.estimate?.(),notify=()=>{},delay=ms=>new Promise(resolve=>setTimeout(resolve,ms))}={}){
+export function createWallpaperPreparation({items=wallpapers,scope='all',storage=globalThis.caches,fetcher=globalThis.fetch,estimate=()=>globalThis.navigator?.storage?.estimate?.(),notify=()=>{},delay=ms=>new Promise(resolve=>setTimeout(resolve,ms))}={}){
  items=items.filter(item=>/^\/wallpapers\/4k\/[a-zA-Z0-9._-]+\.mp4$/.test(item.url)&&/^\/artwork\/wallpaper-posters\/[a-zA-Z0-9._-]+\.webp$/.test(item.preview));
  const videos=items.map(item=>item.url),streams=items.map(item=>item.url.replace('/wallpapers/4k/','/wallpapers/4k-start/')),posters=items.map(item=>item.poster||item.preview).filter(Boolean),known=new Set([...videos,...streams,...posters]);
  let cachePromise,allowed=false,selected=null,running=null,request=null,blocked=false,state='paused';const done=new Set(),failed=new Set();
@@ -27,7 +27,9 @@ export function createWallpaperPreparation({items=wallpapers,storage=globalThis.
   while(allowed&&!blocked){
    // Opening clips become available first; then save every complete 4K loop.
    // A single low-priority download pauses for gameplay, music and app loading.
-   const url=[selected?.replace('/wallpapers/4k/','/wallpapers/4k-start/'),...streams,...posters,selected,...videos].find(url=>known.has(url)&&!done.has(url)&&!failed.has(url));
+   const chosen=items.find(item=>item.url===selected);
+   const candidates=scope==='selected'?[selected?.replace('/wallpapers/4k/','/wallpapers/4k-start/'),chosen?.poster||chosen?.preview,selected]:[selected?.replace('/wallpapers/4k/','/wallpapers/4k-start/'),...streams,...posters,selected,...videos];
+   const url=candidates.find(url=>known.has(url)&&!done.has(url)&&!failed.has(url));
    if(!url){state=failed.size?'partial':'ready';report();return;}
    request=new AbortController();const current=request;
    try{
@@ -46,4 +48,4 @@ export function createWallpaperPreparation({items=wallpapers,storage=globalThis.
  function pause(){allowed=false;if(!['ready','storage','partial','unavailable'].includes(state))state='paused';request?.abort();report();}
  return {source,isPrepared:url=>videos.includes(url)&&done.has(url),select(url){if(selected!==url){request?.abort();selected=known.has(url)?url:null;}},resume(){allowed=true;return start();},retry(){failed.clear();blocked=false;state='paused';return start();},pause,snapshot};
 }
-export const wallpaperPreparation=createWallpaperPreparation({notify:detail=>{if(typeof window!=='undefined')window.dispatchEvent(new CustomEvent('neon-wallpaper-preparation',{detail}));}});
+export const wallpaperPreparation=createWallpaperPreparation({scope:'selected',notify:detail=>{if(typeof window!=='undefined')window.dispatchEvent(new CustomEvent('neon-wallpaper-preparation',{detail}));}});
