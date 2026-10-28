@@ -1,0 +1,9 @@
+import test from 'node:test';
+import assert from 'node:assert/strict';
+import {createBrowserAI,browserModels} from '../public/browser-ai.js';
+function fixture(){let downloads=0,captured,interrupts=0;const engine={unload:async()=>{},interruptGenerate:()=>interrupts++,chat:{completions:{create:async body=>{captured=body;return {choices:[{message:{content:'Hello from your device.'}}]};}}}};const ai=createBrowserAI({gpu:()=>true,makeWorker:()=>({terminate(){}}),load:async()=>({CreateWebWorkerMLCEngine:async()=>{downloads++;return engine;}})});return {ai,downloads:()=>downloads,captured:()=>captured,interrupts:()=>interrupts};}
+test('browser AI has no account-role gate, reuses the downloaded model and preserves context',async()=>{
+ const f=fixture();for(let i=0;i<2;i++){const response=await f.ai.request('/api/chat',{method:'POST',body:JSON.stringify({model:browserModels[0].id,style:'quick',instructions:'Use simple words',messages:[{role:'user',content:'Hello'},{role:'assistant',content:'Hi'},{role:'user',content:'What next?'}]})});assert.equal(response.status,200);assert.equal((await response.json()).content,'Hello from your device.');}assert.equal(f.downloads(),1);assert.equal(f.captured().messages.at(-1).content,'What next?');assert.match(f.captured().messages[0].content,/simple words/);assert.equal(f.captured().max_tokens,256);
+});
+test('unsupported devices get a useful error without downloading a model',async()=>{const ai=createBrowserAI({gpu:()=>false,load:()=>assert.fail('No download')});await assert.rejects(ai.connect(),/WebGPU/);});
+test('a cancelled browser reply is never added as a completed message',async()=>{const f=fixture(),controller=new AbortController();controller.abort();await assert.rejects(f.ai.request('/api/chat',{method:'POST',signal:controller.signal,body:JSON.stringify({messages:[{role:'user',content:'Hi'}]})}),{name:'AbortError'});assert.equal(f.downloads(),0);});

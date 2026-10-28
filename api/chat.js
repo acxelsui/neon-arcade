@@ -71,6 +71,6 @@ export function createChatHandler({env=process.env,request=fetch}={}) {
     finally{clearTimeout(timer);res.off('close',disconnected)}
   };
 }
-// The old public provider endpoint is retired. Owner chat uses the local companion.
-export default function retiredChat(req,res){res.writeHead(403,{'Content-Type':'application/json','Cache-Control':'no-store'});res.end(JSON.stringify({error:'Open Neon AI through your owner account.'}));}
+// Provider credentials are not exposed. Choose a browser model or the authenticated companion.
+export default function retiredChat(req,res){res.writeHead(403,{'Content-Type':'application/json','Cache-Control':'no-store'});res.end(JSON.stringify({error:'Choose a browser model in Neon AI, or connect the installed companion through your account.'}));}
 

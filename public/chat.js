@@ -6,21 +6,24 @@ import {createFloatingScreenChat} from './chat-floating.js';
 import {createScreenShare,startScreenChat} from './chat-screen.js';
 import {conversationContext} from './chat-context.js';
 import {createAIClient} from './ai-client.js';
+import {createBrowserAI,browserModels} from './browser-ai.js';
+import {accountOrigin} from './account-request.js';
 const $=s=>document.querySelector(s);
 const shell=$('#ai .chat-shell');shell.hidden=true;
-const gate=document.createElement('div');gate.className='ai-owner-gate glass';
-const gateMark=document.createElement('span');gateMark.className='ai-owner-mark';gateMark.textContent='N';
-const gateTitle=document.createElement('h1');gateTitle.textContent='Your private thinking space';
-const gateCopy=document.createElement('p');gateCopy.textContent='Checking owner access…';gateCopy.setAttribute('role','status');
-gate.append(gateMark,gateTitle,gateCopy);$('#ai').append(gate);
-let revoke=()=>{};
-const ownerAI=createAIClient({onRevoke:()=>{revoke();shell.hidden=true;shell.replaceChildren();gate.hidden=false;gateCopy.textContent='Owner access changed. Reload Neon AI through your owner account.';}});
-ownerAI.ready.then(async owner=>{gate.hidden=true;shell.hidden=false;await initOwnerChat(owner);}).catch(error=>{gateCopy.textContent=error.message;});
-async function initOwnerChat(owner){
+let revoke=()=>{},initialized=false,identity=null;
+const companion=createAIClient({onRevoke:()=>{}});
+companion.ready.catch(()=>{});
+function openChat(id){if(initialized){if(id!==identity){revoke();shell.hidden=true;const notice=document.createElement('p');notice.textContent='Your account changed. Reload Neon AI to open its chats.';$('#ai').append(notice);}return;}initialized=true;identity=id;shell.hidden=false;initChat(id).catch(()=>{$('#chat-status').textContent='Saved chats could not open. Reload Neon AI.';});}
+window.addEventListener('message',event=>{if(event.source===parent&&event.origin===accountOrigin&&event.data?.channel==='neon-members-v1'&&event.data.type==='members')openChat(event.data.self?.id||'');});
+if(parent===window)openChat('');
+async function initChat(owner){
+const browserAI=createBrowserAI({progress:text=>status(text)});
+const chatAI={request:(url,options)=>modelSelect.value==='companion'?companion.request(url,options?.body?{...options,body:JSON.stringify({...JSON.parse(options.body),model:'auto'})}:options):browserAI.request(url,options)};
 const conversationStorage=createConversationStorage({namespace:owner});
 const preferencesKey='neon-ai-preferences-'+owner;
 let chats=await conversationStorage.read();
-if(!ownerAI.isAllowed())return;
+if(identity!==owner)return;
+
 let active=chats[0]?.id, pending=null, attachments=[], preparing=false;
 let preferences={style:'balanced',instructions:'',model:'auto'};
 try{preferences={...preferences,...JSON.parse(localStorage.getItem(preferencesKey)||'{}')}}catch{}
@@ -28,7 +31,7 @@ $('#chat-style').value=['balanced','quick','detailed','coach'].includes(preferen
 $('#chat-instructions').value=typeof preferences.instructions==='string'?preferences.instructions.slice(0,1000):'';
 const modelLabel=document.createElement('label');modelLabel.className='chat-model-picker';modelLabel.append(document.createTextNode('Model'));
 const modelSelect=document.createElement('select');modelSelect.id='chat-model';modelSelect.setAttribute('aria-label','Neon AI model');modelSelect.append(Object.assign(document.createElement('option'),{value:'auto',textContent:'Auto · Site default'}));modelLabel.append(modelSelect);$('.chat-heading-copy').append(modelLabel);
-let modelLabels=new Map(),contextChars=32000,retryTimer=null,retryUntil=0;
+let modelLabels=new Map(browserModels.map(model=>[model.id,model.label])),contextChars=32000,retryTimer=null,retryUntil=0;
 modelSelect.onchange=()=>{clearWait();savePreferences();status('Model selected. Your conversation stays here.');};
 function savePreferences(){preferences={style:$('#chat-style').value,instructions:$('#chat-instructions').value,model:modelSelect.value};try{localStorage.setItem(preferencesKey,JSON.stringify(preferences))}catch{}}
 $('#chat-style').onchange=savePreferences;$('#chat-instructions').oninput=savePreferences;
@@ -54,7 +57,7 @@ function makeChat(){screenShare.stop();cancel();attachments=[];renderAttachments
 function clearWait(){clearInterval(retryTimer);retryTimer=null;retryUntil=0;$('#chat-retry').disabled=false;$('#chat-retry').textContent='↻ Retry message';}
 function waitToRetry(seconds,copy){clearWait();retryUntil=Date.now()+Math.min(86400,Math.max(1,seconds))*1000;const update=()=>{const left=Math.max(0,Math.ceil((retryUntil-Date.now())/1000));$('#chat-retry').disabled=left>0;$('#chat-retry').textContent=left?`Retry in ${left>=60?Math.ceil(left/60)+' min':left+'s'}`:'↻ Retry message';status(left?copy+' Retry in '+(left>=60?Math.ceil(left/60)+' minute(s).':left+' seconds.'):'You can retry your saved message now.');if(!left){clearInterval(retryTimer);retryTimer=null;}};update();retryTimer=setInterval(update,1000);}
 function cancel(){clearWait();if(pending){pending.abort();pending=null}setBusy(false);status('')}
-function setBusy(busy){floatingChat.busy(busy);$('#chat-screen-start').disabled=busy||preparing;$('#chat-image-input').disabled=busy||preparing;$('#chat-send').disabled=busy;$('#chat-regenerate').disabled=busy;$('#chat-stop').hidden=!busy;$('#chat-input').disabled=busy;$('#chat-retry').hidden=true;$('#chat-messages').setAttribute('aria-busy',String(busy))}
+function setBusy(busy){modelSelect.disabled=busy;floatingChat.busy(busy);$('#chat-screen-start').disabled=busy||preparing;$('#chat-image-input').disabled=busy||preparing;$('#chat-send').disabled=busy;$('#chat-regenerate').disabled=busy;$('#chat-stop').hidden=!busy;$('#chat-input').disabled=busy;$('#chat-retry').hidden=true;$('#chat-messages').setAttribute('aria-busy',String(busy))}
 let renderedChat=null,latestOnReveal=false,visibleTurns=100;
 function resizeComposer(){const input=$('#chat-input');input.style.height='auto';input.style.height=Math.min(110,Math.max(48,input.scrollHeight))+'px';}
 function updateJump(){const log=$('#chat-messages');$('#chat-latest').hidden=!current()?.messages.length||log.scrollHeight-log.scrollTop-log.clientHeight<80;}
@@ -82,9 +85,9 @@ async function send(retry=false,question=null){
   if(chat.messages.at(-1)?.role!=='user')return;
   resizeComposer();render({toLatest:true});setBusy(true);status('Neon is thinking…');const controller=new AbortController();pending=controller;
   const messages=conversationContext(chat.messages,{maxChars:contextChars});
-  try{const result=await requestChat({messages,...preferences},{signal:controller.signal,request:ownerAI.request,progress:({seconds})=>status('Neon is reconnecting. Retrying in '+seconds+'s… Your message is saved. Use Stop to cancel.')});if(pending!==controller)return;chat.messages.push({role:'assistant',content:result.content,...(result.model?{model:result.model}:{})});save();render();status(result.contextTrimmed?'Neon used recent messages for this reply. Your full conversation is still saved.':'')}
+  try{const result=await requestChat({messages,...preferences},{signal:controller.signal,request:chatAI.request,progress:({seconds})=>status('Neon is reconnecting. Retrying in '+seconds+'s… Your message is saved. Use Stop to cancel.')});if(pending!==controller)return;chat.messages.push({role:'assistant',content:result.content,...(result.model?{model:result.model}:{})});save();render();status(result.contextTrimmed?'Neon used recent messages for this reply. Your full conversation is still saved.':'')}
   catch(error){if(pending!==controller)return;status(error.name==='AbortError'?'Reply stopped.':error.message);$('#chat-retry').hidden=false;if(error.retryAfter)waitToRetry(error.retryAfter,error.message)}
-  finally{if(pending===controller){pending=null;floatingChat.busy(false);$('#chat-send').disabled=false;$('#chat-regenerate').disabled=false;$('#chat-stop').hidden=true;$('#chat-input').disabled=false;$('#chat-image-input').disabled=false;$('#chat-screen-start').disabled=false;$('#chat-messages').setAttribute('aria-busy','false');if(question===null)$('#chat-input').focus()}}
+  finally{if(pending===controller){pending=null;modelSelect.disabled=false;floatingChat.busy(false);$('#chat-send').disabled=false;$('#chat-regenerate').disabled=false;$('#chat-stop').hidden=true;$('#chat-input').disabled=false;$('#chat-image-input').disabled=false;$('#chat-screen-start').disabled=false;$('#chat-messages').setAttribute('aria-busy','false');if(question===null)$('#chat-input').focus()}}
   return true;
 }
 $('#chat-search').oninput=()=>render();
@@ -108,12 +111,19 @@ $('#chat-input').addEventListener('input',resizeComposer);
 new ResizeObserver(()=>{chatShell.style.setProperty('--chat-bottom-height',$('.chat-bottom').offsetHeight+'px');updateJump()}).observe($('.chat-bottom'));
 new ResizeObserver(()=>{const log=$('#chat-messages');if(latestOnReveal&&log.clientHeight){log.style.scrollBehavior='auto';log.scrollTop=log.scrollHeight;log.style.scrollBehavior='';latestOnReveal=false;}updateJump()}).observe($('#chat-messages'));
 resizeComposer();render();
-const connection=document.createElement('button');connection.type='button';connection.className='ai-connect';connection.textContent='Connect local AI';$('.chat-heading-copy').append(connection);
-connection.onclick=async()=>{connection.disabled=true;connection.textContent='Connecting...';try{const response=await ownerAI.request('/api/chat');const data=await response.json();if(!response.ok||!data.configured)throw Error(data.error||'Start the Neon AI companion on this computer.');modelSelect.replaceChildren(Object.assign(document.createElement('option'),{value:'auto',textContent:'Neon Local - Qwen 3'}));modelLabels.set('qwen3:1.7b','Qwen 3 - local');contextChars=12000;connection.textContent='Connected - On this computer';status('Ready. Your messages are processed on this computer.');}catch(error){connection.textContent='Reconnect local AI';status(error.message);}finally{connection.disabled=false;}};
-$('#ai').classList.add('local-text-chat');$('.chat-heading-copy .eyebrow').textContent='OWNER SPACE / LOCAL AI';$('#chat-welcome h2').textContent='A little spark. A new idea.';$('#chat-welcome>p').textContent='Ask, write, code, or work through something. This space is yours.';
-$('.chat-footnote').textContent='Replies run on this computer. Chats are saved in this browser for your account. Neon can make mistakes.';
-status('Connect local AI to check the model. Keep the Neon AI companion running while you chat.');
-revoke=()=>{cancel();screenShare.stop();chats=[];attachments=[];};
+modelSelect.replaceChildren(...browserModels.map(model=>Object.assign(document.createElement('option'),{value:model.id,textContent:model.label})),Object.assign(document.createElement('option'),{value:'companion',textContent:'Installed companion'}));
+modelSelect.value=browserModels.some(m=>m.id===preferences.model)?preferences.model:browserModels[0].id;
+preferences.model=modelSelect.value;
+contextChars=10000;
+for(const model of browserModels)modelLabels.set(model.id,model.label);
+const connection=document.createElement('button');connection.type='button';connection.className='ai-connect';connection.textContent='Load selected AI';$('.chat-heading-copy').append(connection);
+connection.onclick=async()=>{modelSelect.disabled=true;connection.disabled=true;connection.textContent='Loading...';try{if(modelSelect.value==='companion'){await companion.ready;const response=await companion.request('/api/chat');const data=await response.json();if(!response.ok||!data.configured)throw Error(data.error||'Start the companion on this computer.');}else await browserAI.connect(modelSelect.value);connection.textContent='Ready on this device';status('Ready. No per-message fee. Your device processes these replies.');}catch(error){connection.textContent='Retry loading AI';status(error.message);}finally{modelSelect.disabled=false;connection.disabled=false;}};
+const resources=document.createElement('details');resources.className='ai-free-links';const moreChats=document.createElement('summary');moreChats.textContent='More free chats';resources.append(moreChats);
+for(const [label,url]of [['WebLLM Chat - on-device','https://chat.webllm.ai/'],['Duck.ai - free, daily limits','https://duck.ai/']]){const a=document.createElement('a');a.href=url;a.target='_blank';a.rel='noopener noreferrer';a.textContent=label;resources.append(a);}$('.chat-heading-copy').append(resources);
+$('#ai').classList.add('local-text-chat');$('.chat-heading-copy .eyebrow').textContent='AI FOR EVERYONE / ON YOUR DEVICE';$('#chat-welcome h2').textContent='A little spark. A new idea.';$('#chat-welcome>p').textContent='Two free, on-device models. Pick one and start a conversation.';
+$('.chat-footnote').textContent='On-device AI: no daily message quota or per-message fee. Model download and WebGPU required. Chats stay in this browser. AI can make mistakes.';
+status('Choose a model and Load selected AI. The first download can take a few minutes; later visits reuse its cache.');
+revoke=()=>{cancel();screenShare.stop();browserAI.stop();chats=[];attachments=[];};
 
 
 function renderAttachments(){

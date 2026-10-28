@@ -28,4 +28,4 @@ if(!tags.models?.some(m=>m.name==='qwen3:1.7b')){
 }
 let companion=false;try{const r=await fetch('http://127.0.0.1:11435/api/chat',{signal:AbortSignal.timeout(1000)});companion=r.status===403;}catch{}
 if(!companion)await background(process.execPath,['scripts/local-ai.mjs'],'companion');
-console.log('Neon AI is running on this computer. Open Neon AI through your signed-in owner account and choose Connect local AI.');
+console.log('Neon AI is running on this computer. Open Neon AI through your signed-in account and choose Connect local AI.');

@@ -25,3 +25,8 @@ test('provider errors stop the playing indicator and invalid or premium tracks n
 test('Stop cancels an API load that finishes after the player was closed',async()=>{
  let resolveAPI,created=0;const player=createSoundCloudWidget({host:{ownerDocument:{createElement:()=>created++},replaceChildren(){}},getAPI:()=>new Promise(resolve=>resolveAPI=resolve)});const pending=player.play(song);player.stop();resolveAPI(()=>{});await pending;assert.equal(created,0);assert.equal(player.state().active,false);
 });
+test('a failed SDK load can be retried from the play action',async()=>{
+ let tries=0;const f=fixture(),widget={bind(){},setVolume(){}};const api=()=>widget;api.Events={};
+ const player=createSoundCloudWidget({host:{ownerDocument:{createElement:()=>({setAttribute(){},remove(){}})},replaceChildren(){}},getAPI:async()=>{if(!tries++)throw Error('offline');return api;}});
+ await assert.rejects(player.play(song),/offline/);assert.equal(player.state().failed,true);assert.equal(player.action('toggle'),true);await new Promise(resolve=>setImmediate(resolve));assert.equal(tries,2);player.stop();f.player.stop();
+});

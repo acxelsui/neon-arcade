@@ -25,10 +25,10 @@ export function initMusic(getController){
  }});
  function mixedEnded(){mixedQueue.ended();}
  function playerDocument(){try{return frame?.element.contentDocument}catch{return null}}
- function updateMini(){const doc=playerDocument();let song=null;try{queue.sync();song=playlistSong(doc?.defaultView?.__NEO_METING_PLAYER__?.track?.());}catch{}const providerState=source==='cloud'?cloud.state():{...readMusicState(doc),active:!!frame,song};const state={...providerState,canToggle:!!providerState.ready,canNext:!!providerState.ready,canPrevious:!!providerState.ready,canLike:!!providerState.song&&!!workspace,liked:!!workspace?.isLiked(providerState.song)},track=state.title,hasTrack=track!=='Choose a song',ready=state.ready,playing=state.playing;
+ function updateMini(){const doc=playerDocument();let song=null;try{queue.sync();song=playlistSong(doc?.defaultView?.__NEO_METING_PLAYER__?.track?.());}catch{}const providerState=source==='cloud'?cloud.state():{...readMusicState(doc),active:!!frame,song};const state={...providerState,canToggle:!!providerState.ready||!!providerState.failed,canNext:!!providerState.ready||mixedQueue.current()?.total>1,canPrevious:!!providerState.ready||mixedQueue.current()?.total>1,canLike:!!providerState.song&&!!workspace,liked:!!workspace?.isLiked(providerState.song)},track=state.title,hasTrack=track!=='Choose a song',ready=state.ready,playing=state.playing;
   const expected=mixedQueue.current();if(source==='cloud'&&expected&&state.song){if(state.song.id===expected.id){cloudObservation={id:expected.id,elapsed:state.elapsed,duration:state.duration};if(state.duration>0&&state.elapsed>=state.duration)mixedQueue.ended();}else if(cloudObservation?.id===expected.id){const finished=cloudObservation.duration>0&&cloudObservation.elapsed>=cloudObservation.duration-3;cloudObservation=null;if(finished)mixedQueue.ended();else mixedQueue.clear();}}
   $('#shell-now').textContent=ready?(hasTrack?track:(playing?'Neon Music':'Music paused')):(frame?'Choose a song':'Nothing playing');
-  $('#shell-music-toggle').disabled=!ready;$('#shell-music-toggle').textContent=playing?'Ⅱ':'▷';
+  $('#shell-music-toggle').disabled=!state.canToggle;$('#shell-music-toggle').textContent=playing?'Ⅱ':'▷';
   $('#shell-music-toggle').title=playing?'Pause music':'Play music';$('#shell-music-toggle').setAttribute('aria-label',playing?'Pause music':'Play music');$('#shell-music-stop').disabled=!frame&&!state.active;
   const signature=JSON.stringify(state);if(signature!==lastMusicState){lastMusicState=signature;window.dispatchEvent(new CustomEvent('neon-music-state',{detail:state}))}
  }
@@ -61,10 +61,10 @@ export function initMusic(getController){
   }catch(error){if(current===version)status('Music could not connect. '+error.message);return null}
   })();loading=pending;pending.finally(()=>{if(loading===pending)loading=null;});return pending;
  }
- function page(name){const active=name==='music';document.body.classList.toggle('music-view',active);if(active){$('#music-dock').classList.remove('compact');$('#music-minimize').setAttribute('aria-expanded','true');if(cloud){$('#music-dock').hidden=false;}else open()}else{$('#music-dock').classList.add('compact');$('#music-minimize').setAttribute('aria-expanded','false')}}
+ function page(name){const active=name==='music';document.body.classList.toggle('music-view',active);if(active){$('#music-dock').classList.remove('compact');$('#music-minimize').setAttribute('aria-expanded','true');if(cloud){$('#music-dock').hidden=false;cloud.prepare();}else open()}else{$('#music-dock').classList.add('compact');$('#music-minimize').setAttribute('aria-expanded','false')}}
  window.addEventListener('neon-page',e=>{page(e.detail);if(e.detail==='playlists')open(false,{background:true});});
  window.addEventListener('neon-music-prepare',()=>open(false,{background:true}));
- const prepareProxy=event=>{if(event.target?.closest?.('[data-page="music"],[data-app="music"],#shell-music,[data-page="search"],[data-app="search"],[data-page="sports"],[data-app="sports"],[data-page="movies"],[data-app="movies"],[data-app="cloud"]'))getController().catch(()=>{});};
+ const prepareProxy=event=>{if(event.target?.closest?.('[data-page="music"],[data-app="music"],#shell-music')){cloud?.prepare();return;}if(event.target?.closest?.('[data-page="music"],[data-app="music"],#shell-music,[data-page="search"],[data-app="search"],[data-page="sports"],[data-app="sports"],[data-page="movies"],[data-app="movies"],[data-app="cloud"]'))getController().catch(()=>{});};
  document.addEventListener?.('pointerover',prepareProxy,{passive:true});document.addEventListener?.('focusin',prepareProxy);
  const openButton=$('#music-open');if(openButton)openButton.onclick=()=>cloud?cloud.open():open();$('#music-home').onclick=()=>{if(cloud){selectSource('cloud');cloud.open(true);}else open(true);};
  $('#music-reload').onclick=async()=>{if(cloud){try{await cloud.reload();}catch(error){status(error.message);}return;}if(frame){status('Reconnecting to music…');frame.reload()}else open()};

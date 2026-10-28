@@ -33,6 +33,7 @@ export function publicSoundCloudClient(client,html,textAt){
 }
 export async function loadSoundCloudCollection(value,getController){
  const url=collectionURL(value);if(!url)throw Error('Choose a public SoundCloud playlist link.');
+ if(typeof window!=='undefined'){const response=await fetch('/api/music?'+new URLSearchParams({collection:url}),{signal:AbortSignal.timeout(45000)});if(response.status!==404){const data=await response.json();if(!response.ok)throw Error(data.error||'This playlist could not load.');return data;}}
  const client=(await getController()).transport;if(client.ready===false)await client.init();
  const result=await client.request(new URL(url),'GET',null,[],AbortSignal.timeout(45000));
  if(result.status!==200){await result.body?.cancel?.();throw Error('This SoundCloud playlist is unavailable.');}

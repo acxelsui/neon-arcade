@@ -10,10 +10,10 @@ export function createAIBridge({getProfile,getSession,rpc,send,fetcher=fetch}){
   const controller=new AbortController();pending.set(data.requestId,{self,controller});
   try{
    if(!['access','status','chat'].includes(data.action))throw Error('Unknown AI action.');
-   // This RPC rejects non-owners, banned accounts and invalid sessions server-side.
-   const permission=await rpc('neon_owner_overview',{});
+   // Verify active site membership; AI no longer requires an owner role.
+   const rows=await rpc('neon_site_status',{}),permission=rows?.[0];
    if(getProfile()?.id!==self)return;
-   if(!Number.isInteger(permission?.players))throw Error('Owner access is required.');
+   if(!permission||permission.banned!==false)throw Error('An active Neon account is required.');
    if(data.action==='access'){reply({result:{allowed:true,self}});return;}
    const session=await getSession();if(getProfile()?.id!==self)return;
    const token=session.data?.session?.access_token;if(!token||session.error)throw Error('Sign in again.');
@@ -22,7 +22,7 @@ export function createAIBridge({getProfile,getSession,rpc,send,fetcher=fetch}){
    const result=await response.json();
    if(result.self&&result.self!==self)throw Error('Your account changed. Reopen Neon AI.');
    reply({status:response.status,result});
-  }catch(error){reply({error:error.name==='AbortError'?'Reply stopped.':error instanceof TypeError?'Start Neon AI on this computer and allow the browser to connect to it.':error.message||'Owner access is required.'});}
+  }catch(error){reply({error:error.name==='AbortError'?'Reply stopped.':error instanceof TypeError?'Start Neon AI on this computer and allow the browser to connect to it.':error.message||'An active Neon account is required.'});}
   finally{pending.delete(data.requestId);}
  };
 }
