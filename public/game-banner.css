@@ -1,0 +1,5 @@
+.game-banner{box-sizing:border-box;width:100%;max-width:970px;margin:0 auto 26px;padding:10px 14px 14px;border:1px solid #9d8bd02b;border-radius:14px;background:#10101bc4;contain:layout style}
+.game-banner-label{display:block;margin:0 0 8px;color:#9891ac;font:9px/1.4 Inter,system-ui,sans-serif;letter-spacing:.17em;text-align:center}
+.game-banner-preview{display:flex;flex-direction:column;align-items:center;justify-content:center;gap:5px;min-height:90px;padding:10px;border:1px dashed #8473c640;border-radius:8px;background:linear-gradient(115deg,#376bd00c,#7d4ac512);text-align:center;color:#b6aecb;font:11px/1.5 Inter,system-ui,sans-serif}
+.game-banner-preview strong{color:#d2c8e8;font-size:13px;font-weight:500}
+@media(max-width:550px){.game-banner{margin-bottom:20px;padding:8px 10px 10px}.game-banner-preview{min-height:100px}}

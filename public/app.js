@@ -1,3 +1,4 @@
+import {initGameBanner} from './game-banner.js';
 import {installMediaLifecycle} from './media-lifecycle.js';
 import {createBatchedRenderer} from './render-batches.js';
 import {initNeonTube} from './neon-tube.js';
@@ -32,6 +33,7 @@ import {protectSportsFrame} from './sports-navigation.js';
 import { filterLibrary, bookmarkUrl } from './library-tools.js';
 import { initAppearance } from './appearance.js';
 const $=s=>document.querySelector(s);
+initGameBanner();
 const store={get(k,f){try{return JSON.parse(localStorage.getItem('neon-'+k))??f}catch{return f}},set(k,v){try{localStorage.setItem('neon-'+k,JSON.stringify(v))}catch{}}};
 let remoteAccess,hacksAccess;
 let libraryRendered=false;
